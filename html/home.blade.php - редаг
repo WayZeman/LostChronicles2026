@@ -1,0 +1,350 @@
+@extends('layouts.base')
+
+@section('title', trans('messages.home'))
+
+@section('app')
+
+    <div id="home" class="container content mb-10">
+        @include('elements.session-alerts')
+
+        @if($message)
+            <div class="card mb-0 mt-4">
+                <div class="card-body">
+                    {{ $message }}
+                </div>
+            </div>
+        @endif
+<section class="container">
+<div class="row gy-3 py-4">
+  <div id="lc-wrapper" class="bg-dark p-4 rounded-3">
+  
+    <style>
+      body[data-bs-theme="dark"] #lc-wrapper {
+        background-color: rgb(27, 43, 53);
+        color: #ffffff;
+      }
+
+      body[data-bs-theme="light"] #lc-wrapper {
+        background-color: #f4f4f4;
+        color: #222222;
+      }
+
+      #lc-wrapper {
+        font-family: 'Roboto', sans-serif;
+        max-width: 100%;
+		margin-top: 2.5rem !important;
+        transition: background-color 0.3s ease, color 0.3s ease;
+      }
+
+      #lc-container {
+        max-width: 1000px;
+        margin: auto;
+        padding: 40px 20px;
+      }
+
+      body[data-bs-theme="dark"] .lc-card {
+        /* background: rgb(20, 34, 43); */
+      }
+
+      body[data-bs-theme="light"] .lc-card {
+       /* background: #ffffff; */
+      }
+
+      .lc-card {
+        padding: 30px;
+        margin-bottom: 30px;
+      }
+
+      .lc-card h2 {
+        margin-top: 0;
+        font-size: 1.8rem;
+      }
+
+      .lc-card p {
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+
+      #lc-features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      body[data-bs-theme="dark"] .lc-feature {
+        background: rgb(27, 43, 53);
+      }
+
+      body[data-bs-theme="light"] .lc-feature {
+        background: #eaeaea;
+      }
+
+      .lc-feature {
+        flex: 1 1 45%;
+        border-radius: 10px;
+        padding: 20px;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .lc-feature-icon {
+        font-size: 36px;
+        color: rgb(236, 175, 45);
+      }
+
+      .lc-img {
+        max-height: 300px;
+        object-fit: cover;
+        float: right;
+      }
+
+      #lc-wrapper .lc-flex-content {
+        display: flex;
+        gap: 20px;
+        align-items: flex-start;
+        justify-content: space-between;
+        flex-wrap: wrap;
+      }
+
+      #lc-wrapper .lc-text {
+        flex: 1 1 60%;
+        min-width: 250px;
+        text-align: center;
+        margin: auto;
+      }
+
+      #lc-wrapper .lc-img-side {
+        flex: 1 1 35%;
+        max-width: 300px;
+        height: auto;
+        border-radius: 10px;
+        object-fit: contain;
+      }
+
+      #lc-wrapper .lc-join-flex {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
+        text-align: center;
+      }
+
+      #lc-wrapper .lc-join-text {
+        flex: 1 1 40%;
+      }
+
+      #lc-wrapper .lc-img-small,
+      #lc-wrapper .lc-img-small2 {
+        flex: 1 1 25%;
+        max-width: 180px;
+        height: auto;
+        object-fit: contain;
+      }
+
+      #lc-wrapper .lc-hold-wrapper {
+        position: relative;
+        width: 100%;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+      }
+
+      #lc-wrapper .lc-player-back {
+        max-width: 800px;
+        width: 100%;
+        z-index: 1;
+        position: relative;
+        margin-top: 20px;
+        animation: floatPlayer 3s ease-in-out infinite;
+      }
+
+      @keyframes floatPlayer {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+      }
+
+      @keyframes glowBox {
+        0%, 100% {
+          box-shadow: 0 0 20px rgba(236, 175, 45, 0.5);
+        }
+        50% {
+          box-shadow: 0 0 30px rgba(236, 175, 45, 0.9);
+        }
+      }
+
+      @media (max-width: 768px) {
+        .lc-feature {
+          flex-direction: column;
+          text-align: center;
+        }
+
+        #lc-header h1 {
+          font-size: 1.8rem;
+        }
+
+        .lc-card h2 {
+          font-size: 1.5rem;
+        }
+
+        .lc-card p {
+          font-size: 1rem;
+        }
+
+        #lc-wrapper .lc-flex-content {
+          flex-direction: column;
+          align-items: center;
+        }
+
+        #lc-wrapper .lc-img-side {
+          max-width: 90%;
+          margin-top: 20px;
+        }
+
+        #lc-wrapper .lc-text {
+          text-align: center;
+        }
+
+        #lc-wrapper .lc-join-flex {
+          flex-direction: column;
+        }
+
+        #lc-wrapper .lc-img-small,
+        #lc-wrapper .lc-img-small2 {
+          display: none;
+        }
+
+        #lc-wrapper .lc-join-text {
+          flex: none;
+        }
+
+        #lc-wrapper .lc-player-back {
+          max-width: 100%;
+        }
+
+        #lc-wrapper .lc-hold-wrapper {
+          padding-bottom: 0;
+        }
+      }
+    </style>
+
+    <div id="lc-container">
+      <div class="lc-card" style="position: relative; overflow: hidden;">
+        <div class="lc-hold-wrapper">
+          <img class="lc-player-back" src="https://lost-chronicles.pp.ua/storage/img/zeman5.png" alt="Minecraft Character Holding">
+        </div>
+      </div>
+
+      <div class="lc-card" id="lc-features">
+        <div class="lc-feature">
+          <span class="material-icons lc-feature-icon">public</span>
+          <div>
+            <strong>Міжнародний масштаб пригод</strong>
+            <p>Світ 20×20 тисяч блоків чекає на тебе.</p>
+          </div>
+        </div>
+        <div class="lc-feature">
+          <span class="material-icons lc-feature-icon">sports_martial_arts</span>
+          <div>
+            <strong>Виклики для героїв</strong>
+            <p>Змагання, квести та івенти покажуть, на що ти здатен.</p>
+          </div>
+        </div>
+        <div class="lc-feature">
+          <span class="material-icons lc-feature-icon">castle</span>
+          <div>
+            <strong>Твоя держава</strong>
+            <p>Побудуй імперію — прав, веди дипломатію, твори історію.</p>
+          </div>
+        </div>
+        <div class="lc-feature">
+          <span class="material-icons lc-feature-icon">group</span>
+          <div>
+            <strong>Команда</strong>
+            <p>Наша спільнота — це підтримка та нові друзі.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="lc-card">
+        <div class="lc-join-flex">
+          <img class="lc-img-small" src="/storage/img/criss.png" alt="Minecraft Character Left">
+          <div class="lc-join-text">
+            <h2 style="color: rgb(236, 175, 45);">Приєднуйся до нас!</h2>
+            <p>Побудуй майбутнє, яке тобі справді належить.<br>Твоя історія тільки починається…</p>
+			<a href="https://lost-chronicles.pp.ua/faq#iak-potrapiti-na-server">Як потрапити на сервер?</a>
+          </div>
+          <img class="lc-img-small2" src="/storage/img/lill.png" alt="Minecraft Character Right">
+        </div>
+      </div>
+      <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+      <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    </div>
+  </div>
+</div>
+</section>
+
+
+
+		<!--
+        @if(! $posts->isEmpty())
+            <section class="container">
+                <h1 class="opacity-0 h6 m-0">{{trans('theme::home.h1', ['site_name' => site_name()])}}</h1>
+                <div class="row gy-3 py-4">
+                    @foreach($posts->take(4) as $post)
+
+                        <article class="@if($loop->first) col-12 @else col-12 col-md-6 col-lg-4 @if($loop->iteration === 3) px-md-3 @endif px-0 @endif">
+                            <div class="@if($loop->first) row flex-row @endif post-preview card h-100">
+                                @if($post->hasImage())
+                                    <a href="{{ route('posts.show', $post) }}" class="@if($loop->first) col-lg-6 px-0 @endif position-relative overflow-hidden">
+                                        @if($loop->first) <h2 class="post-main-title position-absolute bg-dark p-4 py-1">{{ trans('messages.news') }}</h2> @endif
+                                        <img src="{{ $post->imageUrl() }}" alt="{{ $post->title }}" class="card-img-top post-image" @if(!$loop->first) height="215" @else height="400" @endif>
+                                    </a>
+                                @endif
+                                <div class="@if($loop->first) col-lg-6 @endif card-body rounded-bottom-1 d-flex flex-column @if($loop->first) rounded-end-1 @endif">
+                                    <h3 class="card-title text-center">
+                                        <a class="text-decoration-none" href="{{ route('posts.show', $post) }}">{{ $post->title }}</a></h3>
+                                    <p class="card-text flex-grow-1 text-center">{{ Str::limit(strip_tags($post->content), ($loop->first ? 620 : 200)) }}</p>
+                                    <div class="text-end">
+                                        <a class="" href="{{ route('posts.show', $post) }}">{{ trans('messages.posts.read') }}</a>
+                                    </div>
+                                    <div class="bg-light py-2 px-4 rounded-3 mt-3">
+                                        {{ trans('messages.posts.posted', ['date' => format_date($post->published_at), 'user' => $post->author->name]) }}
+                                    </div>
+                                </div>
+                            </div>
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+		-->
+        @if(theme_config('stats.toggle'))
+            <section class="container text-center my-3">
+                <div class="row gy-3 justify-content-center align-items-center">
+                    <div class="col-12 col-md-6 col-lg-4 p-0">
+                        <div class="d-flex flex-column bg-dark border rounded-1 py-2">
+                            <span class="h1 text-primary">{{theme_config('stats.left.number') ?? '♡'}}</span>
+                            <span class="h5 fw-semibold">{{theme_config('stats.left.text') ?? 'THANKS'}}</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4 p-0 px-md-3">
+                        <div class="d-flex flex-column bg-dark border rounded-1 py-2">
+                            <span class="h1 text-primary">{{theme_config('stats.middle.number') ?? 'DIXEPT'}}</span>
+                            <span class="h5 fw-semibold">{{theme_config('stats.middle.text') ?? 'FOR'}}</span>
+                        </div>
+                    </div>
+                    <div class="col-12 col-md-6 col-lg-4 p-0">
+                        <div class="d-flex flex-column bg-dark border rounded-1 py-2">
+                            <span class="h1 text-primary">{{theme_config('stats.right.number') ?? '♡'}}</span>
+                            <span class="h5 fw-semibold">{{theme_config('stats.right.text') ?? 'PURSHASES'}}</span>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        @endif
+    </div>
+@endsection
