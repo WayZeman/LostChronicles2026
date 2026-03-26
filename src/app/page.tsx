@@ -8,6 +8,7 @@ import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroOnlineMonitor } from "@/components/site/HeroOnlineMonitor";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 
 const defaultDescription =
   "Місце, де українські гравці об’єднуються, щоб створювати пригоди, знаходити друзів і будувати власні цивілізації у живому світі історій.";
@@ -106,6 +107,8 @@ export default function Home() {
             </div>
           ))}
         </section>
+
+        <SupportMonobankSection />
       </div>
     </main>
   );
