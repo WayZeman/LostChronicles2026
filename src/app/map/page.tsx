@@ -1,9 +1,13 @@
-import { ExternalLink, Map as MapIcon } from "lucide-react";
+import { Map as MapIcon } from "lucide-react";
 
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
+import { MapOpenActions } from "./MapOpenActions";
 
-/** BlueMap; перевизначення: NEXT_PUBLIC_MAP_URL у .env (у лапках, якщо є # у hash) */
+/**
+ * BlueMap. Перевизначення: NEXT_PUBLIC_MAP_URL у .env / Vercel (у лапках, якщо є # у hash).
+ * Перехід з HTTPS-сайту на http://IP інколи блокує Squid (cross-site), тоді допомагає «Скопіювати» → вставити в адресний рядок.
+ */
 const DEFAULT_MAP_URL =
   "http://142.132.211.240:25553/#world:0:0:0:1500:0:0:0:1:flat";
 
@@ -32,18 +36,20 @@ export default function MapPage() {
               Інтерактивна мапа світу
             </h1>
             <p className="text-sm font-medium text-[var(--mc-text-subtle)]">
-              Карта на базі BlueMap відкриється в новій вкладці браузера.
+              Карта на базі BlueMap відкриється в новій вкладці або за скопійованим посиланням.
+            </p>
+            <p className="text-xs leading-relaxed text-[var(--mc-text-muted)]">
+              Якщо кнопка «Відкрити карту» показує помилку проксі (squid / Access Denied), а той самий
+              URL у адресному рядку працює — це обмеження мережі на перехід із сайту на{" "}
+              <code className="text-[11px]">http://IP</code>. Натисніть «Скопіювати посилання» і
+              вставте в браузер, або опублікуйте мапу за HTTPS через домен і вкажіть{" "}
+              <code className="rounded bg-[var(--mc-surface-elevated)] px-1 py-0.5 text-[11px]">
+                NEXT_PUBLIC_MAP_URL
+              </code>
+              .
             </p>
           </div>
-          <a
-            href={mapUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lc-focus-ring inline-flex items-center gap-2 rounded-sm border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-6 py-3 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)]"
-          >
-            Відкрити карту
-            <ExternalLink className="size-4 opacity-90" aria-hidden />
-          </a>
+          <MapOpenActions mapUrl={mapUrl} className="max-w-full" />
         </div>
       </div>
     </main>
