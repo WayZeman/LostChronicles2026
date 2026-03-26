@@ -2,7 +2,7 @@
 
 import { HeroOnlineHistoryChart } from "@/components/site/HeroOnlineHistoryChart";
 
-/** Обгортка для графіка онлайну (картка — у HeroOnlineHistoryChart). */
+/** Вміст усередині спільної «фігури» з навбаром на сторінці (без окремого am-glass). */
 export function HeroOnlineMonitorClient() {
   return (
     <div className="w-full">

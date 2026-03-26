@@ -12,8 +12,7 @@ import {
   Tooltip,
 } from "chart.js";
 import { Line } from "react-chartjs-2";
-import { lcGlassPanelCenteredClass } from "@/components/site/lc-glass-panel";
-import { cn } from "@/lib/utils";
+import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 
 ChartJS.register(
   CategoryScale,
@@ -152,17 +151,12 @@ export function HeroOnlineHistoryChart() {
       : null;
 
   return (
-    <div
-      className={cn(
-        lcGlassPanelCenteredClass,
-        "bg-white/38 dark:bg-black/40 dark:shadow-[0_8px_36px_rgba(0,0,0,0.38)]",
-      )}
-    >
-      <h3 className="lc-hero-title text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
+    <div className={lcGlassPanelClass}>
+      <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
         Моніторинг онлайну сервера
       </h3>
 
-      <div className="mt-4 flex flex-wrap justify-center gap-2 md:mt-5">
+      <div className="mt-3 flex flex-wrap justify-center gap-2">
         {PERIODS.map((p) => (
           <button
             key={p.id}
@@ -179,7 +173,7 @@ export function HeroOnlineHistoryChart() {
         ))}
       </div>
 
-      <div className="relative mt-5 w-full max-w-full h-[220px] md:mt-6 md:h-[300px] lg:h-[360px]">
+      <div className="relative mt-4 h-[220px] w-full md:h-[300px] lg:h-[360px]">
         {error ? (
           <p className="flex h-full items-center justify-center text-sm text-[var(--mc-text-muted)]">
             {error}

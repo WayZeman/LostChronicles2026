@@ -286,47 +286,6 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--mc-net-green) 45%, transparent);
 }
 
-/* FAQ: HTML-відповіді на склі — світлий текст, без типових синіх кольорів prose/theme */
-.lc-faq-answer {
-  color: var(--mc-text);
-}
-.lc-faq-answer p {
-  margin-top: 0.5rem;
-  margin-bottom: 0.5rem;
-}
-.lc-faq-answer p:first-child {
-  margin-top: 0;
-}
-.lc-faq-answer ul,
-.lc-faq-answer ol {
-  margin: 0.5rem 0;
-  padding-left: 1.25rem;
-}
-.lc-faq-answer li {
-  margin: 0.15rem 0;
-  color: var(--mc-text);
-}
-.lc-faq-answer strong {
-  color: var(--mc-text);
-  font-weight: 700;
-}
-.lc-faq-answer a {
-  color: var(--mc-net-green);
-  font-weight: 700;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-}
-.lc-faq-answer a:hover {
-  filter: brightness(1.08);
-}
-.lc-faq-answer code {
-  font-size: 0.9em;
-  padding: 0.15rem 0.4rem;
-  border-radius: 0.25rem;
-  background: color-mix(in srgb, var(--mc-text) 14%, transparent);
-  color: var(--mc-text);
-}
-
 .am-bg {
   background-color: var(--mc-net-page);
   color: var(--mc-text);
@@ -645,13 +604,14 @@ html:not(.dark) .mc-slot {
   border-radius: 2px;
 }
 
-/* Без transform: інакше предки з am-reveal ламають backdrop-filter у скляних карток */
 @keyframes am-fade-up {
   from {
     opacity: 0;
+    transform: translate3d(0, 14px, 0);
   }
   to {
     opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
