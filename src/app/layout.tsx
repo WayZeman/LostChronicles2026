@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Noto_Sans } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteFooterGate } from "@/components/site/SiteFooterGate";
 import "./globals.css";
 
 const noto = Noto_Sans({
@@ -62,7 +63,9 @@ export default function RootLayout({
         <div className="relative z-10 flex min-h-0 flex-1 flex-col pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
           {children}
         </div>
-        <SiteFooter />
+        <SiteFooterGate>
+          <SiteFooter />
+        </SiteFooterGate>
       </body>
     </html>
   );
