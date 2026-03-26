@@ -5,7 +5,7 @@
 export type LostChroniclesFaqItem = {
   order: number;
   question: string;
-  /** HTML */
+  /** HTML (стилі: `.lc-faq-answer` на /faq) */
   answer: string;
 };
 

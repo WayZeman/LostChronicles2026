@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { ExternalLink, Map as MapIcon } from "lucide-react";
 
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { lcGlassPanelCenteredClass } from "@/components/site/lc-glass-panel";
 
 /** BlueMap. Перевизначення: NEXT_PUBLIC_MAP_URL у .env / Vercel (у лапках, якщо є # у hash). */
 const DEFAULT_MAP_URL =
@@ -18,9 +18,7 @@ export default function MapPage() {
   return (
     <main className="relative flex min-h-0 flex-1 flex-col justify-center">
       <div className="site-container mx-auto w-full max-w-4xl px-4 py-10 md:py-16">
-        <div
-          className={`${lcGlassPanelClass} flex flex-col items-center text-center`}
-        >
+        <div className={lcGlassPanelCenteredClass}>
           <h2 className="lc-hero-title text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
             Перейти до карти
           </h2>

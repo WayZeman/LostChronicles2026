@@ -7,7 +7,6 @@ import {
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroOnlineMonitor } from "@/components/site/HeroOnlineMonitor";
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 
 const defaultDescription =
   "Місце, де українські гравці об’єднуються, щоб створювати пригоди, знаходити друзів і будувати власні цивілізації у живому світі історій.";
@@ -75,21 +74,26 @@ export default function Home() {
           aria-label="Онлайн та підключення до сервера"
         >
           <HeroOnlineMonitor />
-          <div className={lcGlassPanelClass}>
-            <h2 className="lc-hero-title text-center text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
+          {/* Заголовок без другого шару скла — blur у Java/Bedrock тоді йде на фон (частинки, fon) */}
+          <div className="flex w-full flex-col items-center text-center">
+            <h2 className="lc-hero-title text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
               Підключитися до серверу
             </h2>
-            <div
-              className="mt-6 grid grid-cols-1 gap-4 md:mt-8 md:grid-cols-2 md:items-stretch"
-              aria-label="Java та Bedrock"
-            >
-              <HeroJoinPanel embedded ip={settings.ip} version={settings.version} />
-              <HeroBedrockPanel
-                embedded
-                address={settings.bedrockAddress}
-                port={settings.bedrockPort}
-              />
-            </div>
+            <p className="mt-4 w-full max-w-lg text-sm font-medium leading-relaxed text-[var(--mc-text-muted)] md:text-base">
+              Оберіть свою платформу — Java Edition або Bedrock. Адреса сервера та порт для Bedrock вказані в
+              відповідних блоках нижче.
+            </p>
+          </div>
+          <div
+            className="grid w-full grid-cols-1 gap-4 md:grid-cols-2 md:items-stretch md:gap-5"
+            aria-label="Java та Bedrock"
+          >
+            <HeroJoinPanel embedded ip={settings.ip} version={settings.version} />
+            <HeroBedrockPanel
+              embedded
+              address={settings.bedrockAddress}
+              port={settings.bedrockPort}
+            />
           </div>
         </div>
 
