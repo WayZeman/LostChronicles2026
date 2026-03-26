@@ -200,7 +200,7 @@
   --mc-footer-bg: #e2e8f3;
   --mc-footer-border: rgba(15, 23, 42, 0.09);
   --mc-footer-text: rgba(30, 41, 59, 0.52);
-  /* Скрам над fon-wite.jpg (світла тема) */
+  /* Скрам над фоном (світла тема) */
   --mc-bg-image-overlay: linear-gradient(
     180deg,
     rgba(244, 247, 252, 0.52) 0%,
@@ -306,7 +306,7 @@ html:not(.dark) .lc-hero-lead {
   font-weight: 500;
 }
 
-/* Фон: темна — fon.png; світла — fon-wite.jpg + накладка + кольорові плями */
+/* Фон: темна та світла — fon.png + накладка + кольорові плями */
 .mc-net-backdrop {
   position: fixed;
   inset: 0;
@@ -328,14 +328,14 @@ html:not(.dark) .lc-hero-lead {
   opacity: var(--mc-backdrop-vignette-opacity);
 }
 
-/* Світла тема: легкий блюр fon-wite.jpg; накладка та віньєтка — у ::after поверх блобів */
+/* Світла тема: легкий блюр fon.png; накладка та віньєтка — у ::after поверх блобів */
 html:not(.dark) .mc-net-backdrop {
   background-image: none;
 }
 
 html:not(.dark) .mc-net-backdrop::before {
   inset: -14px;
-  background: url("/fon-wite.jpg") center / cover no-repeat;
+  background: url("/fon.png") center / cover no-repeat;
   filter: blur(5px);
   opacity: 1;
   transform: scale(1.03);

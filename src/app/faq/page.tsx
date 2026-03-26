@@ -40,9 +40,15 @@ export default function FAQPage() {
               <AccordionTrigger className="text-left text-[15px] font-bold text-[var(--mc-ink)] hover:text-[var(--mc-net-green)] hover:no-underline">
                 {faq.question}
               </AccordionTrigger>
-              <AccordionContent className="text-sm font-medium leading-relaxed text-[var(--mc-ink-muted)]">
+              <AccordionContent className="text-[15px] font-medium leading-relaxed text-[var(--mc-text)] md:text-base">
                 <div
-                  className="prose max-w-none prose-p:my-2 prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-headings:text-[var(--mc-ink)] prose-p:text-[var(--mc-ink-muted)] prose-strong:text-[var(--mc-ink)] prose-a:font-bold prose-a:text-[var(--mc-net-green)]"
+                  className={cn(
+                    "prose max-w-none",
+                    "prose-p:my-2 prose-p:text-[var(--mc-text)]",
+                    "prose-ul:my-2 prose-ol:my-2 prose-li:my-0.5 prose-li:text-[var(--mc-text)] prose-li:marker:text-[var(--mc-net-green)]",
+                    "prose-headings:text-[var(--mc-text)] prose-strong:text-[var(--mc-text)] prose-strong:font-bold",
+                    "prose-a:font-bold prose-a:text-[var(--mc-net-green)] prose-a:no-underline hover:prose-a:underline",
+                  )}
                   dangerouslySetInnerHTML={{ __html: faq.answer }}
                 />
               </AccordionContent>
