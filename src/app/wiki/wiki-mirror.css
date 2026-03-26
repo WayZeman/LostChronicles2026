@@ -1,0 +1,228 @@
+/* HTML з MediaWiki parse (лише тіло статті) */
+
+.wiki-mirror {
+  --wiki-border: rgba(0, 0, 0, 0.1);
+  --wiki-muted: rgb(71 85 105);
+  --wiki-link: #b45309;
+  --wiki-bg-soft: rgba(241 245 249 / 0.95);
+  color: var(--wiki-muted);
+  font-size: 0.9375rem;
+  line-height: 1.65;
+  word-wrap: break-word;
+  overflow-x: auto;
+}
+
+.wiki-mirror .mw-parser-output::after,
+.wiki-mirror.mw-parser-output::after {
+  content: "";
+  display: block;
+  clear: both;
+}
+
+.wiki-mirror p {
+  margin: 0.65em 0;
+}
+
+.wiki-mirror p:first-child {
+  margin-top: 0;
+}
+
+.wiki-mirror b,
+.wiki-mirror strong {
+  color: rgb(15 23 42);
+  font-weight: 600;
+}
+
+.wiki-mirror a {
+  color: var(--wiki-link);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.wiki-mirror h1,
+.wiki-mirror h2,
+.wiki-mirror h3,
+.wiki-mirror h4 {
+  color: rgb(15 23 42);
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 1.15em 0 0.45em;
+}
+
+.wiki-mirror h2 {
+  font-size: 1.35rem;
+  margin-top: 1.35em;
+  padding-bottom: 0.2em;
+  border-bottom: 1px solid var(--wiki-border);
+}
+
+.wiki-mirror ul,
+.wiki-mirror ol {
+  margin: 0.5em 0;
+  padding-left: 1.5em;
+}
+
+.wiki-mirror .mw-editsection,
+.wiki-mirror .mw-editsection-bracket {
+  display: none !important;
+}
+
+.wiki-mirror table.infobox,
+.wiki-mirror .infobox {
+  float: right;
+  clear: right;
+  margin: 0 0 1em 1.25em;
+  width: min(300px, 92vw);
+  border-collapse: collapse;
+  border: 1px solid var(--wiki-border);
+  background: var(--wiki-bg-soft);
+  font-size: 0.8125rem;
+}
+
+.wiki-mirror table.infobox th,
+.wiki-mirror table.infobox td {
+  border: 1px solid var(--wiki-border);
+  padding: 0.4em 0.65em;
+}
+
+.wiki-mirror table.wikitable th,
+.wiki-mirror table.wikitable td {
+  border: 1px solid var(--wiki-border);
+  padding: 0.35em 0.6em;
+}
+
+.wiki-mirror .toc {
+  display: table;
+  max-width: 100%;
+  border: 1px solid var(--wiki-border);
+  background: var(--wiki-bg-soft);
+  padding: 0.65em 1rem;
+  margin: 0 0 1.25em;
+  font-size: 0.875rem;
+}
+
+.wiki-mirror .toctogglecheckbox,
+.wiki-mirror .toctogglespan,
+.wiki-mirror .toctogglelabel {
+  display: none !important;
+}
+
+.wiki-mirror .thumbinner,
+.wiki-mirror figure {
+  border: 1px solid var(--wiki-border);
+  background: var(--wiki-bg-soft);
+  padding: 0.35rem;
+  max-width: 100%;
+}
+
+.wiki-mirror .tright {
+  float: right;
+  clear: right;
+  margin: 0.5em 0 1em 1.25em;
+}
+
+.wiki-mirror .tleft {
+  float: left;
+  clear: left;
+  margin: 0.5em 1.25em 1em 0;
+}
+
+.wiki-mirror img {
+  max-width: 100%;
+  height: auto;
+}
+
+.wiki-mirror aside.portable-infobox {
+  float: right;
+  clear: right;
+  margin: 0 0 1em 1.25em;
+  width: min(300px, 92vw);
+}
+
+.wiki-mirror .wds-tabs__wrapper,
+.wiki-mirror ul.wds-tabs {
+  display: none !important;
+}
+
+.wiki-mirror .wds-tab__content {
+  display: block !important;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--wiki-border);
+}
+
+.wiki-mirror .wds-tab__content:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.wiki-mirror .hatnote {
+  font-style: italic;
+  padding: 0.65em 1em;
+  margin: 0 0 1em;
+  border-left: 3px solid rgba(202, 138, 4, 0.5);
+  background: rgba(202, 138, 4, 0.08);
+  font-size: 0.875rem;
+}
+
+.wiki-mirror table.navbox {
+  width: 100%;
+  margin: 1.25em 0;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+  border: 1px solid var(--wiki-border);
+}
+
+.wiki-mirror .mw-normal-catlinks {
+  margin-top: 2rem;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--wiki-border);
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 640px) {
+  .wiki-mirror table.infobox,
+  .wiki-mirror .infobox,
+  .wiki-mirror aside.portable-infobox {
+    float: none;
+    width: 100%;
+    margin: 0 0 1em;
+  }
+
+  .wiki-mirror .tright,
+  .wiki-mirror .tleft {
+    float: none;
+    margin: 0.75em 0;
+  }
+}
+
+/* Темна тема — контраст як на темних сторінках порталу */
+.dark .wiki-mirror {
+  --wiki-border: rgba(255, 255, 255, 0.12);
+  --wiki-muted: rgb(203 213 225 / 0.92);
+  --wiki-link: #fcd34d;
+  --wiki-bg-soft: rgba(0, 0, 0, 0.35);
+  color: var(--wiki-muted);
+}
+
+.dark .wiki-mirror b,
+.dark .wiki-mirror strong {
+  color: rgb(248 250 252);
+}
+
+.dark .wiki-mirror h1,
+.dark .wiki-mirror h2,
+.dark .wiki-mirror h3,
+.dark .wiki-mirror h4 {
+  color: rgb(248 250 252);
+}
+
+.dark .wiki-mirror a {
+  color: #fbbf24;
+}
+
+.dark .wiki-mirror .hatnote {
+  border-left-color: rgba(251, 191, 36, 0.55);
+  background: rgba(0, 0, 0, 0.35);
+}

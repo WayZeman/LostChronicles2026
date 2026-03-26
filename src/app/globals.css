@@ -1,0 +1,687 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@plugin "tailwindcss-animate";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --font-sans: var(--font-noto);
+  --font-serif: var(--font-noto);
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  /* Базові shadcn: світла тема — холодний нейтраль + синій primary */
+  --background: oklch(0.97 0.012 252);
+  --foreground: oklch(0.22 0.02 260);
+  --card: oklch(0.995 0.004 252);
+  --card-foreground: oklch(0.22 0.02 260);
+  --popover: oklch(0.995 0.004 252);
+  --popover-foreground: oklch(0.22 0.02 260);
+  --primary: oklch(0.5 0.2 264);
+  --primary-foreground: oklch(0.99 0.005 252);
+  --secondary: oklch(0.94 0.014 252);
+  --secondary-foreground: oklch(0.26 0.022 260);
+  --muted: oklch(0.935 0.012 252);
+  --muted-foreground: oklch(0.44 0.024 260);
+  --accent: oklch(0.93 0.03 264);
+  --accent-foreground: oklch(0.22 0.02 260);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.88 0.014 252);
+  --input: oklch(0.88 0.014 252);
+  --ring: oklch(0.5 0.2 264);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  /* Нейтральні сірі (chroma 0), без синього відтінку */
+  --background: oklch(0.14 0 0);
+  --foreground: oklch(0.97 0 0);
+  --card: oklch(0.2 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.2 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.72 0.14 75);
+  --primary-foreground: oklch(0.18 0.04 75);
+  --secondary: oklch(0.26 0 0);
+  --secondary-foreground: oklch(0.95 0 0);
+  --muted: oklch(0.26 0 0);
+  --muted-foreground: oklch(0.68 0 0);
+  --accent: oklch(0.3 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.65 0.14 75);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+    scroll-behavior: smooth;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
+}
+
+/* ─── Сайт: світла тема — холодний нейтраль + синій акцент; темна — .dark ─── */
+:root {
+  color-scheme: light;
+  --am-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --am-dur: 0.55s;
+  /* Акцент (ім’я --mc-net-green історичне): синій */
+  --mc-net-green: #2563eb;
+  --mc-net-green-hover: #1d4ed8;
+  --mc-on-gold: #f8fafc;
+  /* Фон сторінки: прохолодний світлий */
+  --mc-net-sky-top: #f4f7fc;
+  --mc-net-gradient-mid: #e8eef7;
+  --mc-net-sky-mid: #e2e9f4;
+  --mc-net-page: #eef2f9;
+  --mc-backdrop-vignette-gradient: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgba(30, 58, 95, 0.06),
+    transparent 58%
+  );
+  --mc-backdrop-vignette-opacity: 0.28;
+  --mc-grass: var(--mc-net-green);
+  --mc-grass-bright: #3b82f6;
+  --mc-dirt: #4c5c6e;
+  --mc-sky: #3d9fd9;
+  --mc-stone: #94a3b8;
+  --mc-deep: #0f172a;
+  /* Текст: slate на світло-блакитному тлі */
+  --mc-text: #0f172a;
+  --mc-text-muted: #334155;
+  --mc-text-subtle: #64748b;
+  --mc-ink: #0f172a;
+  --mc-ink-muted: #475569;
+  --mc-ink-subtle: #64748b;
+  --mc-surface: #ffffff;
+  --mc-surface-elevated: #f4f7fb;
+  --mc-border: rgba(15, 23, 42, 0.1);
+  --mc-border-card: rgba(15, 23, 42, 0.07);
+  /* Навбар */
+  --mc-nav-bg: rgba(255, 255, 255, 0.9);
+  --mc-nav-border: rgba(15, 23, 42, 0.09);
+  --mc-nav-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
+  --mc-nav-link: #334155;
+  --mc-nav-link-hover-bg: rgba(37, 99, 235, 0.09);
+  --mc-nav-toggle-bg: rgba(255, 255, 255, 0.97);
+  --mc-toggle-border: rgba(15, 23, 42, 0.12);
+  --mc-toggle-bg: #ffffff;
+  --mc-toggle-hover-bg: rgba(15, 23, 42, 0.05);
+  --mc-green-ink: #1e40af;
+  --mc-vote-bg: rgba(37, 99, 235, 0.1);
+  --mc-vote-bg-hover: rgba(37, 99, 235, 0.16);
+  --mc-bento-icon-bg: rgba(37, 99, 235, 0.08);
+  --mc-bento-icon-hover: rgba(37, 99, 235, 0.14);
+  --mc-arrow-muted: #64748b;
+  --mc-btn-secondary-border: rgba(15, 23, 42, 0.14);
+  --mc-btn-secondary-bg: #ffffff;
+  --mc-btn-secondary-fg: #1e293b;
+  --mc-btn-secondary-hover: rgba(15, 23, 42, 0.05);
+  --mc-footer-bg: #e2e8f3;
+  --mc-footer-border: rgba(15, 23, 42, 0.09);
+  --mc-footer-text: rgba(30, 41, 59, 0.52);
+  /* Скрам над fon-wite.jpg (світла тема) */
+  --mc-bg-image-overlay: linear-gradient(
+    180deg,
+    rgba(244, 247, 252, 0.52) 0%,
+    rgba(232, 238, 248, 0.44) 45%,
+    rgba(226, 233, 245, 0.54) 100%
+  );
+  /* Узгодження з Tailwind theme tokens */
+  --background: var(--mc-net-page);
+  --foreground: var(--mc-text);
+  --card: var(--mc-surface);
+  --card-foreground: var(--mc-ink);
+  --muted: var(--mc-surface-elevated);
+  --muted-foreground: var(--mc-text-subtle);
+  --border: color-mix(in oklch, var(--mc-text) 12%, var(--mc-surface));
+  --input: color-mix(in oklch, var(--mc-text) 10%, var(--mc-surface));
+}
+
+.dark {
+  color-scheme: dark;
+  --mc-net-green: #eab308;
+  --mc-net-green-hover: #facc15;
+  --mc-on-gold: #1c1206;
+  --mc-net-sky-top: #121212;
+  --mc-net-gradient-mid: #0e0e0e;
+  --mc-net-sky-mid: #0c0c0c;
+  --mc-net-page: #0a0a0a;
+  --mc-backdrop-vignette-gradient: radial-gradient(
+    ellipse 120% 80% at 50% 100%,
+    rgba(0, 0, 0, 0.5),
+    transparent 55%
+  );
+  --mc-backdrop-vignette-opacity: 0.65;
+  --mc-text: #fafafa;
+  --mc-text-muted: #d4d4d8;
+  --mc-text-subtle: #a3a3a3;
+  --mc-ink: #fafafa;
+  --mc-ink-muted: #a3a3a3;
+  --mc-ink-subtle: #a1a1aa;
+  --mc-surface: #1c1c1c;
+  --mc-surface-elevated: #262626;
+  --mc-border: rgba(255, 255, 255, 0.1);
+  --mc-border-card: rgba(255, 255, 255, 0.09);
+  --mc-nav-bg: rgba(30, 30, 30, 0.9);
+  --mc-nav-border: rgba(255, 255, 255, 0.1);
+  --mc-nav-shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+  --mc-nav-link: #d4d4d8;
+  --mc-nav-link-hover-bg: rgba(234, 179, 8, 0.12);
+  --mc-nav-toggle-bg: rgba(38, 38, 38, 0.92);
+  --mc-toggle-border: rgba(255, 255, 255, 0.14);
+  --mc-toggle-bg: #2a2a2a;
+  --mc-toggle-hover-bg: rgba(255, 255, 255, 0.1);
+  --mc-green-ink: #fde68a;
+  --mc-vote-bg: rgba(234, 179, 8, 0.18);
+  --mc-vote-bg-hover: rgba(234, 179, 8, 0.28);
+  --mc-bento-icon-bg: rgba(234, 179, 8, 0.16);
+  --mc-bento-icon-hover: rgba(234, 179, 8, 0.26);
+  --mc-arrow-muted: #737373;
+  --mc-btn-secondary-border: rgba(255, 255, 255, 0.18);
+  --mc-btn-secondary-bg: rgba(255, 255, 255, 0.06);
+  --mc-btn-secondary-fg: #e2e8f0;
+  --mc-btn-secondary-hover: rgba(255, 255, 255, 0.11);
+  --mc-footer-bg: #141414;
+  --mc-footer-border: rgba(255, 255, 255, 0.08);
+  --mc-footer-text: rgba(250, 250, 250, 0.42);
+  --mc-bg-image-overlay: linear-gradient(
+    180deg,
+    rgba(10, 10, 10, 0.74) 0%,
+    rgba(12, 12, 12, 0.82) 50%,
+    rgba(8, 8, 8, 0.88) 100%
+  );
+  --background: var(--mc-net-page);
+  --foreground: var(--mc-text);
+  --card: var(--mc-surface);
+  --card-foreground: var(--mc-ink);
+  --muted: var(--mc-surface-elevated);
+  --muted-foreground: var(--mc-text-subtle);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 14%);
+}
+
+.lc-focus-ring:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mc-net-green) 45%, transparent);
+}
+
+.am-bg {
+  background-color: var(--mc-net-page);
+  color: var(--mc-text);
+}
+
+/* Світла тема: головний екран — чиста типографіка, контраст з токенів (без підсвітки) */
+html:not(.dark) .lc-hero-title {
+  color: var(--mc-text);
+  letter-spacing: -0.034em;
+}
+
+html:not(.dark) .lc-hero-accent {
+  color: var(--mc-net-green);
+}
+
+html:not(.dark) .lc-hero-lead {
+  color: var(--mc-text-muted);
+  font-weight: 500;
+}
+
+/* Фон: темна — fon.png; світла — fon-wite.jpg + накладка + кольорові плями */
+.mc-net-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background-color: var(--mc-net-page);
+  background-image: var(--mc-bg-image-overlay), url("/fon.png");
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+.mc-net-backdrop::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: var(--mc-backdrop-vignette-gradient);
+  opacity: var(--mc-backdrop-vignette-opacity);
+}
+
+/* Світла тема: легкий блюр fon-wite.jpg; накладка та віньєтка — у ::after поверх блобів */
+html:not(.dark) .mc-net-backdrop {
+  background-image: none;
+}
+
+html:not(.dark) .mc-net-backdrop::before {
+  inset: -14px;
+  background: url("/fon-wite.jpg") center / cover no-repeat;
+  filter: blur(5px);
+  opacity: 1;
+  transform: scale(1.03);
+  z-index: 0;
+}
+
+html:not(.dark) .mc-net-backdrop::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: var(--mc-bg-image-overlay), var(--mc-backdrop-vignette-gradient);
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  opacity: 1;
+}
+
+html:not(.dark) .mc-bg-blob-layer {
+  z-index: 1;
+}
+
+/* Світла тема: блоби сині замість жовто-помаранчевих */
+html:not(.dark) .mc-bg-blob {
+  background: rgba(37, 99, 235, 0.38);
+}
+
+html:not(.dark) .mc-bg-blob-2 {
+  background: rgba(59, 130, 246, 0.34);
+}
+
+html:not(.dark) .mc-bg-blob-3 {
+  background: rgba(96, 165, 250, 0.36);
+}
+
+html:not(.dark) .mc-bg-blob-5 {
+  background: rgba(147, 197, 253, 0.36);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html:not(.dark) .mc-net-backdrop::before {
+    filter: blur(2px);
+  }
+}
+
+.mc-bg-blob-layer {
+  position: absolute;
+  inset: 0;
+}
+
+.mc-bg-blob {
+  position: absolute;
+  width: clamp(200px, 42vw, 420px);
+  height: clamp(200px, 42vw, 420px);
+  border-radius: 50%;
+  background: rgba(217, 119, 6, 0.45);
+  filter: blur(88px);
+  opacity: 0.1;
+  mix-blend-mode: multiply;
+  will-change: transform;
+  animation: mc-bg-blob-float var(--mc-blob-dur, 38s) ease-in-out infinite;
+}
+
+.dark .mc-bg-blob {
+  background: rgba(250, 204, 21, 0.55);
+  opacity: 0.09;
+  mix-blend-mode: screen;
+}
+
+.mc-bg-blob-1 {
+  --mc-blob-dur: 44s;
+  top: -15%;
+  left: -5%;
+  animation-delay: -4s;
+}
+.mc-bg-blob-2 {
+  --mc-blob-dur: 52s;
+  top: 20%;
+  right: -12%;
+  width: clamp(240px, 48vw, 500px);
+  height: clamp(240px, 48vw, 500px);
+  background: rgba(251, 191, 36, 0.4);
+  animation-delay: -12s;
+}
+.dark .mc-bg-blob-2 {
+  background: rgba(253, 224, 71, 0.45);
+}
+.mc-bg-blob-3 {
+  --mc-blob-dur: 36s;
+  bottom: -18%;
+  left: 10%;
+  background: rgba(245, 158, 11, 0.42);
+  animation-delay: -1s;
+}
+.dark .mc-bg-blob-3 {
+  background: rgba(234, 179, 8, 0.5);
+}
+.mc-bg-blob-4 {
+  --mc-blob-dur: 41s;
+  top: 45%;
+  left: 35%;
+  width: clamp(160px, 32vw, 320px);
+  height: clamp(160px, 32vw, 320px);
+  opacity: 0.05;
+  animation-delay: -20s;
+}
+.mc-bg-blob-5 {
+  --mc-blob-dur: 48s;
+  bottom: 15%;
+  right: 20%;
+  background: rgba(252, 211, 77, 0.38);
+  animation-delay: -8s;
+}
+.dark .mc-bg-blob-5 {
+  background: rgba(252, 211, 77, 0.5);
+}
+
+@keyframes mc-bg-blob-float {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  33% {
+    transform: translate3d(4vw, -3vh, 0) scale(1.06);
+  }
+  66% {
+    transform: translate3d(-3vw, 2vh, 0) scale(0.96);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-bg-blob {
+    animation: none !important;
+    opacity: 0.09;
+  }
+  .dark .mc-bg-blob {
+    opacity: 0.055;
+  }
+}
+
+/* Панелі / «вікна» як картки на minecraft.net */
+.am-glass {
+  background: var(--mc-surface);
+  border: 1px solid var(--mc-border-card);
+  color: var(--mc-ink);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 8px 32px rgba(0, 0, 0, 0.06);
+}
+
+.dark .am-glass {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04) inset,
+    0 12px 40px rgba(0, 0, 0, 0.45);
+}
+
+html:not(.dark) .am-glass {
+  border-color: var(--mc-border-card);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.88) inset,
+    0 1px 2px rgba(28, 25, 23, 0.035),
+    0 10px 36px rgba(28, 25, 23, 0.07);
+}
+
+/* Слот IP — рельєф як UI гри */
+.mc-slot {
+  border: 2px solid rgba(0, 0, 0, 0.1);
+  border-bottom-color: rgba(0, 0, 0, 0.14);
+  border-right-color: rgba(0, 0, 0, 0.12);
+  background: linear-gradient(180deg, #f8fafb 0%, #eef2f5 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    inset 0 -1px 4px rgba(0, 0, 0, 0.04);
+}
+
+html:not(.dark) .mc-slot {
+  border-color: rgba(15, 23, 42, 0.09);
+  border-bottom-color: rgba(15, 23, 42, 0.11);
+  border-right-color: rgba(15, 23, 42, 0.1);
+  background: linear-gradient(180deg, #fafbfc 0%, #f1f4f8 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 3px rgba(15, 23, 42, 0.04);
+}
+
+.dark .mc-slot {
+  border-color: rgba(255, 255, 255, 0.11);
+  border-bottom-color: rgba(0, 0, 0, 0.5);
+  border-right-color: rgba(0, 0, 0, 0.4);
+  background: linear-gradient(180deg, #333333 0%, #262626 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -2px 8px rgba(0, 0, 0, 0.4);
+}
+
+/* Кнопки як на minecraft.net: мало заокруглення, жирний текст, «натиск» */
+.mc-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 2px;
+  border: none;
+  background: var(--mc-net-green);
+  color: var(--mc-on-gold);
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  padding: 0.625rem 1.35rem;
+  box-shadow:
+    0 2px 0 rgba(0, 0, 0, 0.18),
+    inset 0 -1px 0 rgba(0, 0, 0, 0.12);
+  transition:
+    background-color 0.2s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.mc-btn-primary:hover {
+  background: var(--mc-net-green-hover);
+}
+
+.mc-btn-primary:active {
+  transform: translateY(1px);
+  box-shadow:
+    0 1px 0 rgba(0, 0, 0, 0.18),
+    inset 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.mc-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: 2px;
+  border: 2px solid var(--mc-btn-secondary-border);
+  background: var(--mc-btn-secondary-bg);
+  color: var(--mc-btn-secondary-fg);
+  font-weight: 700;
+  font-size: 0.875rem;
+  line-height: 1.25;
+  padding: 0.5rem 1.15rem;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    transform 0.12s ease;
+}
+
+.mc-btn-secondary:hover {
+  background: var(--mc-btn-secondary-hover);
+}
+
+.mc-btn-secondary:active {
+  transform: translateY(1px);
+}
+
+.mc-btn-icon {
+  border-radius: 2px;
+}
+
+@keyframes am-fade-up {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.am-reveal {
+  animation: am-fade-up var(--am-dur) var(--am-ease) both;
+}
+
+.am-delay-1 {
+  animation-delay: 0.08s;
+}
+.am-delay-2 {
+  animation-delay: 0.16s;
+}
+.am-delay-3 {
+  animation-delay: 0.24s;
+}
+.am-delay-4 {
+  animation-delay: 0.32s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .am-reveal {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Зворотна сумісність зі старими класами */
+.lc-mesh {
+  background-color: transparent;
+  background-image: radial-gradient(
+    ellipse 100% 80% at 50% -30%,
+    rgba(37, 99, 235, 0.055),
+    transparent 55%
+  );
+}
+
+.dark .lc-mesh {
+  background-image: radial-gradient(
+    ellipse 100% 80% at 50% -30%,
+    rgba(202, 138, 4, 0.16),
+    transparent 55%
+  );
+}
+
+.lc-animate-fade-up {
+  animation: am-fade-up var(--am-dur) var(--am-ease) both;
+}
+
+.lc-stagger > * {
+  animation: am-fade-up var(--am-dur) var(--am-ease) both;
+}
+.lc-stagger > *:nth-child(1) {
+  animation-delay: 0.05s;
+}
+.lc-stagger > *:nth-child(2) {
+  animation-delay: 0.1s;
+}
+.lc-stagger > *:nth-child(3) {
+  animation-delay: 0.15s;
+}
+.lc-stagger > *:nth-child(4) {
+  animation-delay: 0.2s;
+}
+.lc-stagger > *:nth-child(5) {
+  animation-delay: 0.25s;
+}
+.lc-stagger > *:nth-child(6) {
+  animation-delay: 0.3s;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-animate-fade-up,
+  .lc-stagger > * {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
