@@ -7,6 +7,7 @@ import {
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroOnlineMonitor } from "@/components/site/HeroOnlineMonitor";
+import { HeroPromoVideo } from "@/components/site/HeroPromoVideo";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 
@@ -72,9 +73,10 @@ export default function Home() {
         </section>
 
         <div
-          className="am-reveal am-delay-1 mt-16 flex w-full flex-col gap-8 md:mt-24 md:gap-10"
+          className="am-reveal am-delay-1 mt-10 flex w-full flex-col gap-8 md:mt-12 md:gap-10"
           aria-label="Онлайн та підключення до сервера"
         >
+          <HeroPromoVideo />
           <HeroOnlineMonitor />
           <div className={lcGlassPanelClass}>
             <h2 className="lc-hero-title text-center text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
