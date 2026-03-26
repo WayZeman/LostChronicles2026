@@ -13,6 +13,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { cn } from "@/lib/utils";
 
 ChartJS.register(
   CategoryScale,
@@ -151,7 +152,12 @@ export function HeroOnlineHistoryChart() {
       : null;
 
   return (
-    <div className={lcGlassPanelClass}>
+    <div
+      className={cn(
+        lcGlassPanelClass,
+        "bg-white/40 dark:bg-black/38 dark:shadow-[0_8px_36px_rgba(0,0,0,0.34)]",
+      )}
+    >
       <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
         Моніторинг онлайну сервера
       </h3>

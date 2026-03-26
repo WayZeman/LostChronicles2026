@@ -29,14 +29,14 @@ export function HeroJoinPanel({ ip, version, className, embedded }: Props) {
 
       <p className="mt-6 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">Адреса сервера</p>
       <CopyableMcSlot copyText={ip} className="mt-2" copiedLabel="IP скопійовано">
-        <p className="break-all text-center font-mono text-base font-semibold leading-snug text-[var(--mc-ink)] md:text-lg">
+        <p className="break-all text-center font-mono text-base font-semibold leading-snug md:text-lg">
           {ip}
         </p>
       </CopyableMcSlot>
 
       <p className="mt-5 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">Версія</p>
       <CopyableMcSlot copyText={version} className="mt-2" copiedLabel="Версію скопійовано">
-        <p className="text-center font-mono text-base font-bold leading-snug text-[var(--mc-ink)] md:text-lg">
+        <p className="text-center font-mono text-base font-bold leading-snug md:text-lg">
           {version}
         </p>
       </CopyableMcSlot>

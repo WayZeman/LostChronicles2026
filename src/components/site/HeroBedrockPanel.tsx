@@ -28,14 +28,14 @@ export function HeroBedrockPanel({ address, port, className, embedded }: Props) 
 
       <p className="mt-6 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">Адреса сервера</p>
       <CopyableMcSlot copyText={address} className="mt-2" copiedLabel="Адресу скопійовано">
-        <p className="break-all text-center font-mono text-base font-semibold leading-snug text-[var(--mc-ink)] md:text-lg">
+        <p className="break-all text-center font-mono text-base font-semibold leading-snug md:text-lg">
           {address}
         </p>
       </CopyableMcSlot>
 
       <p className="mt-5 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">Порт</p>
       <CopyableMcSlot copyText={port} className="mt-2" copiedLabel="Порт скопійовано">
-        <p className="text-center font-mono text-base font-bold leading-snug text-[var(--mc-ink)] md:text-lg">
+        <p className="text-center font-mono text-base font-bold leading-snug md:text-lg">
           {port}
         </p>
       </CopyableMcSlot>
