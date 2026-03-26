@@ -382,6 +382,12 @@ html:not(.dark) .mc-bg-blob-5 {
   }
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .lc-atmosphere-particles {
+    display: none !important;
+  }
+}
+
 .mc-bg-blob-layer {
   position: absolute;
   inset: 0;
