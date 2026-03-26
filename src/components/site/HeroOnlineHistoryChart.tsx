@@ -152,7 +152,7 @@ export function HeroOnlineHistoryChart() {
 
   return (
     <div className={lcGlassPanelClass}>
-      <h3 className="text-center text-base font-bold tracking-tight text-[var(--mc-text)] md:text-lg">
+      <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
         Моніторинг онлайну сервера
       </h3>
 

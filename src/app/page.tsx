@@ -33,7 +33,7 @@ export default function Home() {
       <div className="site-container mx-auto w-full max-w-4xl px-4 pb-16 md:pb-24">
         <section className="am-reveal flex flex-col items-center pt-10 text-center md:pt-16">
           <h1
-            className="lc-hero-title max-w-[min(100%,36rem)] text-[clamp(2.75rem,9vw,4.25rem)] font-extrabold leading-[1.05] tracking-[-0.035em] text-[var(--mc-text)]"
+            className="lc-hero-title max-w-[min(100%,36rem)] text-[clamp(2.75rem,9vw,4.25rem)] font-extrabold leading-[1.05] text-[var(--mc-text)]"
             style={{ fontFeatureSettings: '"ss01"' }}
           >
             Lost{" "}
@@ -76,7 +76,7 @@ export default function Home() {
         >
           <HeroOnlineMonitor />
           <div className={lcGlassPanelClass}>
-            <h2 className="lc-hero-title text-center text-xl font-extrabold tracking-tight text-[var(--mc-text)] md:text-2xl">
+            <h2 className="lc-hero-title text-center text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
               Підключитися до серверу
             </h2>
             <div

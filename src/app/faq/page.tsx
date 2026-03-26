@@ -19,7 +19,7 @@ export default function FAQPage() {
       <div className="lc-mesh pointer-events-none absolute inset-0 opacity-90" aria-hidden />
       <div className="site-container relative z-10 mx-auto w-full max-w-4xl px-4 py-12 md:py-16">
         <header className="mb-10 text-center md:mb-12">
-          <h1 className="text-3xl font-extrabold tracking-tight text-[var(--mc-text)] md:text-4xl">
+          <h1 className="text-3xl font-extrabold text-[var(--mc-text)] md:text-4xl">
             Часті запитання
           </h1>
         </header>

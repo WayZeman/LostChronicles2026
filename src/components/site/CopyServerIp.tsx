@@ -28,7 +28,7 @@ export function CopyServerIp({ ip, className }: Props) {
         className
       )}
     >
-      <span className="select-all font-mono text-[0.9375rem] tracking-tight">{ip}</span>
+      <span className="select-all font-mono text-[0.9375rem]">{ip}</span>
       {done ? (
         <Check className="size-4 text-[var(--mc-net-green)]" strokeWidth={2} aria-hidden />
       ) : (

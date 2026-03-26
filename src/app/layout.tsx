@@ -1,15 +1,12 @@
 import type { Metadata, Viewport } from "next";
-import { Noto_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
-import { SiteFooter } from "@/components/site/SiteFooter";
-import { SiteFooterGate } from "@/components/site/SiteFooterGate";
 import "./globals.css";
 
-const noto = Noto_Sans({
-  subsets: ["latin", "cyrillic"],
-  variable: "--font-noto",
+const inter = Inter({
+  subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
+  variable: "--font-inter",
   display: "swap",
-  weight: ["400", "500", "600", "700"],
 });
 
 const siteDescription =
@@ -49,7 +46,7 @@ export default function RootLayout({
       className="dark scroll-pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
       suppressHydrationWarning
     >
-      <body className={`${noto.variable} am-bg relative flex min-h-screen flex-col antialiased`}>
+      <body className={`${inter.variable} am-bg relative flex min-h-screen flex-col antialiased`}>
         <div className="mc-net-backdrop" aria-hidden>
           <div className="mc-bg-blob-layer">
             <span className="mc-bg-blob mc-bg-blob-1" />
@@ -60,12 +57,9 @@ export default function RootLayout({
           </div>
         </div>
         <Navbar />
-        <div className="relative z-10 flex min-h-0 flex-1 flex-col pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
+        <div className="relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
           {children}
         </div>
-        <SiteFooterGate>
-          <SiteFooter />
-        </SiteFooterGate>
       </body>
     </html>
   );

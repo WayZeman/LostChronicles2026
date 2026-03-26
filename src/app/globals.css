@@ -6,8 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme {
-  --font-sans: var(--font-noto);
-  --font-serif: var(--font-noto);
+  --font-sans: var(--font-inter);
+  --font-serif: var(--font-inter);
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-mono: var(--font-geist-mono);
@@ -131,6 +131,7 @@
   html {
     @apply font-sans;
     scroll-behavior: smooth;
+    letter-spacing: 0.022em;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -293,7 +294,7 @@
 /* Світла тема: головний екран — чиста типографіка, контраст з токенів (без підсвітки) */
 html:not(.dark) .lc-hero-title {
   color: var(--mc-text);
-  letter-spacing: -0.034em;
+  letter-spacing: 0.02em;
 }
 
 html:not(.dark) .lc-hero-accent {
