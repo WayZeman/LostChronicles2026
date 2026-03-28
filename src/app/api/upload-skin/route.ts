@@ -23,7 +23,10 @@ async function getExistingSha(
   path: string,
   token: string,
 ): Promise<string | null> {
-  const url = `https://api.github.com/repos/${REPO}/contents/${encodeURIComponent(path)}`;
+
+  const url =
+    `https://api.github.com/repos/${REPO}/contents/${encodeURIComponent(path)}`;
+
   const res = await fetch(url, {
     headers: {
       Authorization: `Bearer ${token}`,
@@ -31,18 +34,31 @@ async function getExistingSha(
       "X-GitHub-Api-Version": "2022-11-28",
     },
   });
+
   if (res.status === 404) return null;
+
   if (!res.ok) {
     const t = await res.text();
-    throw new Error(`GitHub GET ${res.status}: ${t.slice(0, 200)}`);
+    throw new Error(
+      `GitHub GET ${res.status}: ${t.slice(0, 200)}`
+    );
   }
-  const data = (await res.json()) as GhContentFile | unknown[];
+
+  const data =
+    (await res.json()) as GhContentFile | unknown[];
+
   if (Array.isArray(data)) return null;
-  return typeof data.sha === "string" ? data.sha : null;
+
+  return typeof data.sha === "string"
+    ? data.sha
+    : null;
 }
 
 export async function POST(request: Request) {
-  const token = process.env.GITHUB_TOKEN?.trim();
+
+  const token =
+    process.env.GITHUB_TOKEN?.trim();
+
   if (!token) {
     return NextResponse.json(
       { error: "Сервер не налаштовано (GITHUB_TOKEN)." },
@@ -51,64 +67,159 @@ export async function POST(request: Request) {
   }
 
   let form: FormData;
+
   try {
     form = await request.formData();
   } catch {
-    return NextResponse.json({ error: "Некоректне тіло запиту." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Некоректне тіло запиту." },
+      { status: 400 },
+    );
   }
 
-  const nicknameRaw = form.get("nickname");
-  const file = form.get("file");
+  const nicknameRaw =
+    form.get("nickname");
+
+  const file =
+    form.get("file");
 
   if (typeof nicknameRaw !== "string") {
-    return NextResponse.json({ error: "Вкажіть нікнейм." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Вкажіть нікнейм." },
+      { status: 400 },
+    );
   }
-  const nickname = nicknameRaw.trim();
+
+  const nickname =
+    nicknameRaw.trim();
+
   if (!NICKNAME_RE.test(nickname)) {
     return NextResponse.json(
-      { error: "Нікнейм: 3–16 символів, лише латинські літери, цифри та _." },
+      {
+        error:
+          "Нікнейм: 3–16 символів, лише латинські літери, цифри та _.",
+      },
       { status: 400 },
     );
   }
 
   if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Оберіть PNG-файл." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Оберіть PNG-файл." },
+      { status: 400 },
+    );
   }
+
   if (file.size === 0 || file.size > MAX_BYTES) {
     return NextResponse.json(
-      { error: "Файл порожній або завеликий (макс. 512 КБ)." },
+      {
+        error:
+          "Файл порожній або завеликий (макс. 512 КБ).",
+      },
       { status: 400 },
     );
   }
 
   const ab = await file.arrayBuffer();
   const bytes = new Uint8Array(ab);
+
   if (!isPng(bytes)) {
     return NextResponse.json(
-      { error: "Потрібен саме PNG (перевірте формат файлу)." },
+      {
+        error:
+          "Потрібен саме PNG (перевірте формат файлу).",
+      },
       { status: 400 },
     );
   }
 
-  const path = `public/skins/${nickname}.png`;
-  const base64 = Buffer.from(bytes).toString("base64");
+  // 🔍 Перевірка розміру PNG
 
-  let sha: string | null;
-  try {
-    sha = await getExistingSha(path, token);
-  } catch (e) {
-    const msg = e instanceof Error ? e.message : "Помилка GitHub.";
-    return NextResponse.json({ error: msg }, { status: 502 });
+  if (bytes.length < 24) {
+    return NextResponse.json(
+      { error: "Файл пошкоджений." },
+      { status: 400 },
+    );
   }
 
-  const message = sha
-    ? `Update skin for ${nickname}`
-    : `Upload skin for ${nickname}`;
+  const width =
+    (bytes[16] << 24) |
+    (bytes[17] << 16) |
+    (bytes[18] << 8) |
+    bytes[19];
 
-  const putBody: { message: string; content: string; sha?: string } = {
+  const height =
+    (bytes[20] << 24) |
+    (bytes[21] << 16) |
+    (bytes[22] << 8) |
+    bytes[23];
+
+  if (
+    !(
+      (width === 64 && height === 64) ||
+      (width === 64 && height === 32)
+    )
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "PNG має бути 64x64 або 64x32.",
+      },
+      { status: 400 },
+    );
+  }
+
+  // 🧾 Лог
+
+  console.log(
+    "Skin upload:",
+    nickname,
+    `${width}x${height}`,
+  );
+
+  const path =
+    `public/skins/${nickname}.png`;
+
+  const base64 =
+    Buffer.from(bytes).toString("base64");
+
+  let sha: string | null;
+
+  try {
+
+    sha =
+      await getExistingSha(
+        path,
+        token,
+      );
+
+  } catch (e) {
+
+    const msg =
+      e instanceof Error
+        ? e.message
+        : "Помилка GitHub.";
+
+    return NextResponse.json(
+      { error: msg },
+      { status: 502 },
+    );
+  }
+
+  const message =
+    sha
+      ? `Update skin for ${nickname}`
+      : `Upload skin for ${nickname}`;
+
+  const putBody: {
+    message: string;
+    content: string;
+    sha?: string;
+  } = {
     message,
     content: base64,
   };
+
   if (sha) putBody.sha = sha;
 
   const putRes = await fetch(
@@ -126,13 +237,20 @@ export async function POST(request: Request) {
   );
 
   if (!putRes.ok) {
+
     const t = await putRes.text();
+
     return NextResponse.json(
-      { error: `Не вдалося зберегти файл: ${putRes.status} ${t.slice(0, 180)}` },
+      {
+        error:
+          `Не вдалося зберегти файл: ${putRes.status} ${t.slice(0, 180)}`,
+      },
       { status: 502 },
     );
   }
 
-  const url = `${SKIN_BASE_URL}/${encodeURIComponent(nickname)}.png`;
+  const url =
+    `${SKIN_BASE_URL}/${encodeURIComponent(nickname)}.png`;
+
   return NextResponse.json({ url });
 }

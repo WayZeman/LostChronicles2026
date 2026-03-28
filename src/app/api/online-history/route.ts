@@ -1,3 +1,4 @@
+import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
 import { getJavaServerStatus } from "@/lib/minecraft-java-status";
 import {
   fetchOumOnlineHistory,
@@ -60,10 +61,29 @@ function syntheticSeries(period: Period, currentOnline: number): {
   return { labels, values };
 }
 
+type LiveSnapshot = {
+  liveOnline: number | null;
+  liveMax: number;
+  liveProbe: "api" | "api-offline" | "env-fallback";
+};
+
+async function getLiveSnapshot(): Promise<LiveSnapshot> {
+  const host =
+    process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST;
+  const status = await getJavaServerStatus(host);
+  return {
+    liveOnline: status.playersOnline,
+    liveMax: status.playersMax,
+    liveProbe: status.source,
+  };
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const raw = searchParams.get("period");
   const period: Period = isPeriod(raw) ? raw : "week";
+
+  const live = await getLiveSnapshot();
 
   const upstream = process.env.ONLINE_HISTORY_API_URL?.trim();
   if (upstream) {
@@ -79,6 +99,8 @@ export async function GET(req: Request) {
             values: data.values.map((v) => Number(v) || 0),
             synthetic: false,
             source: "custom-api",
+            historySource: "custom-api" as const,
+            ...live,
           });
         }
       }
@@ -103,7 +125,9 @@ export async function GET(req: Request) {
             values,
             synthetic: false,
             source: "minecraft-org-ua",
+            historySource: "minecraft-org-ua" as const,
             attributionUrl: oumPage,
+            ...live,
           });
         }
       }
@@ -112,14 +136,16 @@ export async function GET(req: Request) {
     }
   }
 
-  const host = process.env.NEXT_PUBLIC_SERVER_IP?.trim() || "";
-  const status = await getJavaServerStatus(host);
-  const online = status.playersOnline ?? 0;
+  const online = live.liveOnline ?? 0;
   const { labels, values } = syntheticSeries(period, online);
 
   return Response.json({
     labels,
     values,
     synthetic: true,
+    historySource: "synthetic" as const,
+    liveOnline: live.liveOnline,
+    liveMax: live.liveMax,
+    liveProbe: live.liveProbe,
   });
 }

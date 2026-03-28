@@ -11,7 +11,8 @@ export type LostChroniclesFaqItem = {
   skinUploadForm?: boolean;
 };
 
-const LC_FORM_URL =
+/** Анкета для заходу на сервер (Google Forms). */
+export const LC_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLScWada7pzzu4YeWd3cFLQY3Ozr8UBSmaHFn8tFGHLY-towXdw/viewform?usp=header";
 
 const LC_MONO_JAR_URL =

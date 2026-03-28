@@ -10,6 +10,8 @@ import { HeroOnlineMonitor } from "@/components/site/HeroOnlineMonitor";
 import { HeroPromoVideo } from "@/components/site/HeroPromoVideo";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
+import { LC_FORM_URL } from "@/data/lost-chronicles-faq";
+import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
 
 const defaultDescription =
   "Місце, де українські гравці об’єднуються, щоб створювати пригоди, знаходити друзів і будувати власні цивілізації у живому світі історій.";
@@ -19,7 +21,7 @@ export const dynamic = "force-dynamic";
 
 export default function Home() {
   const settings = {
-    ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || "play.lost-chronicles.site",
+    ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST,
     version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.7",
     description: process.env.NEXT_PUBLIC_SERVER_DESCRIPTION?.trim() || defaultDescription,
     bedrockAddress:
@@ -44,8 +46,17 @@ export default function Home() {
           <p className="lc-hero-lead mt-6 max-w-xl text-xl font-medium leading-relaxed text-black md:text-2xl dark:text-[var(--mc-text)]">
             {settings.description}
           </p>
+          <a
+            href={LC_FORM_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lc-focus-ring mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-6 py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)] active:opacity-90"
+          >
+            Подати заявку
+            <ExternalLink className="size-3 opacity-60" aria-hidden />
+          </a>
 
-          <div className="mt-10 flex flex-wrap justify-center gap-3 pb-2 md:pb-3">
+          <div className="mt-8 flex flex-wrap justify-center gap-3 pb-2 md:mt-10 md:pb-3">
             {discordUrl ? (
               <a
                 href={discordUrl}
@@ -76,7 +87,6 @@ export default function Home() {
           className="am-reveal am-delay-1 mt-10 flex w-full flex-col gap-8 md:mt-12 md:gap-10"
           aria-label="Онлайн та підключення до сервера"
         >
-          <HeroPromoVideo />
           <HeroOnlineMonitor />
           <div className={lcGlassPanelClass}>
             <h2 className="lc-hero-title text-center text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
@@ -94,6 +104,7 @@ export default function Home() {
               />
             </div>
           </div>
+          <HeroPromoVideo />
         </div>
 
         <section

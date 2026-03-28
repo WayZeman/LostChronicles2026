@@ -45,6 +45,9 @@ type ChartPayload = {
   labels: string[];
   values: number[];
   synthetic?: boolean;
+  liveOnline?: number | null;
+  liveMax?: number;
+  liveProbe?: "api" | "api-offline" | "env-fallback";
 };
 
 export function HeroOnlineHistoryChart() {
@@ -60,6 +63,12 @@ export function HeroOnlineHistoryChart() {
       const data = (await res.json()) as ChartPayload;
       if (!Array.isArray(data.labels) || !Array.isArray(data.values)) {
         throw new Error("bad payload");
+      }
+      if (typeof data.liveMax !== "number") {
+        data.liveMax = 80;
+      }
+      if (!("liveOnline" in data)) {
+        data.liveOnline = null;
       }
       setPayload(data);
     } catch {
@@ -161,6 +170,20 @@ export function HeroOnlineHistoryChart() {
       <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
         Моніторинг онлайну сервера
       </h3>
+
+      {payload != null && payload.liveOnline != null ? (
+        <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+          Зараз онлайн:{" "}
+          <span className="tabular-nums">
+            {payload.liveOnline} / {payload.liveMax}
+          </span>
+          {payload.liveProbe === "api-offline" ? (
+            <span className="ml-2 font-normal text-[var(--mc-text-muted)]">
+              (сервер недоступний для перевірки)
+            </span>
+          ) : null}
+        </p>
+      ) : null}
 
       <div className="mt-3 flex flex-wrap justify-center gap-2">
         {PERIODS.map((p) => (

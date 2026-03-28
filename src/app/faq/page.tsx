@@ -57,7 +57,8 @@ export default function FAQPage() {
               </AccordionTrigger>
               <AccordionContent
                 className={cn(
-                  "border-t border-[var(--mc-border-card)]/80 px-0.5 text-left text-[0.9375rem] font-normal leading-[1.6] text-[var(--mc-text)] sm:px-0 sm:text-base sm:leading-relaxed",
+                  "border-t border-[var(--mc-border-card)]/80 text-left text-[0.9375rem] font-normal leading-[1.6] text-[var(--mc-text)] sm:text-base sm:leading-relaxed",
+                  "pl-2.5 pr-2.5 sm:pl-5 sm:pr-5 md:pl-10 md:pr-10",
                   "pt-2.5 sm:pt-4",
                 )}
               >
