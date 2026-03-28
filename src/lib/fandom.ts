@@ -1,3 +1,9 @@
+import {
+  decodeWikiImgSrcUrl,
+  isWikiCdnImageUrl,
+  WIKI_IMAGE_PROXY_PATH,
+} from "@/lib/wiki-image-proxy";
+
 /**
  * Fandom (MediaWiki API) — лише вміст статті (parse), без оболонки сайту.
  *
@@ -143,5 +149,99 @@ export async function fetchFandomPageHtml(
     .replace(/,\s*\/\//g, ", https://")
     .replace(/(src|href|srcset)="\/\//g, '$1="https://');
 
+  html = rewriteFandomImageUrlsToProxy(html);
+  html = rewriteFandomWikiLinksToLocal(html, base);
+  html = stripBlankTargetFromLocalWikiAnchors(html);
+
   return { html, title };
+}
+
+const SKIP_WIKI_NS = new RegExp(
+  "^(special|file|category|user|user talk|template|mediawiki|help|talk|module|project)$",
+  "i",
+);
+
+/** Усі посилання на сторінки вікі Fandom → /wiki/… на нашому сайті (без переходу на fandom.com). */
+function rewriteFandomWikiLinksToLocal(html: string, wikiBase: string): string {
+  let origin: string;
+  try {
+    origin = new URL(wikiBase.replace(/\/+$/, "")).origin;
+  } catch {
+    return html;
+  }
+  const esc = origin.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const hrefRe = new RegExp(
+    `href="${esc}(?:/[a-z]{2}(?:-[a-z]{2})?)?/wiki/([^"]+)"`,
+    "gi",
+  );
+  return html.replace(hrefRe, (full, pathAndHash: string) => {
+    const hashIdx = pathAndHash.indexOf("#");
+    const pathPart =
+      hashIdx >= 0 ? pathAndHash.slice(0, hashIdx) : pathAndHash;
+    const hash = hashIdx >= 0 ? pathAndHash.slice(hashIdx) : "";
+    let decoded: string;
+    try {
+      decoded = decodeURIComponent(pathPart.replace(/\+/g, "%20"));
+    } catch {
+      decoded = pathPart;
+    }
+    const ns = decoded.split(":")[0]?.trim() ?? "";
+    if (SKIP_WIKI_NS.test(ns)) {
+      return full;
+    }
+    return `href="/wiki/${pathPart}${hash}"`;
+  });
+}
+
+/** Прибираємо target="_blank" у внутрішніх посилань /wiki/, щоб відкривалось на сайті. */
+function stripBlankTargetFromLocalWikiAnchors(html: string): string {
+  return html.replace(/<a\s+([^>]+)>/gi, (full, attrs) => {
+    const isLocal =
+      /\shref="\/wiki\//i.test(attrs) || /\shref='\/wiki\//i.test(attrs);
+    if (!isLocal) return full;
+    const cleaned = attrs
+      .replace(/\s*target="_blank"/gi, "")
+      .replace(/\s*target='_blank'/gi, "")
+      .replace(/\s*rel="noopener\s+noreferrer"/gi, "")
+      .replace(/\s*rel='noopener\s+noreferrer'/gi, "")
+      .replace(/\s*rel="nofollow\s+noopener\s+noreferrer"/gi, "")
+      .replace(/\s*rel='nofollow\s+noopener\s+noreferrer'/gi, "")
+      .replace(/\s+/g, " ")
+      .trim();
+    return `<a ${cleaned}>`;
+  });
+}
+
+/** Підставляє /api/wiki-image щоб CDN не блокував зображення за Referer (до гідратації клієнта). */
+function rewriteFandomImageUrlsToProxy(html: string): string {
+  const sub = (s: string) =>
+    s.replace(
+      /(src|data-src)=["'](https:\/\/[^"']+)["']/gi,
+      (match, attr: string, url: string) => {
+        const clean = decodeWikiImgSrcUrl(url);
+        if (!isWikiCdnImageUrl(clean)) return match;
+        const proxied = `${WIKI_IMAGE_PROXY_PATH}?url=${encodeURIComponent(clean)}`;
+        return `${attr}="${proxied}"`;
+      },
+    );
+  let out = sub(html);
+  out = out.replace(
+    /srcset=["']([^"']+)["']/gi,
+    (full, inner: string) => {
+      const parts = inner.split(",").map((p: string) => p.trim());
+      const rebuilt = parts
+        .map((part) => {
+          const [u, ...desc] = part.split(/\s+/);
+          if (!u?.startsWith("https://")) return part;
+          const clean = decodeWikiImgSrcUrl(u);
+          if (!isWikiCdnImageUrl(clean)) return part;
+          const proxied = `${WIKI_IMAGE_PROXY_PATH}?url=${encodeURIComponent(clean)}`;
+          const rest = desc.join(" ");
+          return rest ? `${proxied} ${rest}` : proxied;
+        })
+        .join(", ");
+      return `srcset="${rebuilt}"`;
+    },
+  );
+  return out;
 }
