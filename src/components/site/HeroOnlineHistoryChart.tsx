@@ -24,12 +24,6 @@ ChartJS.register(
   Legend,
 );
 
-const PERIODS = [
-  { id: "day" as const, label: "День" },
-  { id: "week" as const, label: "Тиждень" },
-  { id: "month" as const, label: "Місяць" },
-];
-
 const LINE_GOLD = "#ECAF2D";
 const HOVER_POINT = "#00FFFF";
 
@@ -41,6 +35,18 @@ const chartPalette = {
   tooltipBody: "#ffffff",
 } as const;
 
+/** 1 гравець, 2 гравці, 5 гравців */
+function ukPlayersWord(n: number): string {
+  const nAbs = Math.abs(Math.trunc(n));
+  const mod10 = nAbs % 10;
+  const mod100 = nAbs % 100;
+  if (mod10 === 1 && mod100 !== 11) return "гравець";
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 10 || mod100 >= 20)) {
+    return "гравці";
+  }
+  return "гравців";
+}
+
 type ChartPayload = {
   labels: string[];
   values: number[];
@@ -51,14 +57,13 @@ type ChartPayload = {
 };
 
 export function HeroOnlineHistoryChart() {
-  const [period, setPeriod] = useState<(typeof PERIODS)[number]["id"]>("month");
   const [payload, setPayload] = useState<ChartPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async (p: (typeof PERIODS)[number]["id"]) => {
+  const load = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch(`/api/online-history?period=${p}`);
+      const res = await fetch("/api/online-history?period=month");
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as ChartPayload;
       if (!Array.isArray(data.labels) || !Array.isArray(data.values)) {
@@ -78,8 +83,8 @@ export function HeroOnlineHistoryChart() {
   }, []);
 
   useEffect(() => {
-    void load(period);
-  }, [period, load]);
+    void load();
+  }, [load]);
 
   const hasOfflineTicks = Boolean(
     payload && payload.values.some((v) => v < 0),
@@ -95,6 +100,23 @@ export function HeroOnlineHistoryChart() {
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
+      animation: {
+        duration: 1400,
+        easing: "easeOutQuart",
+      },
+      animations: {
+        numbers: {
+          type: "number",
+          properties: ["x", "y"],
+          duration: 1400,
+          easing: "easeOutQuart",
+        },
+      },
+      transitions: {
+        active: {
+          animation: { duration: 400, easing: "easeOutQuad" },
+        },
+      },
       scales: {
         x: {
           ticks: { color: chartPalette.tick, maxTicksLimit: 10 },
@@ -172,35 +194,22 @@ export function HeroOnlineHistoryChart() {
       </h3>
 
       {payload != null && payload.liveOnline != null ? (
-        <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
-          Зараз онлайн:{" "}
-          <span className="tabular-nums">
-            {payload.liveOnline} / {payload.liveMax}
-          </span>
-          {payload.liveProbe === "api-offline" ? (
-            <span className="ml-2 font-normal text-[var(--mc-text-muted)]">
-              (сервер недоступний для перевірки)
-            </span>
-          ) : null}
-        </p>
+        payload.liveProbe === "api-offline" ? (
+          <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-text-muted)] md:text-base">
+            Не вдалося перевірити сервер — спробуйте пізніше.
+          </p>
+        ) : payload.liveOnline === 0 ? (
+          <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+            Зараз нікого немає онлайн.
+          </p>
+        ) : (
+          <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+            Зараз онлайн:{" "}
+            <span className="tabular-nums">{payload.liveOnline}</span>{" "}
+            {ukPlayersWord(payload.liveOnline)}
+          </p>
+        )
       ) : null}
-
-      <div className="mt-3 flex flex-wrap justify-center gap-2">
-        {PERIODS.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            onClick={() => setPeriod(p.id)}
-            className={`rounded-sm border-2 px-3 py-1.5 text-xs font-bold transition-colors md:text-sm ${
-              period === p.id
-                ? "border-[#ECAF2D] bg-[#ECAF2D] text-white"
-                : "border-white/10 bg-white/[0.06] text-neutral-200 hover:bg-white/[0.1]"
-            }`}
-          >
-            {p.label}
-          </button>
-        ))}
-      </div>
 
       <div className="relative mt-4 h-[220px] w-full md:h-[300px] lg:h-[360px]">
         {error ? (
@@ -208,7 +217,11 @@ export function HeroOnlineHistoryChart() {
             {error}
           </p>
         ) : data ? (
-          <Line data={data} options={options} />
+          <Line
+            key={`${payload?.labels?.length ?? 0}-${payload?.values?.at(-1) ?? ""}`}
+            data={data}
+            options={options}
+          />
         ) : (
           <p className="flex h-full items-center justify-center text-sm text-[var(--mc-text-muted)]">
             Завантаження…

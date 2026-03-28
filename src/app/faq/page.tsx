@@ -5,7 +5,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
-import { FaqSkinUploadForm } from "@/components/faq/faq-skin-upload-form";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +14,6 @@ export default function FAQPage() {
     question: item.question,
     answer: item.answer,
     order: item.order,
-    skinUploadForm: item.skinUploadForm,
   }));
 
   return (
@@ -76,11 +74,6 @@ export default function FAQPage() {
                   )}
                   dangerouslySetInnerHTML={{ __html: faq.answer }}
                 />
-                {faq.skinUploadForm ? (
-                  <div className="not-prose mt-4 border-t border-[var(--mc-border-card)]/80 pt-4">
-                    <FaqSkinUploadForm />
-                  </div>
-                ) : null}
               </AccordionContent>
             </AccordionItem>
           ))}

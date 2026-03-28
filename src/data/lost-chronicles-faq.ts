@@ -7,8 +7,6 @@ export type LostChroniclesFaqItem = {
   question: string;
   /** HTML */
   answer: string;
-  /** Показати форму завантаження скіну під відповіддю (сторінка FAQ). */
-  skinUploadForm?: boolean;
 };
 
 /** Анкета для заходу на сервер (Google Forms). */
@@ -237,8 +235,6 @@ const FAQ_ADMIN = `<p><strong>Адміністрація серверу</strong>
 </ul>
 <p>❗ Якщо хтось із адміністрації не відповідає — зверніться до іншого члена команди. Ми тут, щоб зробити ваш ігровий досвід приємним і захоплюючим!</p>`;
 
-const FAQ_SKIN = `<p>Якщо на сайті не показується ваш скін з Minecraft, завантажте PNG (звичайний скін, наприклад 64×64). Файл збережеться на сайті й буде доступний за постійним посиланням.</p>`;
-
 const FAQ_DONATIONS = `<div class="not-prose mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
 <p class="mb-0 min-w-0 flex-1 text-left text-[0.9375rem] leading-[1.65] text-[var(--mc-text)] sm:text-base sm:leading-relaxed">На сервері є пожертви з бонусами, що серйозно не ламають баланс гри. Для бонусу зв’яжіться з адміністрацією з доказом оплати.</p>
 <a href="${LC_MONO_JAR_URL}" target="_blank" rel="noopener noreferrer" class="${FAQ_CTA_BTN}">Підтримати</a>
@@ -269,10 +265,4 @@ export const LOST_CHRONICLES_FAQ: LostChroniclesFaqItem[] = [
   { order: 10, question: "Вирішення деяких помилок", answer: FAQ_ERRORS },
   { order: 11, question: "Адміністрація", answer: FAQ_ADMIN },
   { order: 12, question: "Пожертви", answer: FAQ_DONATIONS },
-  {
-    order: 13,
-    question: "Не бачиш скін?",
-    answer: FAQ_SKIN,
-    skinUploadForm: true,
-  },
 ];
