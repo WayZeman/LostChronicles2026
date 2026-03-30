@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 import {
   isWikiCdnImageUrl,
@@ -74,6 +75,43 @@ export function WikiMirrorHtml({
   fandomBase,
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
+  const router = useRouter();
+
+  /** Звичайні <a href="/wiki/..."> роблять full reload → перемонтовується layout і фонове відео. */
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+
+    const onClick = (e: MouseEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.button !== 0) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+
+      const anchor = (e.target as HTMLElement | null)?.closest("a[href]");
+      if (!anchor) return;
+
+      if (anchor.getAttribute("target") === "_blank") return;
+      if (anchor.hasAttribute("download")) return;
+
+      const hrefAttr = anchor.getAttribute("href");
+      if (!hrefAttr?.trim() || hrefAttr.startsWith("#")) return;
+
+      let url: URL;
+      try {
+        url = new URL(hrefAttr, window.location.origin);
+      } catch {
+        return;
+      }
+      if (url.origin !== window.location.origin) return;
+      if (!url.pathname.startsWith("/wiki")) return;
+
+      e.preventDefault();
+      router.push(`${url.pathname}${url.search}${url.hash}`);
+    };
+
+    root.addEventListener("click", onClick);
+    return () => root.removeEventListener("click", onClick);
+  }, [router]);
 
   useEffect(() => {
     const root = ref.current;

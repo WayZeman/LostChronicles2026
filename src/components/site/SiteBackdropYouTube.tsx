@@ -1,9 +1,14 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from "react";
 import { readClientNetworkHints } from "@/lib/client-network";
 import { cn } from "@/lib/utils";
-import { LC_SPLASH_FADE_EVENT } from "@/lib/splash-bridge";
 
 const VIDEO_ID = "_5jELltfi9U";
 
@@ -15,13 +20,17 @@ function backdropEmbedSrc(): string {
  * Фоновий YouTube (mute, loop). Вимикається при зменшеному русі або «важкій» мережі;
  * iframe підвантажується після простою / невеликої затримки, щоб не конкурувати з LCP.
  */
+const IFRAME_LOAD_FALLBACK_MS = 9000;
+/** Пауза після load: перший кадр декодується без «смуги знизу». */
+const REVEAL_DELAY_AFTER_LOAD_MS = 400;
+
 export function SiteBackdropYouTube() {
   const [active, setActive] = useState(true);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
-  const [veilLifted, setVeilLifted] = useState(false);
-  const liftedRef = useRef(false);
-  const fallbackTimerRef = useRef<number | undefined>(undefined);
+  const [revealCover, setRevealCover] = useState(false);
   const idleCancelRef = useRef<{ cancel: () => void } | null>(null);
+  const loadFallbackRef = useRef<number | null>(null);
+  const revealDelayRef = useRef<number | null>(null);
 
   useLayoutEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -29,7 +38,6 @@ export function SiteBackdropYouTube() {
       const { isConstrained } = readClientNetworkHints();
       const on = !mq.matches && !isConstrained;
       setActive(on);
-      document.documentElement.classList.toggle("has-video-bg", on);
     };
     apply();
     mq.addEventListener("change", apply);
@@ -39,6 +47,17 @@ export function SiteBackdropYouTube() {
     return () => {
       mq.removeEventListener("change", apply);
       conn?.removeEventListener?.("change", apply);
+    };
+  }, []);
+
+  /** Режим відео лише коли iframe в DOM — інакше знімається фон «в ніч» до появи картинки. */
+  useEffect(() => {
+    const showVideoLayer = Boolean(active && iframeSrc);
+    document.documentElement.classList.toggle("has-video-bg", showVideoLayer);
+  }, [active, iframeSrc]);
+
+  useEffect(() => {
+    return () => {
       document.documentElement.classList.remove("has-video-bg");
     };
   }, []);
@@ -64,53 +83,73 @@ export function SiteBackdropYouTube() {
     };
   }, [active]);
 
+  /** Якщо onLoad не прийшов (рідко), усе одно знімаємо вуаль — інакше вічна заслінка. */
   useEffect(() => {
-    if (!active) return;
-
-    function lift() {
-      if (liftedRef.current) return;
-      liftedRef.current = true;
-      if (fallbackTimerRef.current !== undefined) {
-        window.clearTimeout(fallbackTimerRef.current);
-        fallbackTimerRef.current = undefined;
-      }
-      window.removeEventListener(LC_SPLASH_FADE_EVENT, lift);
-      requestAnimationFrame(() => setVeilLifted(true));
+    if (!iframeSrc) return;
+    const resetCover = requestAnimationFrame(() => setRevealCover(false));
+    if (loadFallbackRef.current !== null) {
+      window.clearTimeout(loadFallbackRef.current);
     }
-
-    window.addEventListener(LC_SPLASH_FADE_EVENT, lift);
-    fallbackTimerRef.current = window.setTimeout(lift, 6000) as number;
-
+    loadFallbackRef.current = window.setTimeout(() => {
+      loadFallbackRef.current = null;
+      setRevealCover(true);
+    }, IFRAME_LOAD_FALLBACK_MS) as unknown as number;
     return () => {
-      window.removeEventListener(LC_SPLASH_FADE_EVENT, lift);
-      if (fallbackTimerRef.current !== undefined) {
-        window.clearTimeout(fallbackTimerRef.current);
-        fallbackTimerRef.current = undefined;
+      window.cancelAnimationFrame(resetCover);
+      if (loadFallbackRef.current !== null) {
+        window.clearTimeout(loadFallbackRef.current);
+        loadFallbackRef.current = null;
       }
     };
-  }, [active]);
+  }, [iframeSrc]);
+
+  const scheduleRevealAfterLoad = useCallback(() => {
+    if (loadFallbackRef.current !== null) {
+      window.clearTimeout(loadFallbackRef.current);
+      loadFallbackRef.current = null;
+    }
+    if (revealDelayRef.current !== null) {
+      window.clearTimeout(revealDelayRef.current);
+    }
+    revealDelayRef.current = window.setTimeout(() => {
+      revealDelayRef.current = null;
+      setRevealCover(true);
+    }, REVEAL_DELAY_AFTER_LOAD_MS) as unknown as number;
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (revealDelayRef.current !== null) {
+        window.clearTimeout(revealDelayRef.current);
+      }
+    };
+  }, []);
 
   if (!active) return null;
 
   return (
     <div className="mc-backdrop-youtube-wrap" aria-hidden>
       {iframeSrc ? (
-        <iframe
-          className="mc-backdrop-youtube-iframe"
-          src={iframeSrc}
-          title="Фонове відео"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          loading="lazy"
-          referrerPolicy="strict-origin-when-cross-origin"
-        />
+        <>
+          <iframe
+            className="mc-backdrop-youtube-iframe"
+            src={iframeSrc}
+            title="Фонове відео"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            loading="lazy"
+            referrerPolicy="strict-origin-when-cross-origin"
+            onLoad={scheduleRevealAfterLoad}
+          />
+          {/* Вуаль знімається лише після load + пауза; без анімації opacity на iframe. */}
+          <div
+            className={cn(
+              "mc-backdrop-youtube-cover",
+              revealCover && "mc-backdrop-youtube-cover--reveal",
+            )}
+            aria-hidden
+          />
+        </>
       ) : null}
-      <div
-        className={cn(
-          "mc-backdrop-youtube-veil",
-          veilLifted && "mc-backdrop-youtube-veil--lifted"
-        )}
-        aria-hidden
-      />
     </div>
   );
 }

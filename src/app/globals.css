@@ -154,11 +154,21 @@
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
+    scrollbar-width: none; /* Firefox */
+    -ms-overflow-style: none; /* старий Edge */
+  }
+  body::-webkit-scrollbar {
+    display: none; /* Chromium, Safari */
   }
   html {
     @apply font-sans overflow-x-hidden;
     scroll-behavior: smooth;
     letter-spacing: 0.022em;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  html::-webkit-scrollbar {
+    display: none;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
@@ -221,13 +231,47 @@ html.has-video-bg .mc-backdrop-scrim {
   background: var(--mc-bg-image-overlay);
 }
 
-/* Iframe без згортання opacity (autoplay); вуаль ховає відео до lc-splash-fade */
+/* Фоновий YouTube: вуаль знімається після iframe onLoad (див. TS), не анімуємо opacity iframe. */
 .mc-backdrop-youtube-wrap {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  isolation: isolate;
+}
+
+.mc-backdrop-youtube-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--mc-net-page);
+  opacity: 1;
+}
+
+/* Анімація лише після load: довго тримаємо повну непрозорість, потім дуже плавний спад */
+.mc-backdrop-youtube-cover--reveal {
+  animation: mc-backdrop-youtube-cover-fade
+    var(--mc-backdrop-video-fade-dur, 7s)
+    cubic-bezier(0.33, 0.02, 0.18, 1) forwards;
+}
+
+@keyframes mc-backdrop-youtube-cover-fade {
+  0%,
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-backdrop-youtube-cover--reveal {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 .mc-backdrop-youtube-iframe {
@@ -241,26 +285,7 @@ html.has-video-bg .mc-backdrop-scrim {
   min-width: 177.78vh;
   transform: translate(-50%, -50%);
   border: 0;
-}
-
-.mc-backdrop-youtube-veil {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-  background: var(--mc-net-page);
   opacity: 1;
-  transition: opacity 2.2s var(--am-ease, cubic-bezier(0.16, 1, 0.3, 1));
-}
-
-.mc-backdrop-youtube-veil--lifted {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .mc-backdrop-youtube-veil {
-    transition: none;
-  }
 }
 
 /* Віньєтка під блобами, як у старому фоні з fon.png */
@@ -485,78 +510,6 @@ html.has-video-bg .mc-bg-blob-layer {
     animation: none !important;
     opacity: 1 !important;
     transform: none !important;
-  }
-}
-
-/* Заставка при вході (дихаюче лого → плавне зникнення після load + шрифти) */
-.site-splash {
-  position: fixed;
-  inset: 0;
-  z-index: 200;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: var(--mc-net-page);
-  opacity: 1;
-  visibility: visible;
-  transition:
-    opacity 0.45s ease-out,
-    visibility 0.45s ease-out;
-  pointer-events: auto;
-}
-
-.site-splash--out {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-}
-
-.site-splash__inner {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.125rem;
-}
-
-.site-splash__logo {
-  animation: site-splash-breathe 2.65s ease-in-out infinite;
-  border-radius: 1rem;
-  object-fit: contain;
-}
-
-.site-splash__title {
-  font-family: var(--font-sans);
-  font-size: 0.9375rem;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--mc-text-muted);
-  opacity: 0.88;
-}
-
-@keyframes site-splash-breathe {
-  0%,
-  100% {
-    transform: scale(1);
-    opacity: 0.88;
-    filter: brightness(0.96);
-  }
-  50% {
-    transform: scale(1.065);
-    opacity: 1;
-    filter: brightness(1.04);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .site-splash__logo {
-    animation: none;
-    opacity: 1;
-    filter: none;
-  }
-
-  .site-splash {
-    transition-duration: 0.22s;
   }
 }
 

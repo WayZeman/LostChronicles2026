@@ -29,7 +29,10 @@ export default async function WikiArticlePage({
 
   return (
     <main className="relative flex-1">
-      <div className="pointer-events-none absolute inset-0 opacity-90" aria-hidden />
+      <div
+        className="lc-mesh pointer-events-none absolute inset-0 opacity-90"
+        aria-hidden
+      />
       <div className="site-container relative z-10 mx-auto w-full max-w-4xl px-4 py-12 md:py-16">
         <Link
           href="/wiki"

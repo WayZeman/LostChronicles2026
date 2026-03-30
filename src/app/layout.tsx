@@ -4,7 +4,6 @@ import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
 import { SiteBackdropYouTube } from "@/components/site/SiteBackdropYouTube";
-import { SiteSplash } from "@/components/site/SiteSplash";
 import "./globals.css";
 
 const inter = Inter({
@@ -92,7 +91,6 @@ export default function RootLayout({
           {children}
         </div>
         <DeferVercelMetrics />
-        <SiteSplash />
       </body>
     </html>
   );
