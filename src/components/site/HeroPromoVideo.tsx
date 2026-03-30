@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Play } from "lucide-react";
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
 
 const PROMO_VIDEO_ID = "OQpRfs5GKyk";
@@ -16,11 +15,12 @@ export function HeroPromoVideo() {
     <div className="w-full" aria-label="Відео про сервер Lost Chronicles на YouTube">
       <div
         className={cn(
-          lcGlassPanelClass,
-          "overflow-hidden !p-0 bg-black/38 shadow-[0_8px_36px_rgba(0,0,0,0.34)]",
+          "overflow-hidden rounded-2xl border border-white/[0.09]",
+          "bg-[color-mix(in_srgb,var(--mc-net-page)_92%,transparent)]",
+          "shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]",
         )}
       >
-        <div className="relative aspect-video w-full bg-black/20">
+        <div className="relative aspect-video w-full bg-black">
           {playing ? (
             <iframe
               src={`https://www.youtube-nocookie.com/embed/${PROMO_VIDEO_ID}?autoplay=1&rel=0`}
@@ -42,20 +42,36 @@ export function HeroPromoVideo() {
                 fetchPriority="low"
               />
               <div
-                className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/15 to-transparent"
+                className="absolute inset-0 bg-black/20"
                 aria-hidden
               />
               <button
                 type="button"
-                className="lc-focus-ring absolute inset-0 flex flex-col items-center justify-center gap-3 text-white transition-opacity hover:opacity-95 active:opacity-90"
+                className={cn(
+                  "lc-focus-ring group absolute inset-0 flex items-center justify-center",
+                  "text-white transition-[opacity,transform] duration-200",
+                  "hover:opacity-[0.98] active:scale-[0.99] active:opacity-95",
+                )}
                 onClick={() => setPlaying(true)}
               >
-                <span className="flex size-16 items-center justify-center rounded-full bg-[var(--mc-net-green)] text-[var(--mc-on-gold)] shadow-lg md:size-[4.25rem]">
-                  <Play className="ml-1 size-8 md:size-9" fill="currentColor" aria-hidden />
+                <span
+                  className={cn(
+                    "flex size-14 items-center justify-center rounded-full md:size-16",
+                    "border border-white/15 bg-black/45 backdrop-blur-md",
+                    "shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
+                    "transition-[border-color,background-color,transform] duration-200",
+                    "group-hover:border-[color-mix(in_srgb,var(--mc-net-green)_55%,transparent)]",
+                    "group-hover:bg-black/55 group-focus-visible:border-[var(--mc-net-green)]",
+                  )}
+                >
+                  <Play
+                    className="ml-0.5 size-7 text-[var(--mc-net-green)] md:size-8"
+                    fill="currentColor"
+                    strokeWidth={0}
+                    aria-hidden
+                  />
                 </span>
-                <span className="px-4 text-center text-sm font-bold drop-shadow md:text-base">
-                  Відтворити відео (YouTube)
-                </span>
+                <span className="sr-only">Відтворити відео на YouTube</span>
               </button>
             </>
           )}
