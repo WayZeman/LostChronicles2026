@@ -306,7 +306,7 @@ html:not(.dark) .lc-hero-lead {
   font-weight: 500;
 }
 
-/* Фон: темна та світла — fon.png + накладка + кольорові плями */
+/* Фон: темна та світла — fon.png + накладка + кольорові плями (fon замінюється на YouTube при .has-video-bg) */
 .mc-net-backdrop {
   position: fixed;
   inset: 0;
@@ -318,6 +318,62 @@ html:not(.dark) .lc-hero-lead {
   background-size: cover, cover;
   background-position: center, center;
   background-repeat: no-repeat, no-repeat;
+}
+
+html.has-video-bg .mc-net-backdrop {
+  background-image: none;
+}
+
+.mc-backdrop-scrim {
+  display: none;
+}
+
+html.has-video-bg .mc-backdrop-scrim {
+  display: block;
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--mc-bg-image-overlay);
+}
+
+.mc-backdrop-youtube-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.mc-backdrop-youtube-iframe {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 100vw;
+  height: 56.25vw;
+  min-height: 100vh;
+  min-width: 177.78vh;
+  transform: translate(-50%, -50%);
+  border: 0;
+}
+
+html:not(.dark) .mc-backdrop-youtube-wrap {
+  filter: blur(5px);
+  transform: scale(1.03);
+  transform-origin: center center;
+}
+
+/* Віньєтка під блобами, як у старому фоні з fon.png */
+html.has-video-bg .mc-net-backdrop::before {
+  z-index: 2;
+}
+
+html.has-video-bg .mc-bg-blob-layer {
+  z-index: 3;
+}
+
+html.has-video-bg:not(.dark) .mc-net-backdrop::after {
+  z-index: 4;
 }
 
 .mc-net-backdrop::before {
@@ -340,6 +396,10 @@ html:not(.dark) .mc-net-backdrop::before {
   opacity: 1;
   transform: scale(1.03);
   z-index: 0;
+}
+
+html.has-video-bg:not(.dark) .mc-net-backdrop::before {
+  display: none;
 }
 
 html:not(.dark) .mc-net-backdrop::after {

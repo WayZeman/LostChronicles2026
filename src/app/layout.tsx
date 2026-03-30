@@ -4,6 +4,7 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter } from "next/font/google";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
+import { SiteBackdropYouTube } from "@/components/site/SiteBackdropYouTube";
 import "./globals.css";
 
 const inter = Inter({
@@ -73,6 +74,8 @@ export default function RootLayout({
     >
       <body className={`${inter.variable} am-bg relative flex min-h-screen flex-col antialiased`}>
         <div className="mc-net-backdrop" aria-hidden>
+          <SiteBackdropYouTube />
+          <div className="mc-backdrop-scrim" />
           <div className="mc-bg-blob-layer">
             <span className="mc-bg-blob mc-bg-blob-1" />
             <span className="mc-bg-blob mc-bg-blob-2" />
