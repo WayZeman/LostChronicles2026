@@ -1,16 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Analytics } from "@vercel/analytics/react";
-import { SpeedInsights } from "@vercel/speed-insights/next";
 import { Inter } from "next/font/google";
+import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
 import { SiteBackdropYouTube } from "@/components/site/SiteBackdropYouTube";
+import { SiteSplash } from "@/components/site/SiteSplash";
 import "./globals.css";
 
 const inter = Inter({
   subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
   variable: "--font-inter",
   display: "swap",
+  adjustFontFallback: true,
 });
 
 /** Канонічний URL сайту (для OG / прев’ю в месенджерах). Можна перевизначити через NEXT_PUBLIC_SITE_URL. */
@@ -30,7 +31,8 @@ export const metadata: Metadata = {
   description: "Український Minecraft сервер",
   icons: {
     icon: [{ url: "/logo.png", sizes: "597x595", type: "image/png" }],
-    apple: [{ url: "/logo.png", sizes: "180x180" }],
+    apple: [{ url: "/logo.png", sizes: "180x180", type: "image/png" }],
+    shortcut: "/logo.png",
   },
   appleWebApp: {
     capable: true,
@@ -69,7 +71,7 @@ export default function RootLayout({
   return (
     <html
       lang="uk"
-      className="dark scroll-pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
+      className="scroll-pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
       suppressHydrationWarning
     >
       <body className={`${inter.variable} am-bg relative flex min-h-screen flex-col antialiased`}>
@@ -89,8 +91,8 @@ export default function RootLayout({
         <div className="relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
           {children}
         </div>
-        <Analytics />
-        <SpeedInsights />
+        <DeferVercelMetrics />
+        <SiteSplash />
       </body>
     </html>
   );

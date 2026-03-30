@@ -14,6 +14,21 @@ function isPeriod(v: string | null): v is Period {
   return v === "day" || v === "week" || v === "month" || v === "all";
 }
 
+/** Лише https, без userinfo — зменшує ризик SSRF при помилковому/шкідливому env. */
+function parseTrustedOnlineHistoryUpstream(raw: string): URL | null {
+  const s = raw.trim();
+  if (!s || s.length > 2048) return null;
+  let u: URL;
+  try {
+    u = new URL(s);
+  } catch {
+    return null;
+  }
+  if (u.protocol !== "https:") return null;
+  if (!u.hostname || u.username || u.password) return null;
+  return u;
+}
+
 /** Як у плагіні statusgrap: { labels, values } */
 function syntheticSeries(period: Period, currentOnline: number): {
   labels: string[];
@@ -85,12 +100,14 @@ export async function GET(req: Request) {
 
   const live = await getLiveSnapshot();
 
-  const upstream = process.env.ONLINE_HISTORY_API_URL?.trim();
-  if (upstream) {
+  const upstreamBase = parseTrustedOnlineHistoryUpstream(
+    process.env.ONLINE_HISTORY_API_URL ?? "",
+  );
+  if (upstreamBase) {
     try {
-      const join = upstream.includes("?") ? "&" : "?";
-      const url = `${upstream}${join}period=${encodeURIComponent(period)}`;
-      const res = await fetch(url, { next: { revalidate: 60 } });
+      const url = new URL(upstreamBase);
+      url.searchParams.set("period", period);
+      const res = await fetch(url.toString(), { next: { revalidate: 60 } });
       if (res.ok) {
         const data = (await res.json()) as { labels?: unknown; values?: unknown };
         if (Array.isArray(data.labels) && Array.isArray(data.values)) {

@@ -30,10 +30,22 @@ type McSrvPayload = {
   players?: { online?: number; max?: number };
 };
 
+/**
+ * Дозволяє лише типовий Minecraft host / IPv4 / host:port без шляхів і спецсимволів,
+ * щоб значення з env не ламало URL до mcsrvstat.
+ */
+export function sanitizeMinecraftServerHost(raw: string): string {
+  const host = raw.trim();
+  if (!host || host.length > 253) return "";
+  if (/[\s\0\u0001-\u001F/\\@#?&<>"`|]/.test(host)) return "";
+  if (host.includes("..")) return "";
+  return host;
+}
+
 export async function getJavaServerStatus(hostname: string): Promise<JavaServerStatus> {
   const envMax = parseEnvMax(process.env.NEXT_PUBLIC_SERVER_SLOTS_MAX?.trim());
   const envOnline = parseEnvOnline(process.env.NEXT_PUBLIC_SERVER_ONLINE?.trim());
-  const host = hostname.trim();
+  const host = sanitizeMinecraftServerHost(hostname);
 
   if (!host) {
     return { host, playersOnline: envOnline, playersMax: envMax, source: "env-fallback" };

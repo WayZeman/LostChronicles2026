@@ -43,7 +43,7 @@ export default function Home() {
             Lost{" "}
             <span className="lc-hero-accent text-[var(--mc-net-green)]">Chronicles</span>
           </h1>
-          <p className="lc-hero-lead mt-6 max-w-xl text-xl font-medium leading-relaxed text-black md:text-2xl dark:text-[var(--mc-text)]">
+          <p className="lc-hero-lead mt-6 max-w-xl text-xl font-medium leading-relaxed text-[var(--mc-text)] md:text-2xl">
             {settings.description}
           </p>
           <a

@@ -35,7 +35,7 @@ function AccordionTrigger({
       <AccordionPrimitive.Trigger
         data-slot="accordion-trigger"
         className={cn(
-          "group/accordion-trigger relative flex min-h-12 w-full flex-1 touch-manipulation items-center rounded-lg border border-transparent py-2 text-sm font-medium outline-none transition-colors duration-200 hover:bg-black/[0.04] active:bg-black/[0.07] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:after:border-ring aria-disabled:pointer-events-none aria-disabled:opacity-50 dark:hover:bg-white/[0.05] dark:active:bg-white/[0.08] sm:min-h-[3rem] sm:py-2.5",
+          "group/accordion-trigger relative flex min-h-12 w-full flex-1 touch-manipulation items-center rounded-lg border border-transparent py-2 text-sm font-medium outline-none transition-colors duration-200 hover:bg-white/[0.05] active:bg-white/[0.08] focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:after:border-ring aria-disabled:pointer-events-none aria-disabled:opacity-50 sm:min-h-[3rem] sm:py-2.5",
           className
         )}
         {...props}

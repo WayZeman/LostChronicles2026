@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { readClientNetworkHints } from "@/lib/client-network";
 import {
   CategoryScale,
   Chart as ChartJS,
@@ -59,6 +60,31 @@ type ChartPayload = {
 export function HeroOnlineHistoryChart() {
   const [payload, setPayload] = useState<ChartPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [motionTier, setMotionTier] = useState<"full" | "light" | "none">(
+    "full",
+  );
+
+  useEffect(() => {
+    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const narrow = window.matchMedia("(max-width: 767px)");
+    const apply = () => {
+      const { isConstrained } = readClientNetworkHints();
+      if (reduced.matches || isConstrained) setMotionTier("none");
+      else if (narrow.matches) setMotionTier("light");
+      else setMotionTier("full");
+    };
+    apply();
+    reduced.addEventListener("change", apply);
+    narrow.addEventListener("change", apply);
+    const conn = (navigator as Navigator & { connection?: EventTarget })
+      .connection;
+    conn?.addEventListener?.("change", apply);
+    return () => {
+      reduced.removeEventListener("change", apply);
+      narrow.removeEventListener("change", apply);
+      conn?.removeEventListener?.("change", apply);
+    };
+  }, []);
 
   const load = useCallback(async () => {
     setError(null);
@@ -95,26 +121,32 @@ export function HeroOnlineHistoryChart() {
       ? Math.max(...payload.values) + 1
       : 1;
 
+  const animMs =
+    motionTier === "none" ? 0 : motionTier === "light" ? 520 : 1400;
+
   const options: ChartOptions<"line"> = useMemo(
     () => ({
       responsive: true,
       maintainAspectRatio: false,
       interaction: { mode: "index", intersect: false },
       animation: {
-        duration: 1400,
+        duration: animMs,
         easing: "easeOutQuart",
       },
       animations: {
         numbers: {
           type: "number",
           properties: ["x", "y"],
-          duration: 1400,
+          duration: animMs,
           easing: "easeOutQuart",
         },
       },
       transitions: {
         active: {
-          animation: { duration: 400, easing: "easeOutQuad" },
+          animation: {
+            duration: motionTier === "none" ? 0 : 280,
+            easing: "easeOutQuad",
+          },
         },
       },
       scales: {
@@ -159,7 +191,7 @@ export function HeroOnlineHistoryChart() {
         },
       },
     }),
-    [hasOfflineTicks, maxY],
+    [animMs, hasOfflineTicks, maxY, motionTier],
   );
 
   const data =
@@ -186,7 +218,7 @@ export function HeroOnlineHistoryChart() {
     <div
       className={cn(
         lcGlassPanelClass,
-        "bg-white/40 dark:bg-black/38 dark:shadow-[0_8px_36px_rgba(0,0,0,0.34)]",
+        "bg-black/38 shadow-[0_8px_36px_rgba(0,0,0,0.34)]",
       )}
     >
       <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">

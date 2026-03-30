@@ -3,7 +3,8 @@
 @plugin "tailwindcss-animate";
 @plugin "@tailwindcss/typography";
 
-@custom-variant dark (&:is(.dark *));
+/* Сайт лише в темній темі: префікс dark: завжди активний */
+@custom-variant dark (&);
 
 @theme {
   --font-sans: var(--font-inter);
@@ -51,175 +52,10 @@
 }
 
 :root {
-  /* Базові shadcn: світла тема — холодний нейтраль + синій primary */
-  --background: oklch(0.97 0.012 252);
-  --foreground: oklch(0.22 0.02 260);
-  --card: oklch(0.995 0.004 252);
-  --card-foreground: oklch(0.22 0.02 260);
-  --popover: oklch(0.995 0.004 252);
-  --popover-foreground: oklch(0.22 0.02 260);
-  --primary: oklch(0.5 0.2 264);
-  --primary-foreground: oklch(0.99 0.005 252);
-  --secondary: oklch(0.94 0.014 252);
-  --secondary-foreground: oklch(0.26 0.022 260);
-  --muted: oklch(0.935 0.012 252);
-  --muted-foreground: oklch(0.44 0.024 260);
-  --accent: oklch(0.93 0.03 264);
-  --accent-foreground: oklch(0.22 0.02 260);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.88 0.014 252);
-  --input: oklch(0.88 0.014 252);
-  --ring: oklch(0.5 0.2 264);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-}
-
-.dark {
-  /* Нейтральні сірі (chroma 0), без синього відтінку */
-  --background: oklch(0.14 0 0);
-  --foreground: oklch(0.97 0 0);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.72 0.14 75);
-  --primary-foreground: oklch(0.18 0.04 75);
-  --secondary: oklch(0.26 0 0);
-  --secondary-foreground: oklch(0.95 0 0);
-  --muted: oklch(0.26 0 0);
-  --muted-foreground: oklch(0.68 0 0);
-  --accent: oklch(0.3 0 0);
-  --accent-foreground: oklch(0.97 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.65 0.14 75);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-}
-
-@layer base {
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-    scroll-behavior: smooth;
-    letter-spacing: 0.022em;
-  }
-  @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
-  }
-}
-
-/* ─── Сайт: світла тема — холодний нейтраль + синій акцент; темна — .dark ─── */
-:root {
-  color-scheme: light;
+  color-scheme: dark;
   --am-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --am-dur: 0.55s;
-  /* Акцент (ім’я --mc-net-green історичне): синій */
-  --mc-net-green: #2563eb;
-  --mc-net-green-hover: #1d4ed8;
-  --mc-on-gold: #f8fafc;
-  /* Фон сторінки: прохолодний світлий */
-  --mc-net-sky-top: #f4f7fc;
-  --mc-net-gradient-mid: #e8eef7;
-  --mc-net-sky-mid: #e2e9f4;
-  --mc-net-page: #eef2f9;
-  --mc-backdrop-vignette-gradient: radial-gradient(
-    ellipse 120% 80% at 50% 100%,
-    rgba(30, 58, 95, 0.06),
-    transparent 58%
-  );
-  --mc-backdrop-vignette-opacity: 0.28;
-  --mc-grass: var(--mc-net-green);
-  --mc-grass-bright: #3b82f6;
-  --mc-dirt: #4c5c6e;
-  --mc-sky: #3d9fd9;
-  --mc-stone: #94a3b8;
-  --mc-deep: #0f172a;
-  /* Текст: slate на світло-блакитному тлі */
-  --mc-text: #0f172a;
-  --mc-text-muted: #334155;
-  --mc-text-subtle: #64748b;
-  --mc-ink: #0f172a;
-  --mc-ink-muted: #475569;
-  --mc-ink-subtle: #64748b;
-  --mc-surface: #ffffff;
-  --mc-surface-elevated: #f4f7fb;
-  --mc-border: rgba(15, 23, 42, 0.1);
-  --mc-border-card: rgba(15, 23, 42, 0.07);
-  /* Навбар */
-  --mc-nav-bg: rgba(255, 255, 255, 0.9);
-  --mc-nav-border: rgba(15, 23, 42, 0.09);
-  --mc-nav-shadow: 0 4px 24px rgba(15, 23, 42, 0.06);
-  --mc-nav-link: #334155;
-  --mc-nav-link-hover-bg: rgba(37, 99, 235, 0.09);
-  --mc-nav-toggle-bg: rgba(255, 255, 255, 0.97);
-  --mc-toggle-border: rgba(15, 23, 42, 0.12);
-  --mc-toggle-bg: #ffffff;
-  --mc-toggle-hover-bg: rgba(15, 23, 42, 0.05);
-  --mc-green-ink: #1e40af;
-  --mc-vote-bg: rgba(37, 99, 235, 0.1);
-  --mc-vote-bg-hover: rgba(37, 99, 235, 0.16);
-  --mc-bento-icon-bg: rgba(37, 99, 235, 0.08);
-  --mc-bento-icon-hover: rgba(37, 99, 235, 0.14);
-  --mc-arrow-muted: #64748b;
-  --mc-btn-secondary-border: rgba(15, 23, 42, 0.14);
-  --mc-btn-secondary-bg: #ffffff;
-  --mc-btn-secondary-fg: #1e293b;
-  --mc-btn-secondary-hover: rgba(15, 23, 42, 0.05);
-  --mc-footer-bg: #e2e8f3;
-  --mc-footer-border: rgba(15, 23, 42, 0.09);
-  --mc-footer-text: rgba(30, 41, 59, 0.52);
-  /* Скрам над фоном (світла тема) */
-  --mc-bg-image-overlay: linear-gradient(
-    180deg,
-    rgba(244, 247, 252, 0.52) 0%,
-    rgba(232, 238, 248, 0.44) 45%,
-    rgba(226, 233, 245, 0.54) 100%
-  );
-  /* Узгодження з Tailwind theme tokens */
-  --background: var(--mc-net-page);
-  --foreground: var(--mc-text);
-  --card: var(--mc-surface);
-  --card-foreground: var(--mc-ink);
-  --muted: var(--mc-surface-elevated);
-  --muted-foreground: var(--mc-text-subtle);
-  --border: color-mix(in oklch, var(--mc-text) 12%, var(--mc-surface));
-  --input: color-mix(in oklch, var(--mc-text) 10%, var(--mc-surface));
-}
-
-.dark {
-  color-scheme: dark;
+  /* Lost Chronicles — лише темна палітра */
   --mc-net-green: #eab308;
   --mc-net-green-hover: #facc15;
   --mc-on-gold: #1c1206;
@@ -233,6 +69,12 @@
     transparent 55%
   );
   --mc-backdrop-vignette-opacity: 0.65;
+  --mc-grass: var(--mc-net-green);
+  --mc-grass-bright: #facc15;
+  --mc-dirt: #525252;
+  --mc-sky: #a3a3a3;
+  --mc-stone: #737373;
+  --mc-deep: #171717;
   --mc-text: #fafafa;
   --mc-text-muted: #d4d4d8;
   --mc-text-subtle: #a3a3a3;
@@ -271,14 +113,58 @@
     rgba(12, 12, 12, 0.82) 50%,
     rgba(8, 8, 8, 0.88) 100%
   );
+  /* shadcn / Tailwind semantic tokens (темна тема) */
   --background: var(--mc-net-page);
   --foreground: var(--mc-text);
-  --card: var(--mc-surface);
-  --card-foreground: var(--mc-ink);
+  --card: oklch(0.2 0 0);
+  --card-foreground: oklch(0.97 0 0);
+  --popover: oklch(0.2 0 0);
+  --popover-foreground: oklch(0.97 0 0);
+  --primary: oklch(0.72 0.14 75);
+  --primary-foreground: oklch(0.18 0.04 75);
+  --secondary: oklch(0.26 0 0);
+  --secondary-foreground: oklch(0.95 0 0);
   --muted: var(--mc-surface-elevated);
   --muted-foreground: var(--mc-text-subtle);
+  --accent: oklch(0.3 0 0);
+  --accent-foreground: oklch(0.97 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
   --border: oklch(1 0 0 / 12%);
   --input: oklch(1 0 0 / 14%);
+  --ring: oklch(0.65 0.14 75);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground overflow-x-hidden;
+  }
+  html {
+    @apply font-sans overflow-x-hidden;
+    scroll-behavior: smooth;
+    letter-spacing: 0.022em;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+  }
 }
 
 .lc-focus-ring:focus-visible {
@@ -291,22 +177,20 @@
   color: var(--mc-text);
 }
 
-/* Світла тема: головний екран — чиста типографіка, контраст з токенів (без підсвітки) */
-html:not(.dark) .lc-hero-title {
-  color: var(--mc-text);
+.lc-hero-title {
   letter-spacing: 0.02em;
 }
 
-html:not(.dark) .lc-hero-accent {
+.lc-hero-accent {
   color: var(--mc-net-green);
 }
 
-html:not(.dark) .lc-hero-lead {
+.lc-hero-lead {
   color: var(--mc-text-muted);
   font-weight: 500;
 }
 
-/* Фон: темна та світла — fon.png + накладка + кольорові плями (fon замінюється на YouTube при .has-video-bg) */
+/* Фон: fon.png + накладка + блоби (з YouTube при .has-video-bg) */
 .mc-net-backdrop {
   position: fixed;
   inset: 0;
@@ -337,6 +221,7 @@ html.has-video-bg .mc-backdrop-scrim {
   background: var(--mc-bg-image-overlay);
 }
 
+/* Iframe без згортання opacity (autoplay); вуаль ховає відео до lc-splash-fade */
 .mc-backdrop-youtube-wrap {
   position: absolute;
   inset: 0;
@@ -347,6 +232,7 @@ html.has-video-bg .mc-backdrop-scrim {
 
 .mc-backdrop-youtube-iframe {
   position: absolute;
+  z-index: 0;
   top: 50%;
   left: 50%;
   width: 100vw;
@@ -357,10 +243,24 @@ html.has-video-bg .mc-backdrop-scrim {
   border: 0;
 }
 
-html:not(.dark) .mc-backdrop-youtube-wrap {
-  filter: blur(5px);
-  transform: scale(1.03);
-  transform-origin: center center;
+.mc-backdrop-youtube-veil {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: var(--mc-net-page);
+  opacity: 1;
+  transition: opacity 2.2s var(--am-ease, cubic-bezier(0.16, 1, 0.3, 1));
+}
+
+.mc-backdrop-youtube-veil--lifted {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mc-backdrop-youtube-veil {
+    transition: none;
+  }
 }
 
 /* Віньєтка під блобами, як у старому фоні з fon.png */
@@ -372,74 +272,12 @@ html.has-video-bg .mc-bg-blob-layer {
   z-index: 3;
 }
 
-html.has-video-bg:not(.dark) .mc-net-backdrop::after {
-  z-index: 4;
-}
-
 .mc-net-backdrop::before {
   content: "";
   position: absolute;
   inset: 0;
   background: var(--mc-backdrop-vignette-gradient);
   opacity: var(--mc-backdrop-vignette-opacity);
-}
-
-/* Світла тема: легкий блюр fon.png; накладка та віньєтка — у ::after поверх блобів */
-html:not(.dark) .mc-net-backdrop {
-  background-image: none;
-}
-
-html:not(.dark) .mc-net-backdrop::before {
-  inset: -14px;
-  background: url("/fon.png") center / cover no-repeat;
-  filter: blur(5px);
-  opacity: 1;
-  transform: scale(1.03);
-  z-index: 0;
-}
-
-html.has-video-bg:not(.dark) .mc-net-backdrop::before {
-  display: none;
-}
-
-html:not(.dark) .mc-net-backdrop::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  pointer-events: none;
-  background-image: var(--mc-bg-image-overlay), var(--mc-backdrop-vignette-gradient);
-  background-size: cover, cover;
-  background-position: center, center;
-  background-repeat: no-repeat, no-repeat;
-  opacity: 1;
-}
-
-html:not(.dark) .mc-bg-blob-layer {
-  z-index: 1;
-}
-
-/* Світла тема: блоби сині замість жовто-помаранчевих */
-html:not(.dark) .mc-bg-blob {
-  background: rgba(37, 99, 235, 0.38);
-}
-
-html:not(.dark) .mc-bg-blob-2 {
-  background: rgba(59, 130, 246, 0.34);
-}
-
-html:not(.dark) .mc-bg-blob-3 {
-  background: rgba(96, 165, 250, 0.36);
-}
-
-html:not(.dark) .mc-bg-blob-5 {
-  background: rgba(147, 197, 253, 0.36);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  html:not(.dark) .mc-net-backdrop::before {
-    filter: blur(2px);
-  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -458,18 +296,12 @@ html:not(.dark) .mc-bg-blob-5 {
   width: clamp(200px, 42vw, 420px);
   height: clamp(200px, 42vw, 420px);
   border-radius: 50%;
-  background: rgba(217, 119, 6, 0.45);
-  filter: blur(88px);
-  opacity: 0.1;
-  mix-blend-mode: multiply;
-  will-change: transform;
-  animation: mc-bg-blob-float var(--mc-blob-dur, 38s) ease-in-out infinite;
-}
-
-.dark .mc-bg-blob {
   background: rgba(250, 204, 21, 0.55);
+  filter: blur(88px);
   opacity: 0.09;
   mix-blend-mode: screen;
+  will-change: transform;
+  animation: mc-bg-blob-float var(--mc-blob-dur, 38s) ease-in-out infinite;
 }
 
 .mc-bg-blob-1 {
@@ -484,21 +316,15 @@ html:not(.dark) .mc-bg-blob-5 {
   right: -12%;
   width: clamp(240px, 48vw, 500px);
   height: clamp(240px, 48vw, 500px);
-  background: rgba(251, 191, 36, 0.4);
-  animation-delay: -12s;
-}
-.dark .mc-bg-blob-2 {
   background: rgba(253, 224, 71, 0.45);
+  animation-delay: -12s;
 }
 .mc-bg-blob-3 {
   --mc-blob-dur: 36s;
   bottom: -18%;
   left: 10%;
-  background: rgba(245, 158, 11, 0.42);
-  animation-delay: -1s;
-}
-.dark .mc-bg-blob-3 {
   background: rgba(234, 179, 8, 0.5);
+  animation-delay: -1s;
 }
 .mc-bg-blob-4 {
   --mc-blob-dur: 41s;
@@ -513,11 +339,8 @@ html:not(.dark) .mc-bg-blob-5 {
   --mc-blob-dur: 48s;
   bottom: 15%;
   right: 20%;
-  background: rgba(252, 211, 77, 0.38);
-  animation-delay: -8s;
-}
-.dark .mc-bg-blob-5 {
   background: rgba(252, 211, 77, 0.5);
+  animation-delay: -8s;
 }
 
 @keyframes mc-bg-blob-float {
@@ -536,9 +359,6 @@ html:not(.dark) .mc-bg-blob-5 {
 @media (prefers-reduced-motion: reduce) {
   .mc-bg-blob {
     animation: none !important;
-    opacity: 0.09;
-  }
-  .dark .mc-bg-blob {
     opacity: 0.055;
   }
 }
@@ -549,49 +369,17 @@ html:not(.dark) .mc-bg-blob-5 {
   border: 1px solid var(--mc-border-card);
   color: var(--mc-ink);
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),
-    0 8px 32px rgba(0, 0, 0, 0.06);
-}
-
-.dark .am-glass {
-  box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.04) inset,
     0 12px 40px rgba(0, 0, 0, 0.45);
 }
 
-html:not(.dark) .am-glass {
-  border-color: var(--mc-border-card);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.88) inset,
-    0 1px 2px rgba(28, 25, 23, 0.035),
-    0 10px 36px rgba(28, 25, 23, 0.07);
-}
-
 /* Слот IP — рельєф як UI гри */
 .mc-slot {
-  border: 2px solid rgba(0, 0, 0, 0.1);
-  border-bottom-color: rgba(0, 0, 0, 0.14);
-  border-right-color: rgba(0, 0, 0, 0.12);
-  background: linear-gradient(180deg, #f8fafb 0%, #eef2f5 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.9),
-    inset 0 -1px 4px rgba(0, 0, 0, 0.04);
-}
-
-html:not(.dark) .mc-slot {
-  border-color: rgba(15, 23, 42, 0.09);
-  border-bottom-color: rgba(15, 23, 42, 0.11);
-  border-right-color: rgba(15, 23, 42, 0.1);
-  background: linear-gradient(180deg, #fafbfc 0%, #f1f4f8 100%);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.92),
-    inset 0 -1px 3px rgba(15, 23, 42, 0.04);
-}
-
-.dark .mc-slot {
   border-color: rgba(255, 255, 255, 0.11);
   border-bottom-color: rgba(0, 0, 0, 0.5);
   border-right-color: rgba(0, 0, 0, 0.4);
+  border-style: solid;
+  border-width: 2px;
   background: linear-gradient(180deg, #333333 0%, #262626 100%);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.06),
@@ -700,17 +488,81 @@ html:not(.dark) .mc-slot {
   }
 }
 
+/* Заставка при вході (дихаюче лого → плавне зникнення після load + шрифти) */
+.site-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--mc-net-page);
+  opacity: 1;
+  visibility: visible;
+  transition:
+    opacity 0.45s ease-out,
+    visibility 0.45s ease-out;
+  pointer-events: auto;
+}
+
+.site-splash--out {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.site-splash__inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.125rem;
+}
+
+.site-splash__logo {
+  animation: site-splash-breathe 2.65s ease-in-out infinite;
+  border-radius: 1rem;
+  object-fit: contain;
+}
+
+.site-splash__title {
+  font-family: var(--font-sans);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--mc-text-muted);
+  opacity: 0.88;
+}
+
+@keyframes site-splash-breathe {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.88;
+    filter: brightness(0.96);
+  }
+  50% {
+    transform: scale(1.065);
+    opacity: 1;
+    filter: brightness(1.04);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-splash__logo {
+    animation: none;
+    opacity: 1;
+    filter: none;
+  }
+
+  .site-splash {
+    transition-duration: 0.22s;
+  }
+}
+
 /* Зворотна сумісність зі старими класами */
 .lc-mesh {
   background-color: transparent;
-  background-image: radial-gradient(
-    ellipse 100% 80% at 50% -30%,
-    rgba(37, 99, 235, 0.055),
-    transparent 55%
-  );
-}
-
-.dark .lc-mesh {
   background-image: radial-gradient(
     ellipse 100% 80% at 50% -30%,
     rgba(202, 138, 4, 0.16),

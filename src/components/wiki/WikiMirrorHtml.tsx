@@ -139,7 +139,6 @@ export function WikiMirrorHtml({
     <div
       ref={ref}
       className="wiki-mirror"
-      // eslint-disable-next-line react/no-danger -- HTML з MediaWiki API / БД
       dangerouslySetInnerHTML={{ __html: html }}
     />
   );

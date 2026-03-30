@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { readClientNetworkHints } from "@/lib/client-network";
 
 type Particle = {
   x: number;
@@ -52,6 +53,15 @@ export function AtmosphereParticles() {
     if (typeof window === "undefined") return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
+    const { saveData, effectiveType } = readClientNetworkHints();
+    if (
+      saveData ||
+      effectiveType === "slow-2g" ||
+      effectiveType === "2g"
+    ) {
+      return;
+    }
+
     const el = ref.current;
     if (!el) return;
     const maybe = el.getContext("2d", { alpha: true });
@@ -66,16 +76,22 @@ export function AtmosphereParticles() {
     function resize() {
       const c = ref.current;
       if (!c) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const narrow = window.innerWidth < 768;
+      const { isConstrained, effectiveType } = readClientNetworkHints();
+      const dprCap =
+        isConstrained || narrow ? 1 : Math.min(window.devicePixelRatio || 1, 2);
       w = window.innerWidth;
       h = window.innerHeight;
-      c.width = Math.floor(w * dpr);
-      c.height = Math.floor(h * dpr);
+      c.width = Math.floor(w * dprCap);
+      c.height = Math.floor(h * dprCap);
       c.style.width = `${w}px`;
       c.style.height = `${h}px`;
-      draw.setTransform(dpr, 0, 0, dpr, 0, 0);
+      draw.setTransform(dprCap, 0, 0, dprCap, 0, 0);
 
-      const count = Math.min(200, Math.max(72, Math.floor((w * h) / 12500)));
+      const base = Math.min(200, Math.max(72, Math.floor((w * h) / 12500)));
+      const light =
+        isConstrained || narrow || effectiveType === "3g" ? 0.42 : 1;
+      const count = Math.max(36, Math.floor(base * light));
       particles = initParticles(count, w, h);
     }
 

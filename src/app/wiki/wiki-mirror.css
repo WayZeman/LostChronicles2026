@@ -1,10 +1,10 @@
 /* HTML з MediaWiki parse (лише тіло статті) */
 
 .wiki-mirror {
-  --wiki-border: rgba(0, 0, 0, 0.1);
-  --wiki-muted: rgb(71 85 105);
-  --wiki-link: #b45309;
-  --wiki-bg-soft: rgba(241 245 249 / 0.95);
+  --wiki-border: rgba(255, 255, 255, 0.12);
+  --wiki-muted: rgb(203 213 225 / 0.92);
+  --wiki-link: #fbbf24;
+  --wiki-bg-soft: rgba(0, 0, 0, 0.35);
   color: var(--wiki-muted);
   font-size: 0.9375rem;
   line-height: 1.65;
@@ -29,7 +29,7 @@
 
 .wiki-mirror b,
 .wiki-mirror strong {
-  color: rgb(15 23 42);
+  color: rgb(248 250 252);
   font-weight: 600;
 }
 
@@ -43,7 +43,7 @@
 .wiki-mirror h2,
 .wiki-mirror h3,
 .wiki-mirror h4 {
-  color: rgb(15 23 42);
+  color: rgb(248 250 252);
   font-weight: 700;
   line-height: 1.25;
   margin: 1.15em 0 0.45em;
@@ -161,8 +161,8 @@
   font-style: italic;
   padding: 0.65em 1em;
   margin: 0 0 1em;
-  border-left: 3px solid rgba(202, 138, 4, 0.5);
-  background: rgba(202, 138, 4, 0.08);
+  border-left: 3px solid rgba(251, 191, 36, 0.55);
+  background: rgba(0, 0, 0, 0.35);
   font-size: 0.875rem;
 }
 
@@ -197,32 +197,3 @@
   }
 }
 
-/* Темна тема — контраст як на темних сторінках порталу */
-.dark .wiki-mirror {
-  --wiki-border: rgba(255, 255, 255, 0.12);
-  --wiki-muted: rgb(203 213 225 / 0.92);
-  --wiki-link: #fcd34d;
-  --wiki-bg-soft: rgba(0, 0, 0, 0.35);
-  color: var(--wiki-muted);
-}
-
-.dark .wiki-mirror b,
-.dark .wiki-mirror strong {
-  color: rgb(248 250 252);
-}
-
-.dark .wiki-mirror h1,
-.dark .wiki-mirror h2,
-.dark .wiki-mirror h3,
-.dark .wiki-mirror h4 {
-  color: rgb(248 250 252);
-}
-
-.dark .wiki-mirror a {
-  color: #fbbf24;
-}
-
-.dark .wiki-mirror .hatnote {
-  border-left-color: rgba(251, 191, 36, 0.55);
-  background: rgba(0, 0, 0, 0.35);
-}
