@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ExternalLink, Map as MapIcon } from "lucide-react";
 
+import { lcPageContainerClass, lcPageMainMapClass } from "@/components/site/lc-page-shell";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 
 /** BlueMap. Перевизначення: NEXT_PUBLIC_MAP_URL у .env / Vercel (у лапках, якщо є # у hash). */
@@ -16,8 +17,8 @@ export default function MapPage() {
   const mapUrl = process.env.NEXT_PUBLIC_MAP_URL?.trim() || DEFAULT_MAP_URL;
 
   return (
-    <main className="relative flex min-h-0 flex-1 flex-col justify-center">
-      <div className="site-container relative z-10 mx-auto w-full max-w-4xl px-4 py-12 md:py-16">
+    <main className={lcPageMainMapClass}>
+      <div className={lcPageContainerClass}>
         <WikiContentFrame>
           <div className="flex flex-col items-center text-center">
             <h2 className="lc-hero-title text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">

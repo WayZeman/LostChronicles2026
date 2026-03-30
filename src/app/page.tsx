@@ -9,6 +9,7 @@ import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroOnlineMonitor } from "@/components/site/HeroOnlineMonitor";
 import { HeroPromoVideo } from "@/components/site/HeroPromoVideo";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_FORM_URL } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
@@ -33,9 +34,9 @@ export default function Home() {
   const voteUrl = process.env.NEXT_PUBLIC_VOTE_URL;
 
   return (
-    <main className="relative flex-1">
-      <div className="site-container mx-auto w-full max-w-4xl px-4 pb-16 md:pb-24">
-        <section className="am-reveal flex flex-col items-center pt-10 text-center md:pt-16">
+    <main className={lcPageMainClass}>
+      <div className={lcPageContainerHomeClass}>
+        <section className="am-reveal flex flex-col items-center pt-0 text-center md:pt-0">
           <h1
             className="lc-hero-title max-w-[min(100%,36rem)] text-[clamp(2.75rem,9vw,4.25rem)] font-extrabold leading-[1.05] text-[var(--mc-text)]"
             style={{ fontFeatureSettings: '"ss01"' }}

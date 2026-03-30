@@ -5,6 +5,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
 import { cn } from "@/lib/utils";
 
@@ -17,8 +18,7 @@ export default function FAQPage() {
   }));
 
   return (
-    <main className="relative flex-1">
-      <div className="lc-mesh pointer-events-none absolute inset-0 opacity-90" aria-hidden />
+    <div className={lcPageMainClass} role="main">
       <div
         className={cn(
           "site-container relative z-10 mx-auto w-full max-w-4xl",
@@ -79,6 +79,6 @@ export default function FAQPage() {
           ))}
         </Accordion>
       </div>
-    </main>
+    </div>
   );
 }

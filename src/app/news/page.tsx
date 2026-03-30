@@ -4,6 +4,7 @@ import {
   getFandomWikiBase,
 } from "@/lib/fandom";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { cn } from "@/lib/utils";
@@ -17,9 +18,8 @@ export default async function NewsListPage() {
   const parsed = await fetchFandomPageHtml(newsTitle);
 
   return (
-    <main className="relative flex-1">
-      <div className="pointer-events-none absolute inset-0 opacity-90" aria-hidden />
-      <div className="site-container relative z-10 mx-auto w-full max-w-4xl px-4 py-12 md:py-16">
+    <main className={lcPageMainClass}>
+      <div className={lcPageContainerClass}>
         {!parsed ? (
           <p
             className={cn(
