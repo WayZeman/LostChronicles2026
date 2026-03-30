@@ -5,14 +5,24 @@ import { useState } from "react";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const PROMO_VIDEO_ID = "OQpRfs5GKyk";
+/** Промо на головній — одне посилання; id для embed і прев’ю береться з нього. */
+const PROMO_VIDEO_WATCH_URL = "https://www.youtube.com/watch?v=OQpRfs5GKyk";
 
-/** Від найкращої якості до запасної (не всі ролики мають maxres на ytimg). */
-const THUMB_URLS = [
-  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/maxresdefault.jpg`,
-  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/sddefault.jpg`,
-  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/hqdefault.jpg`,
-] as const;
+const PROMO_VIDEO_ID =
+  new URL(PROMO_VIDEO_WATCH_URL).searchParams.get("v") ?? "OQpRfs5GKyk";
+
+/**
+ * Після зміни обкладинки в YouTube Studio збільш це число й задеплой —
+ * інакше браузер / Next Image можуть довго показувати стару мініатюру з кешу.
+ */
+const PROMO_THUMB_REVISION = 2;
+
+const THUMB_FILES = ["maxresdefault.jpg", "sddefault.jpg", "hqdefault.jpg"] as const;
+
+const THUMB_URLS = THUMB_FILES.map(
+  (file) =>
+    `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/${file}?cb=${PROMO_THUMB_REVISION}`,
+);
 
 /** Прев’ю YouTube без iframe, поки користувач не натисне — економія трафіку на мобільних і 3G. */
 export function HeroPromoVideo() {
@@ -41,13 +51,14 @@ export function HeroPromoVideo() {
           ) : (
             <>
               <Image
-                key={THUMB_URLS[thumbIndex]}
+                key={`${thumbIndex}-${PROMO_THUMB_REVISION}`}
                 src={THUMB_URLS[thumbIndex]}
                 alt=""
                 className="object-cover"
                 fill
                 sizes="(max-width: 896px) 100vw, 896px"
                 quality={92}
+                unoptimized
                 loading="lazy"
                 fetchPriority="low"
                 onError={() => {
