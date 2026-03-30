@@ -7,9 +7,17 @@ import { cn } from "@/lib/utils";
 
 const PROMO_VIDEO_ID = "OQpRfs5GKyk";
 
+/** Від найкращої якості до запасної (не всі ролики мають maxres на ytimg). */
+const THUMB_URLS = [
+  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/maxresdefault.jpg`,
+  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/sddefault.jpg`,
+  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/hqdefault.jpg`,
+] as const;
+
 /** Прев’ю YouTube без iframe, поки користувач не натисне — економія трафіку на мобільних і 3G. */
 export function HeroPromoVideo() {
   const [playing, setPlaying] = useState(false);
+  const [thumbIndex, setThumbIndex] = useState(0);
 
   return (
     <div className="w-full" aria-label="Відео про сервер Lost Chronicles на YouTube">
@@ -33,13 +41,20 @@ export function HeroPromoVideo() {
           ) : (
             <>
               <Image
-                src={`https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/hqdefault.jpg`}
+                key={THUMB_URLS[thumbIndex]}
+                src={THUMB_URLS[thumbIndex]}
                 alt=""
                 className="object-cover"
                 fill
                 sizes="(max-width: 896px) 100vw, 896px"
+                quality={92}
                 loading="lazy"
                 fetchPriority="low"
+                onError={() => {
+                  setThumbIndex((i) =>
+                    i < THUMB_URLS.length - 1 ? i + 1 : i,
+                  );
+                }}
               />
               <div
                 className="absolute inset-0 bg-black/20"
