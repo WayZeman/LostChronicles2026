@@ -8,31 +8,25 @@ export function getSiteBaseUrl(): string {
   return "http://localhost:3000";
 }
 
-type HeaderGet = { get(name: string): string | null };
-
 /**
- * Origin з заголовків (RSC `headers()` або `Request`).
+ * Публічний origin з поточного HTTP-запиту (Vercel: x-forwarded-*).
  * Для Discord OAuth важливо: cookie `state` прив’язаний до хоста, з якого пішли на логін —
  * `redirect_uri` має бути на тому ж хості, інакше буде `?error=oauth`.
  */
-export function getRequestOriginFromHeaders(h: HeaderGet): string {
+export function getRequestOrigin(req: Request): string {
   const hostRaw =
-    h.get("x-forwarded-host")?.split(",")[0]?.trim() ||
-    h.get("host")?.split(",")[0]?.trim();
+    req.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ||
+    req.headers.get("host")?.split(",")[0]?.trim();
   let proto =
-    h.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
+    req.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() || "https";
 
   if (hostRaw) {
-    const host = hostRaw.toLowerCase();
-    if (host.startsWith("localhost") || host.startsWith("127.0.0.1")) {
+    const h = hostRaw.toLowerCase();
+    if (h.startsWith("localhost") || h.startsWith("127.0.0.1")) {
       proto = "http";
     }
     return `${proto}://${hostRaw}`;
   }
 
   return getSiteBaseUrl();
-}
-
-export function getRequestOrigin(req: Request): string {
-  return getRequestOriginFromHeaders(req.headers);
 }
