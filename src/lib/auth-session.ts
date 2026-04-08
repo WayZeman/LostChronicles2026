@@ -3,6 +3,18 @@ import { cookies } from "next/headers";
 
 export const SESSION_COOKIE = "lc_session";
 export const OAUTH_STATE_COOKIE = "lc_oauth_state";
+/** Після OAuth редірект на цей шлях (лише відносні URL). */
+export const OAUTH_NEXT_COOKIE = "lc_oauth_next";
+
+/** Безпечний внутрішній шлях після логіну (захист від open redirect). */
+export function sanitizeOAuthNextPath(raw: string | null | undefined): string | null {
+  if (raw == null) return null;
+  const t = raw.trim();
+  if (t.length === 0 || t.length > 256) return null;
+  if (!t.startsWith("/") || t.startsWith("//")) return null;
+  if (t.includes("://") || t.includes("\\") || t.includes("@")) return null;
+  return t;
+}
 
 const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30;
 

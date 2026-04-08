@@ -4,7 +4,6 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { LogOut } from "lucide-react";
-import { cn } from "@/lib/utils";
 
 type MeUser = {
   id: number;
@@ -39,29 +38,8 @@ export function DiscordAuthBar() {
     router.refresh();
   };
 
-  if (user === undefined) {
-    return (
-      <div
-        className="pointer-events-none fixed right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[110] h-9 w-24 animate-pulse rounded-md bg-[var(--mc-surface)]/80 sm:right-3"
-        aria-hidden
-      />
-    );
-  }
-
-  if (!user) {
-    return (
-      <div className="fixed right-2 top-[max(0.5rem,env(safe-area-inset-top))] z-[110] sm:right-3">
-        <a
-          href="/api/auth/discord"
-          className={cn(
-            "lc-focus-ring inline-flex min-h-9 max-w-[min(100vw-1rem,14rem)] items-center justify-center gap-1.5 rounded-md border-2 border-[#5865F2] bg-[#5865F2]/20 px-2.5 py-1.5 text-[10px] font-bold text-[var(--mc-text)] shadow-lg backdrop-blur-sm transition-colors hover:bg-[#5865F2]/35 sm:px-3 sm:text-xs",
-          )}
-        >
-          <span className="hidden min-[380px]:inline">Login with Discord</span>
-          <span className="min-[380px]:hidden">Discord</span>
-        </a>
-      </div>
-    );
+  if (user === undefined || !user) {
+    return null;
   }
 
   return (

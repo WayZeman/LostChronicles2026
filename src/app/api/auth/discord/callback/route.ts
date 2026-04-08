@@ -1,10 +1,12 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import {
+  OAUTH_NEXT_COOKIE,
   OAUTH_STATE_COOKIE,
   SESSION_COOKIE,
   sessionCookieOptions,
   signSessionToken,
+  sanitizeOAuthNextPath,
 } from "@/lib/auth-session";
 import {
   discordDisplayName,
@@ -17,14 +19,20 @@ import { getRequestOrigin } from "@/lib/site-base-url";
 
 export const dynamic = "force-dynamic";
 
+const clearCookie = {
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  sameSite: "lax" as const,
+  path: "/",
+  maxAge: 0,
+};
+
 function clearOAuthStateCookie(res: NextResponse): void {
-  res.cookies.set(OAUTH_STATE_COOKIE, "", {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
-    maxAge: 0,
-  });
+  res.cookies.set(OAUTH_STATE_COOKIE, "", clearCookie);
+}
+
+function clearOAuthNextCookie(res: NextResponse): void {
+  res.cookies.set(OAUTH_NEXT_COOKIE, "", clearCookie);
 }
 
 export async function GET(req: Request) {
@@ -33,6 +41,7 @@ export async function GET(req: Request) {
   const fail = (path: string) => {
     const res = NextResponse.redirect(`${base}${path}`);
     clearOAuthStateCookie(res);
+    clearOAuthNextCookie(res);
     return res;
   };
 
@@ -56,8 +65,11 @@ export async function GET(req: Request) {
       avatar: me.avatar,
     });
     const session = await signSessionToken(userId);
-    const res = NextResponse.redirect(`${base}/proposals`);
+    const nextStored = jar.get(OAUTH_NEXT_COOKIE)?.value;
+    const nextPath = sanitizeOAuthNextPath(nextStored) ?? "/proposals";
+    const res = NextResponse.redirect(`${base}${nextPath}`);
     clearOAuthStateCookie(res);
+    clearOAuthNextCookie(res);
     res.cookies.set(SESSION_COOKIE, session, sessionCookieOptions());
     return res;
   } catch {

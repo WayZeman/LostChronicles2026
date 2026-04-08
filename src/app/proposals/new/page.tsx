@@ -85,14 +85,14 @@ export default function NewProposalPage() {
               Увійди через Discord
             </h1>
             <p className="mt-2 text-sm text-[var(--mc-text-muted)]">
-              Щоб створити пропозицію, натисни «Login with Discord» у правому
-              верхньому куті.
+              Щоб створити пропозицію, увійди через Discord — натисни кнопку
+              нижче.
             </p>
             <a
-              href="/api/auth/discord"
+              href={`/api/auth/discord?next=${encodeURIComponent("/proposals/new")}`}
               className="lc-focus-ring mt-6 inline-flex min-h-11 items-center justify-center rounded-md border-2 border-[#5865F2] bg-[#5865F2]/25 px-6 py-2.5 text-sm font-bold text-[var(--mc-text)]"
             >
-              Login with Discord
+              Увійти через Discord
             </a>
             <div className="mt-6">
               <Link

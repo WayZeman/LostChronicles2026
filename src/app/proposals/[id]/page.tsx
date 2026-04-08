@@ -151,7 +151,10 @@ export default function ProposalDetailPage() {
   async function vote(v: 0 | 1) {
     if (!id || voteBusy || !proposal?.voting_open) return;
     if (!me) {
-      setError("Увійди через Discord, щоб голосувати.");
+      const next = `/proposals/${id}`;
+      window.location.assign(
+        `/api/auth/discord?next=${encodeURIComponent(next)}`,
+      );
       return;
     }
     setVoteBusy(true);
@@ -392,7 +395,8 @@ export default function ProposalDetailPage() {
           </div>
           {!me && open ? (
             <p className="text-center text-xs text-[var(--mc-text-muted)]">
-              Увійди через Discord (кнопка зверху справа), щоб голосувати.
+              Натисни 👍 або 👎 — відкриється вхід через Discord, після чого можна
+              проголосувати.
             </p>
           ) : null}
         </article>
