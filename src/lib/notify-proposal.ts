@@ -14,20 +14,28 @@ function escapeDiscordBoldFragment(s: string): string {
   return s.replace(/\*/g, "＊");
 }
 
-/** Короткий вердикт без повторення цифр (цифри в полях embed). */
+/** Telegram HTML: екранування для parse_mode HTML */
+function escapeTelegramHtml(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+/** Короткий вердикт без цифр (цифри окремим блоком, як у Discord). */
+function verdictShortPlain(yes: number, no: number): string {
+  if (yes === 0 && no === 0) return "Голосів не надійшло.";
+  if (yes > no) return "Перемогло «так».";
+  if (no > yes) return "Перемогло «ні».";
+  return "Нічия — однакова кількість голосів.";
+}
+
+/** Короткий вердикт для Discord embed (markdown). */
 function verdictShortMarkdown(yes: number, no: number): string {
   if (yes === 0 && no === 0) return "Голосів не надійшло.";
   if (yes > no) return "Перемогло **«так»**.";
   if (no > yes) return "Перемогло **«ні»**.";
   return "**Нічия** — однакова кількість голосів.";
-}
-
-/** Один рядок для Telegram (з цифрами, без дублювання). */
-function telegramResultsText(yes: number, no: number): string {
-  if (yes === 0 && no === 0) return "Голосів не було.";
-  if (yes > no) return `Перемогло «так»: 👍 ${yes} · 👎 ${no}`;
-  if (no > yes) return `Перемогло «ні»: 👍 ${yes} · 👎 ${no}`;
-  return `Нічия: 👍 ${yes} · 👎 ${no}`;
 }
 
 async function postDiscordWebhook(
@@ -41,6 +49,23 @@ async function postDiscordWebhook(
     body: JSON.stringify({
       ...payload,
       allowed_mentions: { parse: [] },
+    }),
+  }).catch(() => {});
+}
+
+async function postTelegramHtml(text: string): Promise<void> {
+  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
+  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
+  if (!token || !chatId) return;
+
+  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      chat_id: chatId,
+      text,
+      parse_mode: "HTML",
+      disable_web_page_preview: true,
     }),
   }).catch(() => {});
 }
@@ -78,26 +103,17 @@ export async function notifyProposalVotingOpenedTelegram(params: {
   proposalId: number;
   authorUsername: string;
 }): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
-  if (!token || !chatId) return;
-
   const link = proposalUrl(params.proposalId);
-  const text =
-    `🗳 Розпочато голосування\n\n` +
-    `${params.title}\n\n` +
-    `Автор: ${params.authorUsername}\n\n` +
-    `${link}`;
+  const title = escapeTelegramHtml(truncateTitle(params.title));
+  const author = escapeTelegramHtml(params.authorUsername);
+  const html =
+    `<b>Розпочато голосування</b>\n\n` +
+    `<b>${title}</b>\n\n` +
+    `Автор: <b>${author || "—"}</b>\n\n` +
+    `<a href="${escapeTelegramHtml(link)}">Перейти проголосувати ↗</a>\n\n` +
+    `<i>Lost Chronicles · пропозиції</i>`;
 
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      disable_web_page_preview: false,
-    }),
-  }).catch(() => {});
+  await postTelegramHtml(html);
 }
 
 /** Результати після закриття голосування. */
@@ -147,23 +163,23 @@ export async function notifyProposalClosedTelegram(params: {
   yes: number;
   no: number;
 }): Promise<void> {
-  const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
-  const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
-  if (!token || !chatId) return;
-
   const link = proposalUrl(params.proposalId);
-  const line = telegramResultsText(params.yes, params.no);
-  const text =
-    `📊 Голосування завершено\n\n` +
-    `${params.title}\n\n` +
-    `${line}\n\n` +
-    link;
+  const title = escapeTelegramHtml(truncateTitle(params.title));
+  const summary = escapeTelegramHtml(
+    verdictShortPlain(params.yes, params.no),
+  );
+  const safeLink = escapeTelegramHtml(link);
 
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ chat_id: chatId, text }),
-  }).catch(() => {});
+  const html =
+    `<b>Голосування завершено</b>\n\n` +
+    `<b>${title}</b>\n\n` +
+    `👍 Так: <b>${params.yes}</b>\n` +
+    `👎 Ні: <b>${params.no}</b>\n\n` +
+    `Підсумок: ${summary}\n\n` +
+    `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
+    `<i>Lost Chronicles · результати</i>`;
+
+  await postTelegramHtml(html);
 }
 
 export type ProposalExpiredNotifyRow = {
