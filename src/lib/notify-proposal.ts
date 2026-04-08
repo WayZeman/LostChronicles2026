@@ -22,20 +22,20 @@ function escapeTelegramHtml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/** Короткий вердикт для Discord embed (markdown). */
-function verdictShortMarkdown(yes: number, no: number): string {
-  if (yes === 0 && no === 0) return "Голосів не надійшло.";
-  if (yes > no) return "Перемогло **«так»**.";
-  if (no > yes) return "Перемогло **«ні»**.";
-  return "**Нічия** — однакова кількість голосів.";
+/** Висновок після підрахунку (без цифр — лічильники окремим рядком). */
+function verdictOutcomePlain(yes: number, no: number): string {
+  if (yes === 0 && no === 0) return "Голосів не було.";
+  if (yes > no) return "Перемогло «так».";
+  if (no > yes) return "Перемогло «ні».";
+  return "Нічия.";
 }
 
-/** Один рядок для Telegram (вердикт + лічильники). */
-function telegramResultsText(yes: number, no: number): string {
+/** Те саме для Discord description (легкий акцент). */
+function verdictOutcomeMarkdown(yes: number, no: number): string {
   if (yes === 0 && no === 0) return "Голосів не було.";
-  if (yes > no) return `Перемогло «так»: 👍 ${yes} · 👎 ${no}`;
-  if (no > yes) return `Перемогло «ні»: 👍 ${yes} · 👎 ${no}`;
-  return `Нічия: 👍 ${yes} · 👎 ${no}`;
+  if (yes > no) return "Перемогло **«так»**.";
+  if (no > yes) return "Перемогло **«ні»**.";
+  return "**Нічия.**";
 }
 
 async function postDiscordWebhook(
@@ -98,20 +98,17 @@ export async function notifyProposalVotingOpenedDiscord(params: {
   const link = proposalUrl(params.proposalId);
   const title = escapeDiscordBoldFragment(truncateTitle(params.title));
   const author = escapeDiscordBoldFragment(params.authorUsername);
+  const authorLine = author ? `Автор: ${author}` : "Автор: —";
   await postDiscordWebhook({
     embeds: [
       {
-        title: "Розпочато голосування",
-        description: `**${title}**\n\n[Перейти проголосувати ↗](${link})`,
+        title: "Відкрито голосування",
+        description:
+          `**${title}**\n` +
+          `${authorLine}\n\n` +
+          `[Голосувати на сайті ↗](${link})`,
         color: 0x57f287,
-        fields: [
-          {
-            name: "Автор",
-            value: author || "—",
-            inline: false,
-          },
-        ],
-        footer: { text: "Lost Chronicles · пропозиції" },
+        footer: { text: "Lost Chronicles" },
       },
     ],
   });
@@ -126,11 +123,12 @@ export async function notifyProposalVotingOpenedTelegram(params: {
   const title = escapeTelegramHtml(truncateTitle(params.title));
   const author = escapeTelegramHtml(params.authorUsername);
   const html =
-    `<b>Розпочато голосування</b>\n\n` +
+    `<b>Відкрито голосування</b>\n` +
+    `<i>Нова пропозиція на сайті</i>\n\n` +
     `<b>${title}</b>\n\n` +
-    `Автор: <b>${author || "—"}</b>\n\n` +
-    `<a href="${escapeTelegramHtml(link)}">Перейти проголосувати ↗</a>\n\n` +
-    `<i>Lost Chronicles · пропозиції</i>`;
+    `<i>Автор</i>: ${author || "—"}\n\n` +
+    `<a href="${escapeTelegramHtml(link)}">Голосувати на сайті ↗</a>\n\n` +
+    `<i>Lost Chronicles</i>`;
 
   await postTelegramHtml(html);
 }
@@ -144,33 +142,19 @@ export async function notifyProposalClosedDiscord(params: {
 }): Promise<void> {
   const link = proposalUrl(params.proposalId);
   const title = escapeDiscordBoldFragment(truncateTitle(params.title));
-  const verdict = verdictShortMarkdown(params.yes, params.no);
+  const outcome = verdictOutcomeMarkdown(params.yes, params.no);
 
   await postDiscordWebhook({
     embeds: [
       {
         title: "Голосування завершено",
         description:
-          `**${title}**\n\n` + `[Відкрити пропозицію ↗](${link})`,
+          `**${title}**\n\n` +
+          `**${params.yes}** так · **${params.no}** ні\n` +
+          `${outcome}\n\n` +
+          `[Відкрити пропозицію ↗](${link})`,
         color: 0xf0b132,
-        fields: [
-          {
-            name: "👍 Так",
-            value: `**${params.yes}**`,
-            inline: true,
-          },
-          {
-            name: "👎 Ні",
-            value: `**${params.no}**`,
-            inline: true,
-          },
-          {
-            name: "Підсумок",
-            value: verdict,
-            inline: false,
-          },
-        ],
-        footer: { text: "Lost Chronicles · результати" },
+        footer: { text: "Lost Chronicles" },
       },
     ],
   });
@@ -184,17 +168,19 @@ export async function notifyProposalClosedTelegram(params: {
 }): Promise<void> {
   const link = proposalUrl(params.proposalId);
   const title = escapeTelegramHtml(truncateTitle(params.title));
-  const line = escapeTelegramHtml(
-    telegramResultsText(params.yes, params.no),
+  const outcome = escapeTelegramHtml(
+    verdictOutcomePlain(params.yes, params.no),
   );
   const safeLink = escapeTelegramHtml(link);
 
   const html =
-    `<b>Голосування завершено</b>\n\n` +
+    `<b>Голосування завершено</b>\n` +
+    `<i>Підсумок голосування</i>\n\n` +
     `<b>${title}</b>\n\n` +
-    `${line}\n\n` +
+    `👍 ${params.yes} · 👎 ${params.no}\n` +
+    `${outcome}\n\n` +
     `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
-    `<i>Lost Chronicles · результати</i>`;
+    `<i>Lost Chronicles</i>`;
 
   await postTelegramHtml(html);
 }
