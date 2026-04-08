@@ -169,13 +169,33 @@ export function ProposalsListClient() {
           </div>
         ) : null}
 
-        {err === "oauth" || err === "discord" ? (
+        {err === "oauth" ? (
           <p
             className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-100"
             role="alert"
           >
-            Не вдалося увійти через Discord. Перевір налаштування застосунку та
-            спробуй ще раз.
+            Сесія логіну не збіглась (часто через різні домени). Відкрий сайт
+            з того ж адреса, що в адресному рядку після входу, додай у Discord
+            Redirect той самий URL з шляхом{" "}
+            <code className="rounded bg-black/30 px-1">
+              /api/auth/discord/callback
+            </code>
+            , або спробуй у приватному вікні.
+          </p>
+        ) : null}
+
+        {err === "discord" ? (
+          <p
+            className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-100"
+            role="alert"
+          >
+            Discord відхилив обмін коду або сервер не зміг зберегти профіль.
+            Перевір{" "}
+            <code className="rounded bg-black/30 px-1">DISCORD_CLIENT_SECRET</code>
+            , Redirect URI,{" "}
+            <code className="rounded bg-black/30 px-1">AUTH_SECRET</code> та{" "}
+            <code className="rounded bg-black/30 px-1">DATABASE_URL</code> на
+            Vercel, потім Redeploy.
           </p>
         ) : null}
 

@@ -1,5 +1,3 @@
-import { getSiteBaseUrl } from "@/lib/site-base-url";
-
 const DISCORD_API = "https://discord.com/api";
 
 /** Client ID не є секретом (він у URL авторизації); можна задати також як NEXT_PUBLIC_* на Vercel. */
@@ -11,17 +9,22 @@ export function getDiscordClientId(): string {
   );
 }
 
-export function getDiscordRedirectUri(): string {
-  return `${getSiteBaseUrl()}/api/auth/discord/callback`;
+export function discordCallbackPath(): string {
+  return "/api/auth/discord/callback";
 }
 
-export function buildDiscordAuthorizeUrl(state: string): string {
+export function buildDiscordRedirectUri(origin: string): string {
+  const base = origin.replace(/\/$/, "");
+  return `${base}${discordCallbackPath()}`;
+}
+
+export function buildDiscordAuthorizeUrl(state: string, redirectUri: string): string {
   const clientId = getDiscordClientId();
   if (!clientId) throw new Error("DISCORD_CLIENT_ID is not set");
 
   const params = new URLSearchParams({
     client_id: clientId,
-    redirect_uri: getDiscordRedirectUri(),
+    redirect_uri: redirectUri,
     response_type: "code",
     scope: "identify email",
     state,
@@ -31,7 +34,10 @@ export function buildDiscordAuthorizeUrl(state: string): string {
   return `${DISCORD_API}/oauth2/authorize?${params.toString()}`;
 }
 
-export async function exchangeDiscordCode(code: string): Promise<{
+export async function exchangeDiscordCode(
+  code: string,
+  redirectUri: string,
+): Promise<{
   access_token: string;
   token_type: string;
   expires_in: number;
@@ -49,7 +55,7 @@ export async function exchangeDiscordCode(code: string): Promise<{
     client_secret: clientSecret,
     grant_type: "authorization_code",
     code,
-    redirect_uri: getDiscordRedirectUri(),
+    redirect_uri: redirectUri,
   });
 
   const res = await fetch(`${DISCORD_API}/oauth2/token`, {

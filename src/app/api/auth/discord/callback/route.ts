@@ -11,8 +11,9 @@ import {
   exchangeDiscordCode,
   fetchDiscordMe,
 } from "@/lib/discord-oauth";
+import { buildDiscordRedirectUri } from "@/lib/discord-oauth";
 import { upsertDiscordUser } from "@/lib/proposals-queries";
-import { getSiteBaseUrl } from "@/lib/site-base-url";
+import { getRequestOrigin } from "@/lib/site-base-url";
 
 export const dynamic = "force-dynamic";
 
@@ -27,7 +28,8 @@ function clearOAuthStateCookie(res: NextResponse): void {
 }
 
 export async function GET(req: Request) {
-  const base = getSiteBaseUrl();
+  const base = getRequestOrigin(req);
+  const redirectUri = buildDiscordRedirectUri(base);
   const fail = (path: string) => {
     const res = NextResponse.redirect(`${base}${path}`);
     clearOAuthStateCookie(res);
@@ -45,7 +47,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const tokenRes = await exchangeDiscordCode(code);
+    const tokenRes = await exchangeDiscordCode(code, redirectUri);
     const me = await fetchDiscordMe(tokenRes.access_token);
     const display = discordDisplayName(me);
     const userId = await upsertDiscordUser({
