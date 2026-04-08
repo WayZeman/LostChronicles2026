@@ -53,20 +53,34 @@ async function postDiscordWebhook(
   }).catch(() => {});
 }
 
+function parseTelegramMessageThreadId(): number | undefined {
+  const raw = process.env.TELEGRAM_MESSAGE_THREAD_ID?.trim();
+  if (!raw) return undefined;
+  const n = Number(raw);
+  if (!Number.isInteger(n) || n < 1) return undefined;
+  return n;
+}
+
 async function postTelegramHtml(text: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
   if (!token || !chatId) return;
 
+  const messageThreadId = parseTelegramMessageThreadId();
+  if (messageThreadId === undefined) return;
+
+  const payload: Record<string, unknown> = {
+    chat_id: chatId,
+    message_thread_id: messageThreadId,
+    text,
+    parse_mode: "HTML",
+    disable_web_page_preview: true,
+  };
+
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      chat_id: chatId,
-      text,
-      parse_mode: "HTML",
-      disable_web_page_preview: true,
-    }),
+    body: JSON.stringify(payload),
   }).catch(() => {});
 }
 
