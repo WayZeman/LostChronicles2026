@@ -5,6 +5,7 @@ import {
   randomOAuthState,
 } from "@/lib/auth-session";
 import { buildDiscordAuthorizeUrl } from "@/lib/discord-oauth";
+import { getSiteBaseUrl } from "@/lib/site-base-url";
 
 export const dynamic = "force-dynamic";
 
@@ -16,9 +17,9 @@ export async function GET() {
     res.cookies.set(OAUTH_STATE_COOKIE, state, oauthStateCookieOptions());
     return res;
   } catch {
-    return NextResponse.json(
-      { error: "Discord OAuth is not configured (DISCORD_CLIENT_ID, etc.)" },
-      { status: 500 },
+    const base = getSiteBaseUrl();
+    return NextResponse.redirect(
+      `${base}/proposals?error=discord_config`,
     );
   }
 }

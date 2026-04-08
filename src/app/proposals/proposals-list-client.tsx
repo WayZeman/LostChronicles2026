@@ -107,6 +107,68 @@ export function ProposalsListClient() {
           </Link>
         </header>
 
+        {err === "discord_config" ? (
+          <div
+            className="mb-4 space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-3 text-left text-sm text-amber-100"
+            role="alert"
+          >
+            <p className="font-bold text-amber-50">
+              Discord OAuth не налаштовано на сервері
+            </p>
+            <p className="text-amber-100/95">
+              У Vercel → Project → Settings → Environment Variables додай (для
+              Production):
+            </p>
+            <ul className="list-inside list-disc space-y-1 text-amber-100/90">
+              <li>
+                <code className="rounded bg-black/30 px-1">DISCORD_CLIENT_ID</code>{" "}
+                або{" "}
+                <code className="rounded bg-black/30 px-1">
+                  NEXT_PUBLIC_DISCORD_CLIENT_ID
+                </code>{" "}
+                — з{" "}
+                <a
+                  href="https://discord.com/developers/applications"
+                  className="underline underline-offset-2"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  Discord Developer Portal
+                </a>
+              </li>
+              <li>
+                <code className="rounded bg-black/30 px-1">
+                  DISCORD_CLIENT_SECRET
+                </code>{" "}
+                (тільки серверна змінна, без NEXT_PUBLIC)
+              </li>
+              <li>
+                <code className="rounded bg-black/30 px-1">
+                  NEXT_PUBLIC_SITE_URL
+                </code>{" "}
+                — точний URL сайту, напр.{" "}
+                <code className="rounded bg-black/30 px-1">
+                  https://твій-проєкт.vercel.app
+                </code>
+              </li>
+              <li>
+                У застосунку Discord → OAuth2 → Redirects: додай URL з тим самим
+                доменом, що й{" "}
+                <code className="rounded bg-black/30 px-1">
+                  NEXT_PUBLIC_SITE_URL
+                </code>
+                , шлях:{" "}
+                <code className="break-all rounded bg-black/30 px-1">
+                  /api/auth/discord/callback
+                </code>
+              </li>
+            </ul>
+            <p className="text-xs text-amber-200/80">
+              Після збереження змінних натисни Redeploy, щоб вони підхопились.
+            </p>
+          </div>
+        ) : null}
+
         {err === "oauth" || err === "discord" ? (
           <p
             className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-100"

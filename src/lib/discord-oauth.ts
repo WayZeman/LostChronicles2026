@@ -2,12 +2,21 @@ import { getSiteBaseUrl } from "@/lib/site-base-url";
 
 const DISCORD_API = "https://discord.com/api";
 
+/** Client ID не є секретом (він у URL авторизації); можна задати також як NEXT_PUBLIC_* на Vercel. */
+export function getDiscordClientId(): string {
+  return (
+    process.env.DISCORD_CLIENT_ID?.trim() ||
+    process.env.NEXT_PUBLIC_DISCORD_CLIENT_ID?.trim() ||
+    ""
+  );
+}
+
 export function getDiscordRedirectUri(): string {
   return `${getSiteBaseUrl()}/api/auth/discord/callback`;
 }
 
 export function buildDiscordAuthorizeUrl(state: string): string {
-  const clientId = process.env.DISCORD_CLIENT_ID?.trim();
+  const clientId = getDiscordClientId();
   if (!clientId) throw new Error("DISCORD_CLIENT_ID is not set");
 
   const params = new URLSearchParams({
@@ -29,7 +38,7 @@ export async function exchangeDiscordCode(code: string): Promise<{
   refresh_token: string;
   scope: string;
 }> {
-  const clientId = process.env.DISCORD_CLIENT_ID?.trim();
+  const clientId = getDiscordClientId();
   const clientSecret = process.env.DISCORD_CLIENT_SECRET?.trim();
   if (!clientId || !clientSecret) {
     throw new Error("DISCORD_CLIENT_ID or DISCORD_CLIENT_SECRET missing");
