@@ -162,6 +162,8 @@
   }
   html {
     @apply font-sans overflow-x-hidden;
+    /* Той самий колір, що й фон сторінки — при bounce/overscroll зверху не видно «смуги» */
+    background-color: var(--mc-net-page);
     scroll-behavior: smooth;
     letter-spacing: 0.022em;
     scrollbar-width: none;
@@ -203,10 +205,17 @@
 /* Фон: fon.png + накладка + блоби (з YouTube при .has-video-bg) */
 .mc-net-backdrop {
   position: fixed;
-  inset: 0;
+  left: 0;
+  right: 0;
+  /* Невеликий «нахльост» за межі viewport — прибрати субпіксельну смугу зверху/знизу на мобільних */
+  top: -6px;
+  bottom: -6px;
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
+  min-height: calc(100vh + 12px);
+  min-height: calc(100dvh + 12px);
+  min-height: calc(-webkit-fill-available + 12px);
   background-color: var(--mc-net-page);
   background-image: var(--mc-bg-image-overlay), url("/fon.png");
   background-size: cover, cover;
@@ -282,6 +291,7 @@ html.has-video-bg .mc-backdrop-scrim {
   width: 100vw;
   height: 56.25vw;
   min-height: 100vh;
+  min-height: 100dvh;
   min-width: 177.78vh;
   transform: translate(-50%, -50%);
   border: 0;

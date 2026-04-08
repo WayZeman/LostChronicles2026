@@ -159,7 +159,7 @@ export function AtmosphereParticles() {
   return (
     <canvas
       ref={ref}
-      className="lc-atmosphere-particles pointer-events-none fixed inset-0 z-[1] mix-blend-screen opacity-[0.82]"
+      className="lc-atmosphere-particles pointer-events-none fixed inset-x-0 -top-1.5 -bottom-1.5 z-[1] mix-blend-screen opacity-[0.82]"
       aria-hidden
     />
   );
