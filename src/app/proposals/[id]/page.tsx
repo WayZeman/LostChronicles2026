@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -50,6 +50,7 @@ function VoteBar({ yes, no }: { yes: number; no: number }) {
 }
 
 export default function ProposalDetailPage() {
+  const router = useRouter();
   const params = useParams();
   const rawId = params.id;
   const id =
@@ -60,6 +61,7 @@ export default function ProposalDetailPage() {
   const [notFound, setNotFound] = useState(false);
   const [voteBusy, setVoteBusy] = useState(false);
   const [closeBusy, setCloseBusy] = useState(false);
+  const [deleteBusy, setDeleteBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadProposal = useCallback(async () => {
@@ -226,6 +228,35 @@ export default function ProposalDetailPage() {
     setCloseBusy(false);
   }
 
+  async function deleteProposal() {
+    if (!id || deleteBusy) return;
+    if (
+      !window.confirm(
+        "Видалити пропозицію назавжди? Усі голоси буде втрачено.",
+      )
+    ) {
+      return;
+    }
+    setDeleteBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/proposals/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const data = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setError(data.error || "Не вдалося видалити");
+        setDeleteBusy(false);
+        return;
+      }
+      router.push("/proposals");
+    } catch {
+      setError("Мережа недоступна");
+      setDeleteBusy(false);
+    }
+  }
+
   if (!id || notFound) {
     return (
       <main className={lcPageMainClass}>
@@ -298,49 +329,65 @@ export default function ProposalDetailPage() {
               {error}
             </p>
           ) : null}
-          {proposal.is_author && open ? (
+          {proposal.is_author ? (
             <div className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-3">
               <p className="mb-2 text-xs font-semibold text-amber-100/95">
                 Ти автор цієї пропозиції
               </p>
-              <button
-                type="button"
-                disabled={closeBusy}
-                onClick={() => void closeVotingEarly()}
-                className="lc-focus-ring w-full rounded-md border-2 border-amber-500/60 bg-amber-500/15 py-2.5 text-sm font-bold text-amber-100 transition-colors hover:bg-amber-500/25 disabled:opacity-50 sm:w-auto sm:px-5"
-              >
-                {closeBusy ? "Закриття…" : "Закрити голосування достроково"}
-              </button>
+              <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+                {open ? (
+                  <button
+                    type="button"
+                    disabled={closeBusy || deleteBusy}
+                    onClick={() => void closeVotingEarly()}
+                    className="lc-focus-ring rounded-md border-2 border-amber-500/60 bg-amber-500/15 px-4 py-2.5 text-sm font-bold text-amber-100 transition-colors hover:bg-amber-500/25 disabled:opacity-50"
+                  >
+                    {closeBusy ? "Закриття…" : "Закрити голосування достроково"}
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={deleteBusy || closeBusy}
+                  onClick={() => void deleteProposal()}
+                  className="lc-focus-ring rounded-md border-2 border-rose-500/55 bg-rose-500/15 px-4 py-2.5 text-sm font-bold text-rose-100 transition-colors hover:bg-rose-500/25 disabled:opacity-50"
+                >
+                  {deleteBusy ? "Видалення…" : "Видалити пропозицію"}
+                </button>
+              </div>
             </div>
           ) : null}
-          <div className="flex flex-col gap-3 pt-2 sm:flex-row">
+          <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:justify-center">
             <button
               type="button"
               disabled={!open || voteBusy}
               onClick={() => void vote(1)}
+              aria-label="Голосувати «так»"
+              title="Так"
               className={cn(
-                "lc-focus-ring min-h-12 flex-1 rounded-md border-2 py-3 text-sm font-bold transition-colors",
+                "lc-focus-ring flex min-h-14 min-w-14 flex-1 items-center justify-center rounded-md border-2 py-3 text-3xl leading-none transition-colors sm:max-w-[8rem] sm:flex-none",
                 proposal.user_vote === 1
-                  ? "border-emerald-400 bg-emerald-500/25 text-emerald-100"
-                  : "border-emerald-500/50 bg-emerald-500/10 text-emerald-100 hover:bg-emerald-500/20",
+                  ? "border-emerald-400 bg-emerald-500/25"
+                  : "border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20",
                 (!open || voteBusy) && "cursor-not-allowed opacity-50",
               )}
             >
-              👍 Vote Yes
+              👍
             </button>
             <button
               type="button"
               disabled={!open || voteBusy}
               onClick={() => void vote(0)}
+              aria-label="Голосувати «ні»"
+              title="Ні"
               className={cn(
-                "lc-focus-ring min-h-12 flex-1 rounded-md border-2 py-3 text-sm font-bold transition-colors",
+                "lc-focus-ring flex min-h-14 min-w-14 flex-1 items-center justify-center rounded-md border-2 py-3 text-3xl leading-none transition-colors sm:max-w-[8rem] sm:flex-none",
                 proposal.user_vote === 0
-                  ? "border-rose-400 bg-rose-500/25 text-rose-100"
-                  : "border-rose-500/50 bg-rose-500/10 text-rose-100 hover:bg-rose-500/20",
+                  ? "border-rose-400 bg-rose-500/25"
+                  : "border-rose-500/50 bg-rose-500/10 hover:bg-rose-500/20",
                 (!open || voteBusy) && "cursor-not-allowed opacity-50",
               )}
             >
-              👎 Vote No
+              👎
             </button>
           </div>
           {!me && open ? (

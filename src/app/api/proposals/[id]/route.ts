@@ -1,6 +1,10 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { getProposalForUser, isProposalVotingOpen } from "@/lib/proposals-queries";
+import {
+  deleteProposalByAuthor,
+  getProposalForUser,
+  isProposalVotingOpen,
+} from "@/lib/proposals-queries";
 
 export const dynamic = "force-dynamic";
 
@@ -38,6 +42,39 @@ export async function GET(
           sessionUserId !== null && sessionUserId === p.user_id,
       },
     });
+  } catch {
+    return NextResponse.json(
+      { error: "Database unavailable" },
+      { status: 503 },
+    );
+  }
+}
+
+export async function DELETE(
+  _req: Request,
+  ctx: { params: Promise<{ id: string }> },
+) {
+  const { id: raw } = await ctx.params;
+  const id = Number(raw);
+  if (!Number.isFinite(id) || id < 1) {
+    return NextResponse.json({ error: "Not found" }, { status: 404 });
+  }
+
+  try {
+    const userId = await getSessionUserIdFromCookies();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
+    const removed = await deleteProposalByAuthor(id, userId);
+    if (!removed) {
+      return NextResponse.json(
+        { error: "Не знайдено або ти не автор цієї пропозиції." },
+        { status: 403 },
+      );
+    }
+
+    return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(
       { error: "Database unavailable" },

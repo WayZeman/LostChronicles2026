@@ -149,6 +149,20 @@ export async function closeProposalByAuthor(
   return rows.length > 0;
 }
 
+/** Видалення пропозиції лише автором (голоси зникають через ON DELETE CASCADE). */
+export async function deleteProposalByAuthor(
+  proposalId: number,
+  userId: number,
+): Promise<boolean> {
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    DELETE FROM proposals
+    WHERE id = ${proposalId} AND user_id = ${userId}
+    RETURNING id
+  `);
+  return rows.length > 0;
+}
+
 export async function upsertDiscordUser(params: {
   discordId: string;
   username: string;
