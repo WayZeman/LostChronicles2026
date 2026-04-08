@@ -1,6 +1,8 @@
 -- Lost Chronicles — proposals & voting (PostgreSQL / Neon)
 -- Виконай у Neon: SQL Editor → встав скрипт → Run.
 -- Або: Vercel → Storage → Neon → відкрити консоль.
+--
+-- Якщо база вже була без коментарів: лише db/migrations/001_proposal_comments.sql
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,

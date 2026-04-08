@@ -75,6 +75,9 @@ export default function ProposalDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [comments, setComments] = useState<ProposalComment[] | null>(null);
   const [commentsFetchFailed, setCommentsFetchFailed] = useState(false);
+  const [commentsFetchError, setCommentsFetchError] = useState<string | null>(
+    null,
+  );
   const [commentBody, setCommentBody] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
@@ -168,16 +171,26 @@ export default function ProposalDetailPage() {
     try {
       const res = await fetch(`/api/proposals/${id}/comments`);
       if (!res.ok) {
+        let hint: string | null = null;
+        try {
+          const j = (await res.json()) as { error?: string };
+          if (typeof j.error === "string") hint = j.error;
+        } catch {
+          /* ignore */
+        }
         setComments([]);
         setCommentsFetchFailed(true);
+        setCommentsFetchError(hint);
         return;
       }
       const data = (await res.json()) as { comments: ProposalComment[] };
       setComments(data.comments ?? []);
       setCommentsFetchFailed(false);
+      setCommentsFetchError(null);
     } catch {
       setComments([]);
       setCommentsFetchFailed(true);
+      setCommentsFetchError(null);
     }
   }, [id]);
 
@@ -573,8 +586,15 @@ export default function ProposalDetailPage() {
               ))}
             </div>
           ) : commentsFetchFailed ? (
-            <p className="text-center text-sm text-rose-300/90 sm:text-left" role="alert">
-              Не вдалося завантажити коментарі. Спробуй оновити сторінку.
+            <p
+              className="text-center text-sm leading-relaxed text-rose-300/90 sm:text-left"
+              role="alert"
+            >
+              {commentsFetchError ?? (
+                <>
+                  Не вдалося завантажити коментарі. Спробуй оновити сторінку.
+                </>
+              )}
             </p>
           ) : comments.length === 0 ? (
             <p className="text-center text-sm text-[var(--mc-text-subtle)] sm:text-left">

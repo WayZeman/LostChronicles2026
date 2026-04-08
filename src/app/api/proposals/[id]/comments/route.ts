@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
+import { publicDbErrorMessage } from "@/lib/db-errors";
 import { discordCdnAvatarUrl } from "@/lib/discord-oauth";
 import {
   addProposalComment,
@@ -49,9 +50,9 @@ export async function GET(
     return NextResponse.json({
       comments: rows.map((r) => mapCommentToJson(r)),
     });
-  } catch {
+  } catch (err) {
     return NextResponse.json(
-      { error: "Database unavailable" },
+      { error: publicDbErrorMessage(err) },
       { status: 503 },
     );
   }
@@ -104,9 +105,9 @@ export async function POST(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     return NextResponse.json({ comment: mapCommentToJson(row) });
-  } catch {
+  } catch (err) {
     return NextResponse.json(
-      { error: "Database unavailable" },
+      { error: publicDbErrorMessage(err) },
       { status: 503 },
     );
   }
