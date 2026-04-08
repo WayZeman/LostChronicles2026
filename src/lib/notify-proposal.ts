@@ -22,20 +22,20 @@ function escapeTelegramHtml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-/** Короткий вердикт без цифр (цифри окремим блоком, як у Discord). */
-function verdictShortPlain(yes: number, no: number): string {
-  if (yes === 0 && no === 0) return "Голосів не надійшло.";
-  if (yes > no) return "Перемогло «так».";
-  if (no > yes) return "Перемогло «ні».";
-  return "Нічия — однакова кількість голосів.";
-}
-
 /** Короткий вердикт для Discord embed (markdown). */
 function verdictShortMarkdown(yes: number, no: number): string {
   if (yes === 0 && no === 0) return "Голосів не надійшло.";
   if (yes > no) return "Перемогло **«так»**.";
   if (no > yes) return "Перемогло **«ні»**.";
   return "**Нічия** — однакова кількість голосів.";
+}
+
+/** Один рядок для Telegram (вердикт + лічильники). */
+function telegramResultsText(yes: number, no: number): string {
+  if (yes === 0 && no === 0) return "Голосів не було.";
+  if (yes > no) return `Перемогло «так»: 👍 ${yes} · 👎 ${no}`;
+  if (no > yes) return `Перемогло «ні»: 👍 ${yes} · 👎 ${no}`;
+  return `Нічия: 👍 ${yes} · 👎 ${no}`;
 }
 
 async function postDiscordWebhook(
@@ -53,6 +53,7 @@ async function postDiscordWebhook(
   }).catch(() => {});
 }
 
+/** ID теми форуму/каналу (гілки). Без нього Telegram не шлємо — інакше все йде в «загальну». */
 function parseTelegramMessageThreadId(): number | undefined {
   const raw = process.env.TELEGRAM_MESSAGE_THREAD_ID?.trim();
   if (!raw) return undefined;
@@ -61,6 +62,10 @@ function parseTelegramMessageThreadId(): number | undefined {
   return n;
 }
 
+/**
+ * Усі сповіщення про пропозиції в Telegram тільки в тему з TELEGRAM_MESSAGE_THREAD_ID,
+ * не в корінь чату (див. message_thread_id у sendMessage).
+ */
 async function postTelegramHtml(text: string): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
@@ -179,17 +184,15 @@ export async function notifyProposalClosedTelegram(params: {
 }): Promise<void> {
   const link = proposalUrl(params.proposalId);
   const title = escapeTelegramHtml(truncateTitle(params.title));
-  const summary = escapeTelegramHtml(
-    verdictShortPlain(params.yes, params.no),
+  const line = escapeTelegramHtml(
+    telegramResultsText(params.yes, params.no),
   );
   const safeLink = escapeTelegramHtml(link);
 
   const html =
     `<b>Голосування завершено</b>\n\n` +
     `<b>${title}</b>\n\n` +
-    `👍 Так: <b>${params.yes}</b>\n` +
-    `👎 Ні: <b>${params.no}</b>\n\n` +
-    `Підсумок: ${summary}\n\n` +
+    `${line}\n\n` +
     `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
     `<i>Lost Chronicles · результати</i>`;
 
