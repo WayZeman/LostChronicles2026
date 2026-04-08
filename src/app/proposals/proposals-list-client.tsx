@@ -27,8 +27,8 @@ function VoteBar({ yes, no }: { yes: number; no: number }) {
   const total = yes + no;
   const yesPct = total === 0 ? 50 : Math.round((yes / total) * 100);
   return (
-    <div className="mt-3 space-y-1">
-      <div className="flex h-2.5 w-full overflow-hidden rounded-full bg-[var(--mc-deep)] ring-1 ring-[var(--mc-border)]">
+    <div className="mt-2 space-y-1 sm:mt-3">
+      <div className="flex h-3 w-full overflow-hidden rounded-full bg-[var(--mc-deep)] ring-1 ring-[var(--mc-border)] sm:h-2.5">
         <div
           className="h-full bg-emerald-500/90 transition-[width] duration-500"
           style={{ width: `${yesPct}%` }}
@@ -38,7 +38,7 @@ function VoteBar({ yes, no }: { yes: number; no: number }) {
           style={{ width: `${100 - yesPct}%` }}
         />
       </div>
-      <p className="text-[11px] font-semibold text-[var(--mc-text-muted)]">
+      <p className="text-xs font-semibold tabular-nums text-[var(--mc-text-muted)] max-[380px]:text-[11px]">
         👍 {yes} · 👎 {no}
       </p>
     </div>
@@ -88,19 +88,19 @@ export function ProposalsListClient() {
           "pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-4 sm:pb-12 sm:pt-8 md:py-12",
         )}
       >
-        <header className="mb-6 flex flex-col gap-4 sm:mb-8 sm:flex-row sm:items-end sm:justify-between">
+        <header className="mb-5 flex flex-col gap-3 sm:mb-8 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
           <div className="text-center sm:text-left">
-            <h1 className="text-balance text-2xl font-extrabold text-[var(--mc-text)] sm:text-3xl md:text-4xl">
+            <h1 className="text-balance text-xl font-extrabold text-[var(--mc-text)] min-[400px]:text-2xl sm:text-3xl md:text-4xl">
               Пропозиції та голосування
             </h1>
-            <p className="mt-2 max-w-xl text-pretty text-sm text-[var(--mc-text-muted)] sm:text-base">
+            <p className="mt-2 max-w-xl text-pretty text-sm leading-relaxed text-[var(--mc-text-muted)] sm:text-base">
               Створюй ідеї для сервера та голосуй за чужі — вхід лише через
               Discord.
             </p>
           </div>
           <Link
             href="/proposals/new"
-            className="lc-focus-ring mx-auto inline-flex min-h-11 items-center justify-center gap-2 self-center rounded-md border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-4 py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)] sm:mx-0 sm:self-auto"
+            className="lc-focus-ring mx-auto inline-flex min-h-12 w-full max-w-xs touch-manipulation items-center justify-center gap-2 self-center rounded-lg border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-4 py-3 text-sm font-bold text-[var(--mc-green-ink)] transition-colors active:scale-[0.99] hover:bg-[var(--mc-vote-bg-hover)] sm:mx-0 sm:w-auto sm:max-w-none sm:self-auto sm:rounded-md sm:py-2.5"
           >
             <PlusCircle className="size-4" aria-hidden />
             Нова пропозиція
@@ -224,7 +224,7 @@ export function ProposalsListClient() {
             Ще немає пропозицій. Будь першим — натисни «Нова пропозиція».
           </div>
         ) : (
-          <ul className="grid gap-4 md:gap-5">
+          <ul className="grid gap-3 sm:gap-4 md:gap-5">
             {list.map((p) => {
               const open = isProposalVotingOpenClient(p.status, p.ends_at);
               return (
@@ -232,11 +232,12 @@ export function ProposalsListClient() {
                   <article
                     className={cn(
                       lcGlassPanelClass,
+                      "!p-3 sm:!p-4 md:!p-5",
                       "flex flex-col gap-2 border-[var(--mc-border-card)] transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]",
                     )}
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2">
-                      <h2 className="text-lg font-bold leading-snug text-[var(--mc-text)] sm:text-xl">
+                    <div className="flex flex-wrap items-start justify-between gap-2 gap-y-1.5">
+                      <h2 className="min-w-0 flex-1 text-base font-bold leading-snug text-[var(--mc-text)] [overflow-wrap:anywhere] sm:text-lg md:text-xl">
                         {p.title}
                       </h2>
                       <span
@@ -250,18 +251,20 @@ export function ProposalsListClient() {
                         {open ? "активна" : "закрита"}
                       </span>
                     </div>
-                    <p className="text-xs text-[var(--mc-text-muted)]">
+                    <p className="text-[11px] leading-relaxed text-[var(--mc-text-muted)] sm:text-xs">
                       Автор:{" "}
-                      <span className="font-semibold text-[var(--mc-text)]">
+                      <span className="break-words font-semibold text-[var(--mc-text)]">
                         {p.author_username}
                       </span>
                       {" · "}
-                      {formatTimeRemainingUk(p.ends_at)}
+                      <span className="whitespace-normal">
+                        {formatTimeRemainingUk(p.ends_at)}
+                      </span>
                     </p>
                     <VoteBar yes={p.yes_votes} no={p.no_votes} />
                     <Link
                       href={`/proposals/${p.id}`}
-                      className="lc-focus-ring mt-2 inline-flex min-h-10 w-full items-center justify-center rounded-md border border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] py-2 text-sm font-bold text-[var(--mc-net-green)] transition-colors hover:bg-[var(--mc-nav-link-hover-bg)] sm:w-auto sm:self-start sm:px-6"
+                      className="lc-focus-ring mt-1 inline-flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] py-2.5 text-sm font-bold text-[var(--mc-net-green)] transition-colors active:scale-[0.99] hover:bg-[var(--mc-nav-link-hover-bg)] sm:mt-2 sm:min-h-10 sm:w-auto sm:self-start sm:rounded-md sm:px-6"
                     >
                       Переглянути
                     </Link>

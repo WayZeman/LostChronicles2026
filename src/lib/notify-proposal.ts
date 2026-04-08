@@ -4,41 +4,87 @@ function proposalUrl(id: number): string {
   return `${getSiteBaseUrl()}/proposals/${id}`;
 }
 
-export async function notifyProposalCreatedDiscord(params: {
-  authorUsername: string;
-  title: string;
-  proposalId: number;
-}): Promise<void> {
+function truncateTitle(s: string, max = 220): string {
+  const t = s.trim();
+  if (t.length <= max) return t;
+  return `${t.slice(0, max - 1)}…`;
+}
+
+/** Підсумок для Discord (markdown). */
+function discordResultSummary(yes: number, no: number): string {
+  if (yes === 0 && no === 0) {
+    return "Голосів не було.";
+  }
+  if (yes > no) {
+    return `Перемогло **«так»** (👍 ${yes} проти 👎 ${no}).`;
+  }
+  if (no > yes) {
+    return `Перемогло **«ні»** (👎 ${no} проти 👍 ${yes}).`;
+  }
+  return `**Нічия:** 👍 ${yes} · 👎 ${no}.`;
+}
+
+/** Підсумок для Telegram (без parse_mode). */
+function telegramResultSummary(yes: number, no: number): string {
+  if (yes === 0 && no === 0) return "Голосів не було.";
+  if (yes > no) return `Перемогло «так» (${yes} проти ${no}).`;
+  if (no > yes) return `Перемогло «ні» (${no} проти ${yes}).`;
+  return `Нічия: ${yes} так, ${no} ні.`;
+}
+
+async function postDiscordWebhook(
+  payload: Record<string, unknown>,
+): Promise<void> {
   const webhook = process.env.DISCORD_WEBHOOK_URL?.trim();
   if (!webhook) return;
-
-  const link = proposalUrl(params.proposalId);
-  const content =
-    `📢 **New Proposal Created**\n\n` +
-    `**Author:** ${params.authorUsername}\n\n` +
-    `**Title:**\n${params.title}\n\n` +
-    `**View:**\n${link}`;
-
   await fetch(webhook, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
-      content,
+      ...payload,
       allowed_mentions: { parse: [] },
     }),
   }).catch(() => {});
 }
 
-export async function notifyProposalCreatedTelegram(params: {
+/** Старт голосування: нова пропозиція на сайті. */
+export async function notifyProposalVotingOpenedDiscord(params: {
+  authorUsername: string;
   title: string;
   proposalId: number;
+}): Promise<void> {
+  const link = proposalUrl(params.proposalId);
+  const title = truncateTitle(params.title);
+  await postDiscordWebhook({
+    embeds: [
+      {
+        title: "Розпочато голосування",
+        description:
+          `**${title.replace(/\*/g, "")}**\n\n` +
+          `Автор: **${params.authorUsername.replace(/\*/g, "")}**\n\n` +
+          `[Перейти проголосувати](${link})`,
+        color: 0x57f287,
+        footer: { text: "Lost Chronicles · пропозиції" },
+      },
+    ],
+  });
+}
+
+export async function notifyProposalVotingOpenedTelegram(params: {
+  title: string;
+  proposalId: number;
+  authorUsername: string;
 }): Promise<void> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
   if (!token || !chatId) return;
 
   const link = proposalUrl(params.proposalId);
-  const text = `🗳 New Proposal\n\n${params.title}\n\nVote here:\n${link}`;
+  const text =
+    `🗳 Розпочато голосування\n\n` +
+    `${params.title}\n\n` +
+    `Автор: ${params.authorUsername}\n\n` +
+    `Проголосувати: ${link}`;
 
   await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
     method: "POST",
@@ -51,28 +97,30 @@ export async function notifyProposalCreatedTelegram(params: {
   }).catch(() => {});
 }
 
-/** Optional: results when a proposal expires (call from cron or lazy-close path). */
+/** Результати після закриття голосування. */
 export async function notifyProposalClosedDiscord(params: {
   title: string;
   proposalId: number;
   yes: number;
   no: number;
 }): Promise<void> {
-  const webhook = process.env.DISCORD_WEBHOOK_URL?.trim();
-  if (!webhook) return;
-
   const link = proposalUrl(params.proposalId);
-  const content =
-    `⏳ **Proposal closed**\n\n` +
-    `**${params.title}**\n\n` +
-    `👍 ${params.yes} · 👎 ${params.no}\n\n` +
-    `**View:** ${link}`;
-
-  await fetch(webhook, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ content, allowed_mentions: { parse: [] } }),
-  }).catch(() => {});
+  const title = truncateTitle(params.title);
+  const summary = discordResultSummary(params.yes, params.no);
+  await postDiscordWebhook({
+    embeds: [
+      {
+        title: "Голосування завершено",
+        description:
+          `**${title.replace(/\*/g, "")}**\n\n` +
+          `${summary}\n\n` +
+          `Рахунок: 👍 **${params.yes}** · 👎 **${params.no}**\n\n` +
+          `[Відкрити пропозицію](${link})`,
+        color: 0xf0b132,
+        footer: { text: "Lost Chronicles · результати" },
+      },
+    ],
+  });
 }
 
 export async function notifyProposalClosedTelegram(params: {
@@ -87,8 +135,9 @@ export async function notifyProposalClosedTelegram(params: {
 
   const link = proposalUrl(params.proposalId);
   const text =
-    `⏳ Proposal closed\n\n` +
+    `📊 Результати голосування\n\n` +
     `${params.title}\n\n` +
+    `${telegramResultSummary(params.yes, params.no)}\n` +
     `👍 ${params.yes} · 👎 ${params.no}\n\n` +
     link;
 
@@ -97,4 +146,34 @@ export async function notifyProposalClosedTelegram(params: {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ chat_id: chatId, text }),
   }).catch(() => {});
+}
+
+export type ProposalExpiredNotifyRow = {
+  id: number;
+  title: string;
+  yes_votes: number;
+  no_votes: number;
+};
+
+/** Після автоматичного закриття (термін вичерпано) — один вебхук на кожну пропозицію. */
+export async function notifyProposalResultsBatch(
+  rows: ProposalExpiredNotifyRow[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  await Promise.all(
+    rows.flatMap((row) => [
+      notifyProposalClosedDiscord({
+        title: row.title,
+        proposalId: row.id,
+        yes: row.yes_votes,
+        no: row.no_votes,
+      }),
+      notifyProposalClosedTelegram({
+        title: row.title,
+        proposalId: row.id,
+        yes: row.yes_votes,
+        no: row.no_votes,
+      }),
+    ]),
+  );
 }

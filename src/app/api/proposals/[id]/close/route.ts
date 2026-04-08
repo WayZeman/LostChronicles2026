@@ -1,6 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { closeProposalByAuthor } from "@/lib/proposals-queries";
+import {
+  closeProposalByAuthor,
+  getProposalForUser,
+} from "@/lib/proposals-queries";
+import {
+  notifyProposalClosedDiscord,
+  notifyProposalClosedTelegram,
+} from "@/lib/notify-proposal";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +36,24 @@ export async function POST(
         },
         { status: 403 },
       );
+    }
+
+    const p = await getProposalForUser(id, userId);
+    if (p) {
+      void Promise.all([
+        notifyProposalClosedDiscord({
+          title: p.title,
+          proposalId: p.id,
+          yes: p.yes_votes,
+          no: p.no_votes,
+        }),
+        notifyProposalClosedTelegram({
+          title: p.title,
+          proposalId: p.id,
+          yes: p.yes_votes,
+          no: p.no_votes,
+        }),
+      ]).catch(() => {});
     }
 
     return NextResponse.json({ ok: true, status: "closed", voting_open: false });

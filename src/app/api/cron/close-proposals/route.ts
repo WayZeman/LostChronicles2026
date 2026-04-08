@@ -1,19 +1,14 @@
 import { NextResponse } from "next/server";
-import {
-  listProposalsDueForClosing,
-  runExpireProposalsUpdate,
-} from "@/lib/proposals-queries";
-import {
-  notifyProposalClosedDiscord,
-  notifyProposalClosedTelegram,
-} from "@/lib/notify-proposal";
+import { runExpireProposalsUpdate } from "@/lib/proposals-queries";
 
 export const dynamic = "force-dynamic";
 
 /**
- * Optional: call from hosting cron (e.g. Vercel Cron) with header:
- *   Authorization: Bearer YOUR_CRON_SECRET
- * Sends Discord/Telegram summary when proposals expire.
+ * Рекомендовано: Vercel Cron → POST /api/cron/close-proposals
+ * Header: Authorization: Bearer {CRON_SECRET}
+ *
+ * Закриває прострочені пропозиції та надсилає сповіщення в Discord/Telegram
+ * (те саме відбувається при відкритті списку/сторінки, якщо cron не налаштований).
  */
 export async function POST(req: Request) {
   const secret = process.env.CRON_SECRET?.trim();
@@ -27,25 +22,8 @@ export async function POST(req: Request) {
   }
 
   try {
-    const due = await listProposalsDueForClosing();
-    await runExpireProposalsUpdate();
-    for (const row of due) {
-      await Promise.all([
-        notifyProposalClosedDiscord({
-          title: row.title,
-          proposalId: row.id,
-          yes: row.yes_votes,
-          no: row.no_votes,
-        }),
-        notifyProposalClosedTelegram({
-          title: row.title,
-          proposalId: row.id,
-          yes: row.yes_votes,
-          no: row.no_votes,
-        }),
-      ]);
-    }
-    return NextResponse.json({ closed: due.length });
+    const closed = await runExpireProposalsUpdate();
+    return NextResponse.json({ closed });
   } catch {
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }

@@ -1,4 +1,8 @@
 import { getSql } from "@/lib/db";
+import {
+  notifyProposalResultsBatch,
+  type ProposalExpiredNotifyRow,
+} from "@/lib/notify-proposal";
 
 /** Результат `sql` у режимі рядків-об’єктів; тип драйвера занадто широкий для union. */
 function rowsOf(r: unknown): Record<string, unknown>[] {
@@ -52,13 +56,35 @@ function mapProposalRow(r: Record<string, unknown>): ProposalRow {
   };
 }
 
-async function expireActiveProposals(): Promise<void> {
+/** Закриває прострочені active-пропозиції; надсилає Discord/Telegram про результати (не блокує відповідь при помилках вебхуків). */
+async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   const sql = getSql();
-  await sql`
-    UPDATE proposals
-    SET status = 'closed'
-    WHERE status = 'active' AND ends_at < NOW()
-  `;
+  const rows = rowsOf(await sql`
+    WITH upd AS (
+      UPDATE proposals
+      SET status = 'closed'
+      WHERE status = 'active' AND ends_at < NOW()
+      RETURNING id, title
+    )
+    SELECT
+      upd.id,
+      upd.title,
+      COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes
+    FROM upd
+    LEFT JOIN votes v ON v.proposal_id = upd.id
+    GROUP BY upd.id, upd.title
+  `);
+  const closed: ProposalExpiredNotifyRow[] = rows.map((r) => ({
+    id: num(r.id),
+    title: String(r.title ?? ""),
+    yes_votes: num(r.yes_votes),
+    no_votes: num(r.no_votes),
+  }));
+  if (closed.length > 0) {
+    void notifyProposalResultsBatch(closed).catch(() => {});
+  }
+  return closed;
 }
 
 export async function listProposalsForUser(
@@ -233,39 +259,86 @@ export async function setUserVote(params: {
   `;
 }
 
-export type ProposalToCloseRow = {
+/** Для cron: закрити прострочені та надіслати сповіщення (те саме, що й при завантаженні списку). */
+export async function runExpireProposalsUpdate(): Promise<number> {
+  const closed = await expireActiveProposals();
+  return closed.length;
+}
+
+export type ProposalCommentRow = {
   id: number;
-  title: string;
-  yes_votes: number;
-  no_votes: number;
+  user_id: number;
+  body: string;
+  created_at: Date;
+  author_username: string;
+  author_avatar: string | null;
+  author_discord_id: string;
 };
 
-export async function listProposalsDueForClosing(): Promise<
-  ProposalToCloseRow[]
-> {
+function mapCommentRow(r: Record<string, unknown>): ProposalCommentRow {
+  return {
+    id: num(r.id),
+    user_id: num(r.user_id),
+    body: String(r.body ?? ""),
+    created_at: asDate(r.created_at),
+    author_username: String(r.author_username ?? ""),
+    author_avatar:
+      r.author_avatar === null || r.author_avatar === undefined
+        ? null
+        : String(r.author_avatar),
+    author_discord_id: String(r.author_discord_id ?? ""),
+  };
+}
+
+export async function listProposalComments(
+  proposalId: number,
+): Promise<ProposalCommentRow[]> {
   const sql = getSql();
   const rows = rowsOf(await sql`
     SELECT
-      p.id,
-      p.title,
-      COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
-      COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes
-    FROM proposals p
-    LEFT JOIN votes v ON v.proposal_id = p.id
-    WHERE p.status = 'active' AND p.ends_at < NOW()
-    GROUP BY p.id, p.title
+      c.id,
+      c.user_id,
+      c.body,
+      c.created_at,
+      u.username AS author_username,
+      u.avatar AS author_avatar,
+      u.discord_id AS author_discord_id
+    FROM proposal_comments c
+    INNER JOIN users u ON u.id = c.user_id
+    WHERE c.proposal_id = ${proposalId}
+    ORDER BY c.created_at ASC
   `);
-  return rows.map((r) => {
-    const row = r;
-    return {
-      id: num(row.id),
-      title: String(row.title ?? ""),
-      yes_votes: num(row.yes_votes),
-      no_votes: num(row.no_votes),
-    };
-  });
+  return rows.map((r) => mapCommentRow(r));
 }
 
-export async function runExpireProposalsUpdate(): Promise<void> {
-  await expireActiveProposals();
+/** Повертає null, якщо пропозиції немає. */
+export async function addProposalComment(params: {
+  proposalId: number;
+  userId: number;
+  body: string;
+}): Promise<ProposalCommentRow | null> {
+  const sql = getSql();
+  const inserted = rowsOf(await sql`
+    INSERT INTO proposal_comments (proposal_id, user_id, body)
+    SELECT ${params.proposalId}, ${params.userId}, ${params.body}
+    WHERE EXISTS (SELECT 1 FROM proposals WHERE id = ${params.proposalId})
+    RETURNING id, user_id, body, created_at
+  `);
+  const ins = inserted[0];
+  if (!ins) return null;
+  const uid = num(ins.user_id);
+  const urows = rowsOf(await sql`
+    SELECT username, avatar, discord_id
+    FROM users
+    WHERE id = ${uid}
+    LIMIT 1
+  `);
+  const u = urows[0];
+  if (!u) return null;
+  return mapCommentRow({
+    ...ins,
+    author_username: u.username,
+    author_avatar: u.avatar,
+    author_discord_id: u.discord_id,
+  });
 }

@@ -31,3 +31,14 @@ CREATE TABLE IF NOT EXISTS votes (
 
 CREATE INDEX IF NOT EXISTS idx_proposals_status_ends ON proposals (status, ends_at);
 CREATE INDEX IF NOT EXISTS idx_proposals_user ON proposals (user_id);
+
+CREATE TABLE IF NOT EXISTS proposal_comments (
+    id SERIAL PRIMARY KEY,
+    proposal_id INT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    body TEXT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_proposal_comments_proposal_created
+    ON proposal_comments (proposal_id, created_at);

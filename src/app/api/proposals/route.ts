@@ -6,8 +6,8 @@ import {
   listProposalsForUser,
 } from "@/lib/proposals-queries";
 import {
-  notifyProposalCreatedDiscord,
-  notifyProposalCreatedTelegram,
+  notifyProposalVotingOpenedDiscord,
+  notifyProposalVotingOpenedTelegram,
 } from "@/lib/notify-proposal";
 
 export const dynamic = "force-dynamic";
@@ -87,12 +87,16 @@ export async function POST(req: Request) {
     const authorUsername = author?.username ?? "Unknown";
 
     await Promise.all([
-      notifyProposalCreatedDiscord({
+      notifyProposalVotingOpenedDiscord({
         authorUsername,
         title,
         proposalId,
       }),
-      notifyProposalCreatedTelegram({ title, proposalId }),
+      notifyProposalVotingOpenedTelegram({
+        title,
+        proposalId,
+        authorUsername,
+      }),
     ]);
 
     return NextResponse.json({ id: proposalId }, { status: 201 });
