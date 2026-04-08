@@ -20,6 +20,7 @@ export async function GET(
     if (!p) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    const sessionUserId = userId;
     return NextResponse.json({
       proposal: {
         id: p.id,
@@ -33,6 +34,8 @@ export async function GET(
         no_votes: p.no_votes,
         user_vote: p.user_vote,
         voting_open: isProposalVotingOpen(p),
+        is_author:
+          sessionUserId !== null && sessionUserId === p.user_id,
       },
     });
   } catch {

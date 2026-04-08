@@ -21,6 +21,7 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     return NextResponse.json({
+      status: p.status,
       yes_votes: p.yes_votes,
       no_votes: p.no_votes,
       user_vote: p.user_vote,

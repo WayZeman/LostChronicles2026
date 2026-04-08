@@ -132,6 +132,23 @@ export function isProposalVotingOpen(row: {
   return new Date(row.ends_at).getTime() > Date.now();
 }
 
+/** Дострокове закриття лише автором, поки статус active (незалежно від ends_at). */
+export async function closeProposalByAuthor(
+  proposalId: number,
+  userId: number,
+): Promise<boolean> {
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    UPDATE proposals
+    SET status = 'closed'
+    WHERE id = ${proposalId}
+      AND user_id = ${userId}
+      AND status = 'active'
+    RETURNING id
+  `);
+  return rows.length > 0;
+}
+
 export async function upsertDiscordUser(params: {
   discordId: string;
   username: string;

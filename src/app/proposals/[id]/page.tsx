@@ -22,6 +22,7 @@ type ProposalDetail = {
   no_votes: number;
   user_vote: number | null;
   voting_open: boolean;
+  is_author?: boolean;
 };
 
 type Me = { id: number } | null;
@@ -58,6 +59,7 @@ export default function ProposalDetailPage() {
   const [me, setMe] = useState<Me | undefined>(undefined);
   const [notFound, setNotFound] = useState(false);
   const [voteBusy, setVoteBusy] = useState(false);
+  const [closeBusy, setCloseBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadProposal = useCallback(async () => {
@@ -91,6 +93,7 @@ export default function ProposalDetailPage() {
       });
       if (!res.ok) return;
       const s = (await res.json()) as {
+        status?: string;
         yes_votes: number;
         no_votes: number;
         user_vote: number | null;
@@ -101,6 +104,7 @@ export default function ProposalDetailPage() {
         prev
           ? {
               ...prev,
+              status: s.status ?? prev.status,
               yes_votes: s.yes_votes,
               no_votes: s.no_votes,
               user_vote: s.user_vote,
@@ -185,6 +189,43 @@ export default function ProposalDetailPage() {
     setVoteBusy(false);
   }
 
+  async function closeVotingEarly() {
+    if (!id || closeBusy || !proposal?.voting_open) return;
+    if (
+      !window.confirm(
+        "Закрити голосування зараз? Після цього ніхто не зможе змінити голос.",
+      )
+    ) {
+      return;
+    }
+    setCloseBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/proposals/${id}/close`, {
+        method: "POST",
+        credentials: "include",
+      });
+      const data = (await res.json()) as { error?: string; ok?: boolean };
+      if (!res.ok) {
+        setError(data.error || "Не вдалося закрити голосування");
+        setCloseBusy(false);
+        return;
+      }
+      setProposal((prev) =>
+        prev
+          ? {
+              ...prev,
+              status: "closed",
+              voting_open: false,
+            }
+          : prev,
+      );
+    } catch {
+      setError("Мережа недоступна");
+    }
+    setCloseBusy(false);
+  }
+
   if (!id || notFound) {
     return (
       <main className={lcPageMainClass}>
@@ -256,6 +297,21 @@ export default function ProposalDetailPage() {
             <p className="text-sm text-rose-300" role="alert">
               {error}
             </p>
+          ) : null}
+          {proposal.is_author && open ? (
+            <div className="rounded-lg border border-amber-500/35 bg-amber-500/10 px-3 py-3">
+              <p className="mb-2 text-xs font-semibold text-amber-100/95">
+                Ти автор цієї пропозиції
+              </p>
+              <button
+                type="button"
+                disabled={closeBusy}
+                onClick={() => void closeVotingEarly()}
+                className="lc-focus-ring w-full rounded-md border-2 border-amber-500/60 bg-amber-500/15 py-2.5 text-sm font-bold text-amber-100 transition-colors hover:bg-amber-500/25 disabled:opacity-50 sm:w-auto sm:px-5"
+              >
+                {closeBusy ? "Закриття…" : "Закрити голосування достроково"}
+              </button>
+            </div>
           ) : null}
           <div className="flex flex-col gap-3 pt-2 sm:flex-row">
             <button
