@@ -12,7 +12,7 @@ import {
 
 export const dynamic = "force-dynamic";
 
-const DURATIONS = new Set([3, 5, 7]);
+const DURATIONS = new Set([1, 3, 7]);
 
 export async function GET() {
   try {
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
   }
   if (!DURATIONS.has(durationDays)) {
     return NextResponse.json(
-      { error: "durationDays must be 3, 5, or 7" },
+      { error: "durationDays must be 1, 3, or 7" },
       { status: 400 },
     );
   }

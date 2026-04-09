@@ -7,7 +7,16 @@ import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { cn } from "@/lib/utils";
 
-const DURATIONS = [3, 5, 7] as const;
+const DURATIONS = [1, 3, 7] as const;
+
+function ukDaysLabel(n: number): string {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return `${n} день`;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20))
+    return `${n} дні`;
+  return `${n} днів`;
+}
 
 export default function NewProposalPage() {
   const router = useRouter();
@@ -177,7 +186,7 @@ export default function NewProposalPage() {
                       : "border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
                   )}
                 >
-                  {d} днів
+                  {ukDaysLabel(d)}
                 </button>
               ))}
             </div>
