@@ -12,12 +12,6 @@ import {
 } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 
-type VoteRollEntry = {
-  username: string;
-  vote: 0 | 1;
-  voted_at: string;
-};
-
 type ProposalDetail = {
   id: number;
   title: string;
@@ -25,13 +19,11 @@ type ProposalDetail = {
   status: string;
   ends_at: string;
   author_username: string;
-  anonymous_voting: boolean;
   yes_votes: number;
   no_votes: number;
   user_vote: number | null;
   voting_open: boolean;
   is_author?: boolean;
-  votes_roll: VoteRollEntry[];
 };
 
 type Me = { id: number } | null;
@@ -106,12 +98,7 @@ export default function ProposalDetailPage() {
         return;
       }
       const data = (await res.json()) as { proposal: ProposalDetail };
-      const pr = data.proposal;
-      setProposal({
-        ...pr,
-        anonymous_voting: Boolean(pr.anonymous_voting),
-        votes_roll: Array.isArray(pr.votes_roll) ? pr.votes_roll : [],
-      });
+      setProposal(data.proposal);
       setNotFound(false);
     } catch {
       setProposal(null);
@@ -132,8 +119,6 @@ export default function ProposalDetailPage() {
         user_vote: number | null;
         voting_open: boolean;
         ends_at: string;
-        anonymous_voting?: boolean;
-        votes_roll?: VoteRollEntry[];
       };
       setProposal((prev) =>
         prev
@@ -145,13 +130,6 @@ export default function ProposalDetailPage() {
               user_vote: s.user_vote,
               voting_open: s.voting_open,
               ends_at: s.ends_at,
-              anonymous_voting:
-                typeof s.anonymous_voting === "boolean"
-                  ? s.anonymous_voting
-                  : prev.anonymous_voting,
-              votes_roll: Array.isArray(s.votes_roll)
-                ? s.votes_roll
-                : prev.votes_roll,
             }
           : prev,
       );
@@ -264,7 +242,6 @@ export default function ProposalDetailPage() {
             }
           : prev,
       );
-      void loadProposal();
     } catch {
       setError("Мережа недоступна");
     }
@@ -533,63 +510,7 @@ export default function ProposalDetailPage() {
               проголосувати.
             </p>
           ) : null}
-          {proposal.anonymous_voting ? (
-            <p className="rounded-lg border border-white/[0.08] bg-black/20 px-3 py-2.5 text-center text-xs leading-relaxed text-[var(--mc-text-muted)] sm:text-left">
-              Анонімне голосування: видно лише загальну кількість 👍 та 👎, без
-              списку учасників.
-            </p>
-          ) : null}
         </article>
-
-        {!proposal.anonymous_voting ? (
-          <section
-            className={cn(
-              lcGlassPanelClass,
-              "mt-4 flex flex-col gap-3 !p-4 sm:mt-6 sm:!p-6 sm:gap-4 md:!p-8",
-            )}
-            aria-labelledby="votes-roll-heading"
-          >
-            <h2
-              id="votes-roll-heading"
-              className="text-center text-base font-extrabold text-[var(--mc-text)] sm:text-left sm:text-lg"
-            >
-              Хто як голосував
-            </h2>
-            {proposal.votes_roll.length === 0 ? (
-              <p className="text-center text-sm text-[var(--mc-text-subtle)] sm:text-left">
-                Поки ніхто не проголосував.
-              </p>
-            ) : (
-              <ul className="flex flex-col gap-2">
-                {proposal.votes_roll.map((row, idx) => (
-                  <li
-                    key={`${row.username}-${row.voted_at}-${idx}`}
-                    className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1 rounded-lg border border-white/[0.06] bg-black/20 px-3 py-2.5 sm:px-4"
-                  >
-                    <span className="min-w-0 font-bold text-[var(--mc-text)]">
-                      {row.username}
-                    </span>
-                    <span className="shrink-0 text-sm font-semibold tabular-nums text-[var(--mc-text-muted)]">
-                      {row.vote === 1 ? "👍 Так" : "👎 Ні"}
-                    </span>
-                    <time
-                      dateTime={row.voted_at}
-                      className="w-full text-xs text-[var(--mc-text-subtle)] sm:w-auto sm:text-right"
-                    >
-                      {new Date(row.voted_at).toLocaleString("uk-UA", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </time>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-        ) : null}
 
         <section
           className={cn(

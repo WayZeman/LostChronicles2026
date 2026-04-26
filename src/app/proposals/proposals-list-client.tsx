@@ -19,7 +19,6 @@ type ProposalItem = {
   status: string;
   ends_at: string;
   author_username: string;
-  anonymous_voting?: boolean;
   yes_votes: number;
   no_votes: number;
 };
@@ -261,14 +260,6 @@ export function ProposalsListClient() {
                       <span className="whitespace-normal">
                         {formatTimeRemainingUk(p.ends_at)}
                       </span>
-                      {p.anonymous_voting ? (
-                        <>
-                          {" · "}
-                          <span className="font-semibold text-[var(--mc-text-subtle)]">
-                            анонімне голосування
-                          </span>
-                        </>
-                      ) : null}
                     </p>
                     <VoteBar yes={p.yes_votes} no={p.no_votes} />
                     <Link

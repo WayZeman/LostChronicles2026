@@ -26,7 +26,6 @@ export default function NewProposalPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState<(typeof DURATIONS)[number]>(7);
-  const [anonymousVoting, setAnonymousVoting] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -60,7 +59,6 @@ export default function NewProposalPage() {
           title: title.trim(),
           description: description.trim(),
           durationDays: duration,
-          anonymousVoting,
         }),
       });
       const data = (await res.json()) as { id?: number; error?: string };
@@ -191,43 +189,6 @@ export default function NewProposalPage() {
                   {ukDaysLabel(d)}
                 </button>
               ))}
-            </div>
-          </div>
-          <div>
-            <span className="mb-2 block text-sm font-bold text-[var(--mc-text)]">
-              Хто бачить голоси
-            </span>
-            <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-              <button
-                type="button"
-                onClick={() => setAnonymousVoting(false)}
-                className={cn(
-                  "lc-focus-ring min-h-10 flex-1 rounded-md border-2 px-4 py-2.5 text-left text-sm font-bold transition-colors sm:min-w-[12rem]",
-                  !anonymousVoting
-                    ? "border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)]"
-                    : "border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
-                )}
-              >
-                Відкрите
-                <span className="mt-0.5 block text-xs font-normal text-[var(--mc-text-subtle)]">
-                  Під пропозицією видно хто, коли та як проголосував
-                </span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setAnonymousVoting(true)}
-                className={cn(
-                  "lc-focus-ring min-h-10 flex-1 rounded-md border-2 px-4 py-2.5 text-left text-sm font-bold transition-colors sm:min-w-[12rem]",
-                  anonymousVoting
-                    ? "border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)]"
-                    : "border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
-                )}
-              >
-                Анонімне
-                <span className="mt-0.5 block text-xs font-normal text-[var(--mc-text-subtle)]">
-                  Лише суми 👍 / 👎, без імен
-                </span>
-              </button>
             </div>
           </div>
           {error ? (

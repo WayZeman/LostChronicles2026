@@ -27,7 +27,6 @@ export async function GET() {
         created_at: p.created_at.toISOString(),
         ends_at: p.ends_at.toISOString(),
         author_username: p.author_username,
-        anonymous_voting: p.anonymous_voting,
         yes_votes: p.yes_votes,
         no_votes: p.no_votes,
         user_vote: p.user_vote,
@@ -54,7 +53,6 @@ export async function POST(req: Request) {
   const description =
     typeof b.description === "string" ? b.description.trim() : "";
   const durationDays = Number(b.durationDays);
-  const anonymousVoting = b.anonymousVoting === true;
 
   if (!title || title.length > 255) {
     return NextResponse.json({ error: "Invalid title" }, { status: 400 });
@@ -83,7 +81,6 @@ export async function POST(req: Request) {
       title,
       description,
       endsAt,
-      anonymousVoting,
     });
 
     const author = await getUserPublicById(userId);
