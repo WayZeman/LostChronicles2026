@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/mono-check",
+      "schedule": "*/2 * * * *"
+    }
+  ]
+}
