@@ -4,6 +4,7 @@ import {
   deleteProposalByAuthor,
   getProposalForUser,
   isProposalVotingOpen,
+  listProposalVotesPublic,
 } from "@/lib/proposals-queries";
 
 export const dynamic = "force-dynamic";
@@ -25,6 +26,13 @@ export async function GET(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
     const sessionUserId = userId;
+    const votesRoll = p.anonymous_voting
+      ? []
+      : (await listProposalVotesPublic(id)).map((row) => ({
+          username: row.username,
+          vote: row.vote,
+          voted_at: row.voted_at.toISOString(),
+        }));
     return NextResponse.json({
       proposal: {
         id: p.id,
@@ -34,12 +42,14 @@ export async function GET(
         created_at: p.created_at.toISOString(),
         ends_at: p.ends_at.toISOString(),
         author_username: p.author_username,
+        anonymous_voting: p.anonymous_voting,
         yes_votes: p.yes_votes,
         no_votes: p.no_votes,
         user_vote: p.user_vote,
         voting_open: isProposalVotingOpen(p),
         is_author:
           sessionUserId !== null && sessionUserId === p.user_id,
+        votes_roll: votesRoll,
       },
     });
   } catch {

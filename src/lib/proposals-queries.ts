@@ -18,6 +18,7 @@ export type ProposalRow = {
   created_at: Date;
   ends_at: Date;
   author_username: string;
+  anonymous_voting: boolean;
   yes_votes: number;
   no_votes: number;
   user_vote: number | null;
@@ -32,6 +33,10 @@ function num(v: unknown): number {
 function asDate(v: unknown): Date {
   if (v instanceof Date) return v;
   return new Date(String(v));
+}
+
+function asBool(v: unknown): boolean {
+  return v === true || v === "t" || v === "true" || v === 1;
 }
 
 function mapProposalRow(r: Record<string, unknown>): ProposalRow {
@@ -50,6 +55,7 @@ function mapProposalRow(r: Record<string, unknown>): ProposalRow {
     created_at: asDate(r.created_at),
     ends_at: asDate(r.ends_at),
     author_username: String(r.author_username ?? ""),
+    anonymous_voting: asBool(r.anonymous_voting),
     yes_votes: num(r.yes_votes),
     no_votes: num(r.no_votes),
     user_vote: userVote,
@@ -102,6 +108,7 @@ export async function listProposalsForUser(
       p.status,
       p.created_at,
       p.ends_at,
+      p.anonymous_voting,
       u.username AS author_username,
       COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
       COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes,
@@ -111,7 +118,7 @@ export async function listProposalsForUser(
     FROM proposals p
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
-    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username
+    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, p.anonymous_voting, u.username
     ORDER BY p.created_at DESC
   `);
   return rows.map((r) => mapProposalRow(r));
@@ -133,6 +140,7 @@ export async function getProposalForUser(
       p.status,
       p.created_at,
       p.ends_at,
+      p.anonymous_voting,
       u.username AS author_username,
       COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
       COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes,
@@ -143,7 +151,7 @@ export async function getProposalForUser(
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
     WHERE p.id = ${id}
-    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username
+    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, p.anonymous_voting, u.username
     LIMIT 1
   `);
   if (!rows.length) return null;
@@ -235,11 +243,12 @@ export async function createProposalRecord(params: {
   title: string;
   description: string;
   endsAt: Date;
+  anonymousVoting: boolean;
 }): Promise<number> {
   const sql = getSql();
   const rows = rowsOf(await sql`
-    INSERT INTO proposals (user_id, title, description, status, ends_at)
-    VALUES (${params.userId}, ${params.title}, ${params.description}, 'active', ${params.endsAt})
+    INSERT INTO proposals (user_id, title, description, status, ends_at, anonymous_voting)
+    VALUES (${params.userId}, ${params.title}, ${params.description}, 'active', ${params.endsAt}, ${params.anonymousVoting})
     RETURNING id
   `);
   return num(rows[0]?.id);
@@ -255,8 +264,39 @@ export async function setUserVote(params: {
     INSERT INTO votes (proposal_id, user_id, vote)
     VALUES (${params.proposalId}, ${params.userId}, ${params.vote})
     ON CONFLICT (proposal_id, user_id) DO UPDATE SET
-      vote = EXCLUDED.vote
+      vote = EXCLUDED.vote,
+      updated_at = NOW()
   `;
+}
+
+export type ProposalVotePublicRow = {
+  username: string;
+  vote: 0 | 1;
+  voted_at: Date;
+};
+
+export async function listProposalVotesPublic(
+  proposalId: number,
+): Promise<ProposalVotePublicRow[]> {
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT
+      u.username AS username,
+      v.vote AS vote,
+      COALESCE(v.updated_at, v.created_at) AS voted_at
+    FROM votes v
+    INNER JOIN users u ON u.id = v.user_id
+    WHERE v.proposal_id = ${proposalId}
+    ORDER BY COALESCE(v.updated_at, v.created_at) ASC
+  `);
+  return rows.map((r) => {
+    const vn = num(r.vote);
+    return {
+      username: String(r.username ?? ""),
+      vote: vn === 1 ? 1 : 0,
+      voted_at: asDate(r.voted_at),
+    };
+  });
 }
 
 /** Для cron: закрити прострочені та надіслати сповіщення (те саме, що й при завантаженні списку). */

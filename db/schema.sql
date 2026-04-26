@@ -2,7 +2,8 @@
 -- Виконай у Neon: SQL Editor → встав скрипт → Run.
 -- Або: Vercel → Storage → Neon → відкрити консоль.
 --
--- Якщо база вже була без коментарів: лише db/migrations/001_proposal_comments.sql
+-- Якщо база вже була: див. db/migrations/001_proposal_comments.sql та
+-- 002_proposal_anonymous_voting.sql
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
@@ -19,7 +20,8 @@ CREATE TABLE IF NOT EXISTS proposals (
     description TEXT NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    ends_at TIMESTAMPTZ NOT NULL
+    ends_at TIMESTAMPTZ NOT NULL,
+    anonymous_voting BOOLEAN NOT NULL DEFAULT false
 );
 
 CREATE TABLE IF NOT EXISTS votes (
@@ -28,6 +30,7 @@ CREATE TABLE IF NOT EXISTS votes (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     vote SMALLINT NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (proposal_id, user_id)
 );
 
