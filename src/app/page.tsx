@@ -1,13 +1,9 @@
-import {
-  Box,
-  ExternalLink,
-  MessageCircle,
-  Pickaxe,
-} from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroOnlineMonitor } from "@/components/site/HeroOnlineMonitor";
 import { HeroPromoVideo } from "@/components/site/HeroPromoVideo";
+import { HeroSocialLinks } from "@/components/site/HeroSocialLinks";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
@@ -30,7 +26,6 @@ export default function Home() {
     bedrockPort: process.env.NEXT_PUBLIC_BEDROCK_PORT?.trim() || "19132",
   };
 
-  const discordUrl = process.env.NEXT_PUBLIC_DISCORD_URL;
   const voteUrl = process.env.NEXT_PUBLIC_VOTE_URL;
 
   return (
@@ -57,20 +52,8 @@ export default function Home() {
             <ExternalLink className="size-3 opacity-60" aria-hidden />
           </a>
 
-          <div className="mt-8 flex flex-wrap justify-center gap-3 pb-2 md:mt-10 md:pb-3">
-            {discordUrl ? (
-              <a
-                href={discordUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="lc-focus-ring mc-btn-secondary"
-              >
-                <MessageCircle className="size-4 text-[#5865F2]" aria-hidden />
-                Discord
-                <ExternalLink className="size-3 opacity-60" aria-hidden />
-              </a>
-            ) : null}
-            {voteUrl ? (
+          {voteUrl ? (
+            <div className="mt-8 flex flex-wrap justify-center gap-3 pb-2 md:mt-10 md:pb-3">
               <a
                 href={voteUrl}
                 target="_blank"
@@ -80,8 +63,8 @@ export default function Home() {
                 Підтримати голосом
                 <ExternalLink className="size-3 opacity-60" aria-hidden />
               </a>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </section>
 
         <div
@@ -104,23 +87,12 @@ export default function Home() {
                 port={settings.bedrockPort}
               />
             </div>
+            <div className="mt-6 border-t border-white/[0.12] pt-6 md:mt-8 md:pt-8">
+              <HeroSocialLinks embedded />
+            </div>
           </div>
           <HeroPromoVideo />
         </div>
-
-        <section
-          className="am-reveal am-delay-2 mt-12 flex justify-center gap-2 md:mt-16"
-          aria-hidden
-        >
-          {[Pickaxe, Box, Box, Box].map((Ic, i) => (
-            <div
-              key={i}
-              className="mc-slot flex size-11 items-center justify-center rounded-2xl text-[var(--mc-ink-subtle)] md:size-12"
-            >
-              <Ic className="size-5" strokeWidth={1.25} />
-            </div>
-          ))}
-        </section>
 
         <SupportMonobankSection />
       </div>

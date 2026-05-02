@@ -3,13 +3,11 @@
 import Image from "next/image";
 import { useState } from "react";
 import { Play } from "lucide-react";
+import { LC_PROMO_YOUTUBE_WATCH_URL } from "@/data/lc-youtube-promo";
 import { cn } from "@/lib/utils";
 
-/** Промо на головній — одне посилання; id для embed і прев’ю береться з нього. */
-const PROMO_VIDEO_WATCH_URL = "https://www.youtube.com/watch?v=OQpRfs5GKyk";
-
 const PROMO_VIDEO_ID =
-  new URL(PROMO_VIDEO_WATCH_URL).searchParams.get("v") ?? "OQpRfs5GKyk";
+  new URL(LC_PROMO_YOUTUBE_WATCH_URL).searchParams.get("v") ?? "OQpRfs5GKyk";
 
 /** Від найкращої якості до запасної (не всі ролики мають maxres на ytimg). */
 const THUMB_URLS = [
