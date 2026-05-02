@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
+import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
 import { SiteBackdropYouTube } from "@/components/site/SiteBackdropYouTube";
@@ -99,6 +100,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className={`${inter.variable} am-bg relative flex min-h-screen flex-col antialiased`}>
+        <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />
         <div className="mc-net-backdrop" aria-hidden>
           <SiteBackdropYouTube />
