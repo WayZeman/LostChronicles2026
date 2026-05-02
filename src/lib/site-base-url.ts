@@ -1,3 +1,16 @@
+/**
+ * Публічний URL сайту для SEO (metadataBase, sitemap, JSON-LD).
+ * Без завершального /. Не повертає localhost — щоб sitemap/OG не «тікали» на dev.
+ */
+export function getLcMarketingSiteUrl(): string {
+  const explicit =
+    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "").trim() || "";
+  if (explicit) return explicit;
+  const vercel = process.env.VERCEL_URL?.replace(/\/$/, "").trim() || "";
+  if (vercel) return `https://${vercel}`;
+  return "https://lost-chronicles2026.vercel.app";
+}
+
 /** Canonical site origin for OAuth redirects and proposal links (no trailing slash). */
 export function getSiteBaseUrl(): string {
   const fromEnv =

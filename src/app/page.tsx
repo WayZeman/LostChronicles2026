@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { ExternalLink } from "lucide-react";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
@@ -9,9 +10,16 @@ import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_FORM_URL } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
+import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
+
+export const metadata: Metadata = {
+  alternates: {
+    canonical: `${getLcMarketingSiteUrl()}/`,
+  },
+};
 
 const defaultDescription =
-  "Місце, де українські гравці об’єднуються, щоб створювати пригоди, знаходити друзів і будувати власні цивілізації у живому світі історій.";
+  "Lost Chronicles — місце, де українські гравці об’єднуються, щоб створювати пригоди, знаходити друзів і будувати власні цивілізації у живому світі історій.";
 
 /** Інакше NEXT_PUBLIC_* «запікається» в статичний HTML під час build і не оновиться без перезбірки. */
 export const dynamic = "force-dynamic";

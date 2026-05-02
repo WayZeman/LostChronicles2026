@@ -4,6 +4,13 @@ import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
 import { SiteBackdropYouTube } from "@/components/site/SiteBackdropYouTube";
+import { SiteJsonLd } from "@/components/site/SiteJsonLd";
+import {
+  LC_SEO_DESCRIPTION_SHORT,
+  LC_SEO_META_KEYWORDS,
+  LC_SEO_SITE_TITLE_DEFAULT,
+} from "@/data/lc-seo-terms";
+import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 import "./globals.css";
 
 const inter = Inter({
@@ -13,10 +20,11 @@ const inter = Inter({
   adjustFontFallback: true,
 });
 
-/** Канонічний URL сайту (для OG / прев’ю в месенджерах). Можна перевизначити через NEXT_PUBLIC_SITE_URL. */
-const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "") ||
-  "https://lost-chronicles2026.vercel.app";
+/** Канонічний URL (SEO, OG). Перевизначення: NEXT_PUBLIC_SITE_URL у продакшені. */
+const siteUrl = getLcMarketingSiteUrl();
+
+const siteTitleDefault = LC_SEO_SITE_TITLE_DEFAULT;
+const siteDescription = LC_SEO_DESCRIPTION_SHORT;
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -26,8 +34,17 @@ export const viewport: Viewport = {
 
 export const metadata: Metadata = {
   metadataBase: new URL(`${siteUrl}/`),
-  title: "Lost Chronicles",
-  description: "Український Minecraft сервер",
+  title: {
+    default: siteTitleDefault,
+    template: "%s · Lost Chronicles",
+  },
+  description: siteDescription,
+  keywords: LC_SEO_META_KEYWORDS,
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true },
+  },
   icons: {
     icon: [{ url: "/logo.png", sizes: "597x595", type: "image/png" }],
     apple: [{ url: "/logo.png", sizes: "180x180", type: "image/png" }],
@@ -39,8 +56,8 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
   },
   openGraph: {
-    title: "Lost Chronicles",
-    description: "Приєднуйся до пригод у світі Lost Chronicles",
+    title: siteTitleDefault,
+    description: siteDescription,
     url: siteUrl,
     type: "website",
     locale: "uk_UA",
@@ -50,16 +67,24 @@ export const metadata: Metadata = {
         url: "/logo.png",
         width: 597,
         height: 595,
-        alt: "Lost Chronicles",
+        alt: "Lost Chronicles — логотип українського Minecraft-сервера",
       },
     ],
   },
+  /** Квадратний логотип: summary краще рендериться у стрічці, ніж summary_large_image з обрізанням. */
   twitter: {
-    card: "summary_large_image",
-    title: "Lost Chronicles",
-    description: "Приєднуйся до пригод у світі Lost Chronicles",
+    card: "summary",
+    title: siteTitleDefault,
+    description: siteDescription,
     images: ["/logo.png"],
   },
+  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
+    ? {
+        verification: {
+          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
+        },
+      }
+    : {}),
 };
 
 export default function RootLayout({
@@ -74,6 +99,7 @@ export default function RootLayout({
       suppressHydrationWarning
     >
       <body className={`${inter.variable} am-bg relative flex min-h-screen flex-col antialiased`}>
+        <SiteJsonLd siteUrl={siteUrl} />
         <div className="mc-net-backdrop" aria-hidden>
           <SiteBackdropYouTube />
           <div className="mc-backdrop-scrim" />
