@@ -18,7 +18,7 @@ const LC_MONO_JAR_URL =
   "https://send.monobank.ua/jar/8f7nV8DopG";
 
 const FAQ_CTA_BTN =
-  "lc-focus-ring inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-sm border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-4 py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)] active:opacity-90 sm:min-h-[2.5rem] sm:w-auto sm:shrink-0 sm:self-center sm:px-5";
+  "lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-5 py-2.5 text-sm sm:min-h-[2.5rem] sm:w-auto sm:shrink-0 sm:self-center sm:px-6";
 
 const FAQ_JOIN = `<div class="not-prose mb-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
 <p class="mb-0 min-w-0 flex-1 text-left text-[0.9375rem] leading-[1.65] text-[var(--mc-text)] sm:text-base sm:leading-relaxed">Для переходу на сервер вам необхідно пройти невелику співбесіду у формі анкети.</p>

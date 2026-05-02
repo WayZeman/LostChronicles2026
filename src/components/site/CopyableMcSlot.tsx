@@ -41,8 +41,8 @@ export function CopyableMcSlot({
         }
       }}
       className={cn(
-        "lc-focus-ring inline-flex w-full min-w-0 flex-col items-center justify-center gap-1 rounded-sm border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-5 py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)] md:px-6 md:py-3",
-        "cursor-pointer select-none active:scale-[0.995] motion-reduce:transform-none",
+        "lc-focus-ring lc-btn-accent min-h-11 w-full min-w-0 flex-col gap-1 px-5 py-2.5 text-sm md:min-h-12 md:px-6 md:py-3",
+        "cursor-pointer select-none motion-reduce:transform-none",
         "[&_p]:!text-[var(--mc-green-ink)]",
         className
       )}
@@ -50,7 +50,7 @@ export function CopyableMcSlot({
     >
       {children}
       {done ? (
-        <p className="mt-1 text-center text-[11px] font-bold text-[var(--mc-net-green)]">{copiedLabel}</p>
+        <p className="mt-1 text-center text-[11px] font-semibold text-[var(--mc-net-green)]">{copiedLabel}</p>
       ) : null}
     </div>
   );

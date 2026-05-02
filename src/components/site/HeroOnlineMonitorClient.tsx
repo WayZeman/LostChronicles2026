@@ -15,7 +15,7 @@ const HeroOnlineHistoryChart = dynamic(
       <div
         className={cn(
           lcGlassPanelClass,
-          "bg-black/38 shadow-[0_8px_36px_rgba(0,0,0,0.34)]",
+          "bg-[color-mix(in_srgb,#000_20%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
         )}
       >
         <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">

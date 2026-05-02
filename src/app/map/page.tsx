@@ -21,7 +21,7 @@ export default function MapPage() {
       <div className={lcPageContainerClass}>
         <WikiContentFrame>
           <div className="flex flex-col items-center text-center">
-            <h2 className="lc-hero-title text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
+            <h2 className="lc-hero-title text-xl font-semibold text-[var(--mc-text)] md:text-2xl">
               Перейти до карти
             </h2>
             <p className="mt-4 w-full max-w-lg text-sm font-medium leading-relaxed text-[var(--mc-text-muted)] md:text-base">
@@ -33,7 +33,7 @@ export default function MapPage() {
                 href={mapUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="lc-focus-ring inline-flex items-center gap-2 rounded-sm border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-5 py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)] md:px-6 md:py-3"
+                className="lc-focus-ring lc-btn-accent inline-flex items-center gap-2 px-6 py-2.5 text-sm md:px-7 md:py-3"
               >
                 <MapIcon className="size-4 shrink-0 opacity-90" strokeWidth={2} aria-hidden />
                 Мапа серверу

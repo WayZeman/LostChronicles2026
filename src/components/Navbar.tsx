@@ -44,10 +44,10 @@ export function Navbar() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-[100] border-t-2 border-[var(--mc-nav-border)] bg-[var(--mc-nav-bg)] shadow-[var(--mc-nav-shadow)] backdrop-blur-md"
+      className="fixed inset-x-3 bottom-[max(0.5rem,env(safe-area-inset-bottom,0px))] z-[100] overflow-hidden rounded-[1.75rem] border border-[var(--mc-nav-border)] bg-[var(--mc-nav-bg)] shadow-[var(--mc-nav-shadow)] backdrop-blur-2xl backdrop-saturate-200"
       style={{
-        paddingBottom: "max(0.35rem, env(safe-area-inset-bottom, 0px))",
-        paddingTop: "0.35rem",
+        paddingBottom: "max(0.4rem, calc(env(safe-area-inset-bottom, 0px) * 0.35))",
+        paddingTop: "0.4rem",
       }}
       aria-label="Головна навігація"
     >
@@ -59,10 +59,10 @@ export function Navbar() {
               key={href}
               href={href}
               className={cn(
-                "lc-focus-ring flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-md px-0.5 py-1 text-[9px] font-bold leading-tight transition-colors duration-200 min-[380px]:text-[10px] md:min-h-[3.5rem] md:gap-1 md:px-2 md:text-xs",
+                "lc-focus-ring flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-0.5 py-1 text-[9px] font-semibold leading-tight transition-colors duration-200 min-[380px]:text-[10px] md:min-h-[3.5rem] md:gap-1 md:px-2 md:text-xs",
                 active
                   ? "text-[var(--mc-net-green)]"
-                  : "text-[var(--mc-nav-link)] hover:bg-[var(--mc-nav-link-hover-bg)] md:rounded-lg",
+                  : "text-[var(--mc-nav-link)] hover:bg-[var(--mc-nav-link-hover-bg)]",
               )}
               aria-current={active ? "page" : undefined}
             >

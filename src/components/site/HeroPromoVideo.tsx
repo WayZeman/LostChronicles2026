@@ -27,9 +27,10 @@ export function HeroPromoVideo() {
     <div className="w-full" aria-label="Відео про сервер Lost Chronicles на YouTube">
       <div
         className={cn(
-          "overflow-hidden rounded-2xl border border-white/[0.09]",
-          "bg-[color-mix(in_srgb,var(--mc-net-page)_92%,transparent)]",
-          "shadow-[0_1px_0_rgba(255,255,255,0.04)_inset]",
+          "overflow-hidden rounded-[1.75rem] border border-white/[0.14]",
+          "bg-[color-mix(in_srgb,var(--mc-surface)_38%,transparent)]",
+          "shadow-[0_1px_0_rgba(255,255,255,0.08)_inset,0_16px_48px_rgba(0,0,0,0.26)]",
+          "backdrop-blur-[36px] backdrop-saturate-[1.75]",
         )}
       >
         <div className="relative aspect-video w-full bg-black">
@@ -76,11 +77,11 @@ export function HeroPromoVideo() {
                 <span
                   className={cn(
                     "flex size-14 items-center justify-center rounded-full md:size-16",
-                    "border border-white/15 bg-black/45 backdrop-blur-md",
-                    "shadow-[0_8px_32px_rgba(0,0,0,0.35)]",
+                    "border border-white/20 bg-[color-mix(in_srgb,#000_32%,transparent)] backdrop-blur-xl",
+                    "shadow-[0_12px_40px_rgba(0,0,0,0.3)]",
                     "transition-[border-color,background-color,transform] duration-200",
                     "group-hover:border-[color-mix(in_srgb,var(--mc-net-green)_55%,transparent)]",
-                    "group-hover:bg-black/55 group-focus-visible:border-[var(--mc-net-green)]",
+                    "group-hover:bg-[color-mix(in_srgb,#000_48%,transparent)] group-focus-visible:border-[var(--mc-net-green)]",
                   )}
                 >
                   <Play

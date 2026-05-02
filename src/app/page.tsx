@@ -38,7 +38,7 @@ export default function Home() {
       <div className={lcPageContainerHomeClass}>
         <section className="am-reveal flex flex-col items-center pt-0 text-center md:pt-0">
           <h1
-            className="lc-hero-title max-w-[min(100%,36rem)] text-[clamp(2.75rem,9vw,4.25rem)] font-extrabold leading-[1.05] text-[var(--mc-text)]"
+            className="lc-hero-title max-w-[min(100%,36rem)] text-[clamp(2.75rem,9vw,4.25rem)] font-bold leading-[1.05] tracking-tight text-[var(--mc-text)]"
             style={{ fontFeatureSettings: '"ss01"' }}
           >
             Lost{" "}
@@ -51,7 +51,7 @@ export default function Home() {
             href={LC_FORM_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="lc-focus-ring mt-6 inline-flex min-h-11 items-center justify-center gap-2 rounded-sm border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-6 py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)] active:opacity-90"
+            className="lc-focus-ring lc-btn-accent mt-6 min-h-11 px-7 py-2.5 text-sm"
           >
             Подати заявку
             <ExternalLink className="size-3 opacity-60" aria-hidden />
@@ -75,7 +75,7 @@ export default function Home() {
                 href={voteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="lc-focus-ring inline-flex items-center gap-2 rounded-sm border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] px-5 py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)]"
+                className="lc-focus-ring lc-btn-accent px-6 py-2.5 text-sm"
               >
                 Підтримати голосом
                 <ExternalLink className="size-3 opacity-60" aria-hidden />
@@ -90,7 +90,7 @@ export default function Home() {
         >
           <HeroOnlineMonitor />
           <div className={lcGlassPanelClass}>
-            <h2 className="lc-hero-title text-center text-xl font-extrabold text-[var(--mc-text)] md:text-2xl">
+            <h2 className="lc-hero-title text-center text-xl font-semibold text-[var(--mc-text)] md:text-2xl">
               Підключитися до серверу
             </h2>
             <div
@@ -115,7 +115,7 @@ export default function Home() {
           {[Pickaxe, Box, Box, Box].map((Ic, i) => (
             <div
               key={i}
-              className="mc-slot flex size-11 items-center justify-center rounded-sm text-[var(--mc-ink-subtle)] md:size-12"
+              className="mc-slot flex size-11 items-center justify-center rounded-2xl text-[var(--mc-ink-subtle)] md:size-12"
             >
               <Ic className="size-5" strokeWidth={1.25} />
             </div>
