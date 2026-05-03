@@ -18,6 +18,56 @@ function isLikelyYoutubeVideoId(id: string): boolean {
   return /^[\w-]{11}$/.test(id);
 }
 
+function normalizeFeedTitle(raw: string): string {
+  return raw.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+type FeedEntry = { id: string; title: string; publishedMs: number };
+
+function parseFeedEntries(xml: string, maxEntries: number): FeedEntry[] {
+  const out: FeedEntry[] = [];
+  const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
+  let m: RegExpExecArray | null;
+  while ((m = entryRe.exec(xml)) !== null && out.length < maxEntries) {
+    const block = m[1];
+    const idMatch = block.match(/<yt:videoId>([^<]+)<\/yt:videoId>/);
+    const titleMatch = block.match(/<title(?:[^>]*)>([^<]*)<\/title>/);
+    const publishedMatch = block.match(/<published>([^<]+)<\/published>/);
+    const id = idMatch?.[1]?.trim();
+    if (!id || !isLikelyYoutubeVideoId(id)) continue;
+    const title = titleMatch?.[1]?.trim() ?? "";
+    const published = publishedMatch?.[1]?.trim();
+    const publishedMs = published ? Date.parse(published) : Number.NaN;
+    out.push({
+      id,
+      title,
+      publishedMs: Number.isFinite(publishedMs) ? publishedMs : 0,
+    });
+  }
+  return out;
+}
+
+/**
+ * Якщо зверху фіду кілька записів з однаковою назвою (типовий дубль «живий ефір / VOD»),
+ * беремо найраніше опублікований id — у вбудованому плеєрі він зазвичай стабільніший за «свіжий» дубль.
+ */
+function pickHeroVideoIdFromEntries(entries: FeedEntry[]): string | null {
+  if (entries.length === 0) return null;
+  const headTitle = normalizeFeedTitle(entries[0].title);
+  const sameTitle: FeedEntry[] = [];
+  for (const e of entries) {
+    if (normalizeFeedTitle(e.title) === headTitle) sameTitle.push(e);
+    else break;
+  }
+  if (sameTitle.length >= 2) {
+    const oldest = sameTitle.reduce((a, b) =>
+      a.publishedMs <= b.publishedMs ? a : b,
+    );
+    return oldest.id;
+  }
+  return entries[0].id;
+}
+
 /**
  * Останнє відео з публічного RSS каналу (те саме, що «Відео» на YouTube за датою).
  * Підходить для нових трансляцій / VOD без YouTube Data API.
@@ -39,12 +89,9 @@ export async function getLatestHeroYoutubeVideoId(): Promise<string> {
     if (!res.ok) return fallback;
 
     const xml = await res.text();
-    const firstEntry = xml.match(/<entry>[\s\S]*?<\/entry>/);
-    if (!firstEntry) return fallback;
-
-    const idMatch = firstEntry[0].match(/<yt:videoId>([^<]+)<\/yt:videoId>/);
-    const id = idMatch?.[1]?.trim();
-    if (id && isLikelyYoutubeVideoId(id)) return id;
+    const entries = parseFeedEntries(xml, 15);
+    const picked = pickHeroVideoIdFromEntries(entries);
+    if (picked && isLikelyYoutubeVideoId(picked)) return picked;
 
     return fallback;
   } catch {

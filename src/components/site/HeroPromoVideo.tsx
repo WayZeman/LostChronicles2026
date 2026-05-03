@@ -17,6 +17,19 @@ function thumbUrlsFor(videoId: string) {
   ] as const;
 }
 
+function buildYoutubeEmbedSrc(videoId: string): string {
+  const params = new URLSearchParams({
+    autoplay: "1",
+    rel: "0",
+    playsinline: "1",
+    modestbranding: "1",
+  });
+  if (typeof window !== "undefined" && /^https?:\/\//.test(window.location.origin)) {
+    params.set("origin", window.location.origin);
+  }
+  return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+}
+
 /** Прев’ю YouTube без iframe, поки користувач не натисне — економія трафіку на мобільних і 3G. */
 export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
   const [playing, setPlaying] = useState(false);
@@ -41,7 +54,7 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
         <div className="relative aspect-video w-full bg-black">
           {playing ? (
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
+              src={buildYoutubeEmbedSrc(videoId)}
               className="absolute inset-0 h-full w-full border-0"
               title="Lost Chronicles — відео на YouTube"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
