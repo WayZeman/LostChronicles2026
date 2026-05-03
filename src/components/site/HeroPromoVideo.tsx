@@ -1,25 +1,32 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Play } from "lucide-react";
-import { LC_PROMO_YOUTUBE_WATCH_URL } from "@/data/lc-youtube-promo";
 import { cn } from "@/lib/utils";
 
-const PROMO_VIDEO_ID =
-  new URL(LC_PROMO_YOUTUBE_WATCH_URL).searchParams.get("v") ?? "OQpRfs5GKyk";
+export type HeroPromoVideoProps = {
+  videoId: string;
+};
 
-/** Від найкращої якості до запасної (не всі ролики мають maxres на ytimg). */
-const THUMB_URLS = [
-  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/maxresdefault.jpg`,
-  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/sddefault.jpg`,
-  `https://i.ytimg.com/vi/${PROMO_VIDEO_ID}/hqdefault.jpg`,
-] as const;
+function thumbUrlsFor(videoId: string) {
+  return [
+    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
+    `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
+    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
+  ] as const;
+}
 
 /** Прев’ю YouTube без iframe, поки користувач не натисне — економія трафіку на мобільних і 3G. */
-export function HeroPromoVideo() {
+export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
   const [playing, setPlaying] = useState(false);
   const [thumbIndex, setThumbIndex] = useState(0);
+  const thumbUrls = useMemo(() => Array.from(thumbUrlsFor(videoId)), [videoId]);
+
+  useEffect(() => {
+    setThumbIndex(0);
+    setPlaying(false);
+  }, [videoId]);
 
   return (
     <div className="w-full" aria-label="Відео про сервер Lost Chronicles на YouTube">
@@ -34,7 +41,7 @@ export function HeroPromoVideo() {
         <div className="relative aspect-video w-full bg-black">
           {playing ? (
             <iframe
-              src={`https://www.youtube-nocookie.com/embed/${PROMO_VIDEO_ID}?autoplay=1&rel=0`}
+              src={`https://www.youtube-nocookie.com/embed/${videoId}?autoplay=1&rel=0`}
               className="absolute inset-0 h-full w-full border-0"
               title="Lost Chronicles — відео на YouTube"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -44,8 +51,8 @@ export function HeroPromoVideo() {
           ) : (
             <>
               <Image
-                key={THUMB_URLS[thumbIndex]}
-                src={THUMB_URLS[thumbIndex]}
+                key={thumbUrls[thumbIndex]}
+                src={thumbUrls[thumbIndex]}
                 alt=""
                 className="object-cover"
                 fill
@@ -55,7 +62,7 @@ export function HeroPromoVideo() {
                 fetchPriority="low"
                 onError={() => {
                   setThumbIndex((i) =>
-                    i < THUMB_URLS.length - 1 ? i + 1 : i,
+                    i < thumbUrls.length - 1 ? i + 1 : i,
                   );
                 }}
               />

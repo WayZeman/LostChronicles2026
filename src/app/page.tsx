@@ -10,6 +10,7 @@ import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_FORM_URL } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
+import { getLatestHeroYoutubeVideoId } from "@/lib/youtube-channel-latest-video";
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 
 export const metadata: Metadata = {
@@ -24,7 +25,9 @@ const defaultDescription =
 /** Інакше NEXT_PUBLIC_* «запікається» в статичний HTML під час build і не оновиться без перезбірки. */
 export const dynamic = "force-dynamic";
 
-export default function Home() {
+export default async function Home() {
+  const heroYoutubeVideoId = await getLatestHeroYoutubeVideoId();
+
   const settings = {
     ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST,
     version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.7",
@@ -99,7 +102,7 @@ export default function Home() {
               <HeroSocialLinks embedded />
             </div>
           </div>
-          <HeroPromoVideo />
+          <HeroPromoVideo videoId={heroYoutubeVideoId} />
         </div>
 
         <SupportMonobankSection />
