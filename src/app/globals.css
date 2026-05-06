@@ -534,6 +534,190 @@ html.has-video-bg .mc-bg-blob-layer {
   transform: scale(0.98);
 }
 
+@keyframes lc-border-shimmer {
+  0% {
+    background-position: 0% 50%;
+  }
+  100% {
+    background-position: 220% 50%;
+  }
+}
+
+@keyframes lc-panel-breathe {
+  0%,
+  100% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      0 16px 44px rgba(0, 0, 0, 0.28),
+      0 0 0 1px rgba(250, 204, 21, 0.05);
+  }
+  50% {
+    box-shadow:
+      0 1px 0 rgba(255, 255, 255, 0.12) inset,
+      0 22px 60px rgba(0, 0, 0, 0.34),
+      0 0 24px rgba(250, 204, 21, 0.1);
+  }
+}
+
+@keyframes lc-soft-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.lc-interactive-panel {
+  position: relative;
+  overflow: hidden;
+  animation:
+    lc-panel-breathe 5.8s ease-in-out infinite,
+    lc-soft-float 4.4s ease-in-out infinite;
+  transition:
+    transform 0.32s var(--am-ease),
+    box-shadow 0.32s var(--am-ease),
+    border-color 0.28s var(--am-ease);
+}
+
+.lc-interactive-panel::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    rgba(250, 204, 21, 0.22) 35%,
+    rgba(255, 255, 255, 0.3) 50%,
+    rgba(250, 204, 21, 0.22) 65%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  opacity: 0;
+  transition: opacity 0.3s var(--am-ease);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+
+.lc-interactive-panel:hover {
+  transform: translateY(-6px) scale(1.01);
+  border-color: rgba(250, 204, 21, 0.26);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 20px 56px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(250, 204, 21, 0.12),
+    0 0 26px rgba(250, 204, 21, 0.13);
+}
+
+.lc-interactive-panel:hover::after {
+  opacity: 1;
+  animation: lc-border-shimmer 1.8s linear infinite;
+}
+
+.lc-interactive-panel-static,
+.lc-interactive-panel-static:hover {
+  animation: none !important;
+  transform: none !important;
+}
+
+.lc-interactive-panel-static::after,
+.lc-interactive-panel-static:hover::after {
+  opacity: 0 !important;
+  animation: none !important;
+}
+
+.lc-btn-primary:hover,
+.mc-btn-secondary:hover,
+.lc-btn-accent:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.2) inset,
+    0 14px 30px rgba(0, 0, 0, 0.26);
+}
+
+.lc-btn-primary:active,
+.mc-btn-secondary:active,
+.lc-btn-accent:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.lc-focus-ring {
+  transition:
+    transform 0.22s var(--am-ease),
+    filter 0.22s var(--am-ease);
+}
+
+.lc-focus-ring:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.08);
+}
+
+.lc-player-card {
+  transition:
+    transform 0.24s var(--am-ease),
+    box-shadow 0.24s var(--am-ease),
+    border-color 0.24s var(--am-ease);
+}
+
+.lc-player-card:hover {
+  transform: translateY(-3px) scale(1.03);
+  border-color: rgba(250, 204, 21, 0.3);
+  box-shadow:
+    0 10px 20px rgba(0, 0, 0, 0.25),
+    0 0 16px rgba(250, 204, 21, 0.14);
+}
+
+.lc-player-card > img {
+  transition: transform 0.24s var(--am-ease);
+}
+
+.lc-player-card:hover > img {
+  transform: scale(1.12) rotate(-2deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-interactive-panel,
+  .lc-player-card,
+  .lc-focus-ring,
+  .lc-btn-primary,
+  .mc-btn-secondary,
+  .lc-btn-accent {
+    transition: none !important;
+    animation: none !important;
+  }
+
+  .lc-interactive-panel:hover {
+    transform: none;
+  }
+
+  .lc-player-card:hover,
+  .lc-player-card:hover > img,
+  .lc-focus-ring:hover,
+  .lc-btn-primary:hover,
+  .mc-btn-secondary:hover,
+  .lc-btn-accent:hover {
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .lc-interactive-panel::after,
+  .lc-interactive-panel:hover::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+}
+
 @keyframes am-fade-up {
   from {
     opacity: 0;

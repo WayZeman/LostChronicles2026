@@ -247,6 +247,7 @@ export function HeroOnlineHistoryChart() {
     <div
       className={cn(
         lcGlassPanelClass,
+        "lc-interactive-panel-static",
         "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
       )}
     >
@@ -272,14 +273,11 @@ export function HeroOnlineHistoryChart() {
             </p>
             {payload.livePlayerNames && payload.livePlayerNames.length > 0 ? (
               <div className="mt-3">
-                <p className="mb-2 text-center text-xs text-[var(--mc-text-muted)] md:text-sm">
-                  Гравці онлайн
-                </p>
                 <ul className="mx-auto flex w-full max-w-3xl flex-wrap justify-center gap-2">
                   {payload.livePlayerNames.map((nick) => (
                     <li
                       key={nick}
-                      className="flex w-[calc(50%-0.25rem)] min-w-[140px] max-w-[190px] items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-2.5 py-2 sm:w-[calc(33.333%-0.34rem)] lg:w-[calc(25%-0.375rem)]"
+                      className="lc-player-card flex w-[calc(50%-0.25rem)] min-w-[140px] max-w-[190px] items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-2.5 py-2 sm:w-[calc(33.333%-0.34rem)] lg:w-[calc(25%-0.375rem)]"
                     >
                       <img
                         src={getPlayerHeadUrl(nick)}
