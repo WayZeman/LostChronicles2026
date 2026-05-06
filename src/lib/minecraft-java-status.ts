@@ -1,6 +1,6 @@
 /**
  * Статус Java-сервера через HTTPS (працює на Vercel тощо).
- * API: https://api.mcsrvstat.us — кеш ~1 хв, ми revalidate 45 с.
+ * API: https://api.mcsrvstat.us — live-запит без кешу, щоб UI бачив актуальний онлайн.
  */
 
 export type JavaServerStatusSource = "api" | "api-offline" | "env-fallback";
@@ -79,7 +79,7 @@ export async function getJavaServerStatus(hostname: string): Promise<JavaServerS
   try {
     const url = `https://api.mcsrvstat.us/3/${encodeURIComponent(host)}`;
     const res = await fetch(url, {
-      next: { revalidate: 45 },
+      cache: "no-store",
       headers: { Accept: "application/json" },
     });
 

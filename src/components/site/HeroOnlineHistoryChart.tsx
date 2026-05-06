@@ -99,7 +99,9 @@ export function HeroOnlineHistoryChart() {
   const load = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch("/api/online-history?period=month");
+      const res = await fetch("/api/online-history?period=month", {
+        cache: "no-store",
+      });
       if (!res.ok) throw new Error(String(res.status));
       const data = (await res.json()) as ChartPayload;
       if (!Array.isArray(data.labels) || !Array.isArray(data.values)) {
