@@ -4,6 +4,7 @@ import {
 } from "@/data/lc-youtube-promo";
 
 const FEED_REVALIDATE_SECONDS = 300;
+const OEMBED_REVALIDATE_SECONDS = 900;
 
 function fallbackPromoVideoId(): string {
   try {
@@ -20,6 +21,19 @@ function isLikelyYoutubeVideoId(id: string): boolean {
 
 function normalizeFeedTitle(raw: string): string {
   return raw.replace(/\s+/g, " ").trim().toLowerCase();
+}
+
+function isLikelyStreamTitle(rawTitle: string): boolean {
+  const t = normalizeFeedTitle(rawTitle);
+  return (
+    t.includes("стрім") ||
+    t.includes("стрим") ||
+    t.includes("трансляц") ||
+    t.includes("прямий ефір") ||
+    t.includes("live stream") ||
+    t.includes("livestream") ||
+    t.includes(" live")
+  );
 }
 
 type FeedEntry = { id: string; title: string; publishedMs: number };
@@ -47,25 +61,34 @@ function parseFeedEntries(xml: string, maxEntries: number): FeedEntry[] {
   return out;
 }
 
-/**
- * Якщо зверху фіду кілька записів з однаковою назвою (типовий дубль «живий ефір / VOD»),
- * беремо найраніше опублікований id — у вбудованому плеєрі він зазвичай стабільніший за «свіжий» дубль.
- */
 function pickHeroVideoIdFromEntries(entries: FeedEntry[]): string | null {
   if (entries.length === 0) return null;
-  const headTitle = normalizeFeedTitle(entries[0].title);
-  const sameTitle: FeedEntry[] = [];
+
+  // 1) Пріоритет: найсвіжіша записана трансляція (VOD стріму).
   for (const e of entries) {
-    if (normalizeFeedTitle(e.title) === headTitle) sameTitle.push(e);
-    else break;
+    if (isLikelyStreamTitle(e.title)) return e.id;
   }
-  if (sameTitle.length >= 2) {
-    const oldest = sameTitle.reduce((a, b) =>
-      a.publishedMs <= b.publishedMs ? a : b,
-    );
-    return oldest.id;
+
+  // 2) Якщо у фіді немає стрімів, беремо будь-який найсвіжіший запис.
+  for (const e of entries) {
+    if (isLikelyYoutubeVideoId(e.id)) return e.id;
   }
-  return entries[0].id;
+
+  return null;
+}
+
+async function isEmbeddableYoutubeVideoId(videoId: string): Promise<boolean> {
+  if (!isLikelyYoutubeVideoId(videoId)) return false;
+  try {
+    const url = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`;
+    const res = await fetch(url, {
+      next: { revalidate: OEMBED_REVALIDATE_SECONDS },
+      headers: { "User-Agent": "LostChroniclesSite/1.0 (+https://lost-chronicles.site)" },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -90,8 +113,20 @@ export async function getLatestHeroYoutubeVideoId(): Promise<string> {
 
     const xml = await res.text();
     const entries = parseFeedEntries(xml, 15);
-    const picked = pickHeroVideoIdFromEntries(entries);
-    if (picked && isLikelyYoutubeVideoId(picked)) return picked;
+    const primary = pickHeroVideoIdFromEntries(entries);
+    if (primary && (await isEmbeddableYoutubeVideoId(primary))) return primary;
+
+    // Fallback 1: embeddable записаний стрім.
+    for (const entry of entries) {
+      if (isLikelyStreamTitle(entry.title) && (await isEmbeddableYoutubeVideoId(entry.id))) {
+        return entry.id;
+      }
+    }
+
+    // Fallback 2: будь-який embeddable ролик серед свіжих записів.
+    for (const entry of entries) {
+      if (await isEmbeddableYoutubeVideoId(entry.id)) return entry.id;
+    }
 
     return fallback;
   } catch {

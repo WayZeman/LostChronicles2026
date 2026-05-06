@@ -27,7 +27,11 @@ function buildYoutubeEmbedSrc(videoId: string): string {
   if (typeof window !== "undefined" && /^https?:\/\//.test(window.location.origin)) {
     params.set("origin", window.location.origin);
   }
-  return `https://www.youtube.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
+}
+
+function buildYoutubeWatchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
 }
 
 /** Прев’ю YouTube без iframe, поки користувач не натисне — економія трафіку на мобільних і 3G. */
@@ -111,6 +115,18 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
                 </span>
                 <span className="sr-only">Відтворити відео на YouTube</span>
               </button>
+              <a
+                href={buildYoutubeWatchUrl(videoId)}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={cn(
+                  "lc-focus-ring absolute bottom-3 right-3 rounded-full px-3 py-1.5 text-xs",
+                  "border border-white/20 bg-black/45 text-white/90 backdrop-blur-md",
+                  "transition-colors hover:border-[var(--mc-net-green)] hover:text-[var(--mc-net-green)]",
+                )}
+              >
+                Відкрити на YouTube
+              </a>
             </>
           )}
         </div>
