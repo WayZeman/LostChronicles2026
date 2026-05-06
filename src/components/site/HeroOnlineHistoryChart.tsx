@@ -48,12 +48,22 @@ function ukPlayersWord(n: number): string {
   return "гравців";
 }
 
+function getPlayerHeadUrl(nick: string): string {
+  const skinUrl = `http://skinsystem.ely.by/skins/${encodeURIComponent(nick)}.png`;
+  return `https://ely.by/services/skins-renderer?url=${encodeURIComponent(skinUrl)}&scale=18.9&renderFace=1`;
+}
+
+function getPlayerHeadFallbackUrl(nick: string): string {
+  return `https://mc-heads.net/avatar/${encodeURIComponent(nick)}/48`;
+}
+
 type ChartPayload = {
   labels: string[];
   values: number[];
   synthetic?: boolean;
   liveOnline?: number | null;
   liveMax?: number;
+  livePlayerNames?: string[];
   liveProbe?: "api" | "api-offline" | "env-fallback";
 };
 
@@ -101,6 +111,9 @@ export function HeroOnlineHistoryChart() {
       if (!("liveOnline" in data)) {
         data.liveOnline = null;
       }
+      if (!Array.isArray(data.livePlayerNames)) {
+        data.livePlayerNames = [];
+      }
       setPayload(data);
     } catch {
       setError("Не вдалося завантажити графік");
@@ -116,10 +129,26 @@ export function HeroOnlineHistoryChart() {
     payload && payload.values.some((v) => v < 0),
   );
 
-  const maxY =
-    payload && payload.values.length > 0
-      ? Math.max(...payload.values) + 1
-      : 1;
+  const chartValues = useMemo(() => {
+    if (!payload || payload.values.length === 0) return [];
+    const next = [...payload.values];
+    if (
+      payload.liveProbe === "api" &&
+      typeof payload.liveOnline === "number" &&
+      payload.liveOnline >= 0
+    ) {
+      next[next.length - 1] = payload.liveOnline;
+    }
+    return next;
+  }, [payload]);
+
+  const maxY = chartValues.length > 0 ? Math.max(...chartValues) + 1 : 1;
+  const peakOnline = useMemo(() => {
+    if (chartValues.length === 0) return null;
+    const onlyOnlineValues = chartValues.filter((v) => v >= 0);
+    if (onlyOnlineValues.length === 0) return null;
+    return Math.max(...onlyOnlineValues);
+  }, [chartValues]);
 
   const animMs =
     motionTier === "none" ? 0 : motionTier === "light" ? 520 : 1400;
@@ -201,7 +230,7 @@ export function HeroOnlineHistoryChart() {
           datasets: [
             {
               label: "Онлайн",
-              data: payload.values,
+              data: chartValues,
               borderColor: LINE_GOLD,
               backgroundColor: "transparent",
               borderWidth: 4,
@@ -235,11 +264,50 @@ export function HeroOnlineHistoryChart() {
             Зараз нікого немає онлайн.
           </p>
         ) : (
-          <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
-            Зараз онлайн:{" "}
-            <span className="tabular-nums">{payload.liveOnline}</span>{" "}
-            {ukPlayersWord(payload.liveOnline)}
-          </p>
+          <>
+            <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+              Зараз онлайн:{" "}
+              <span className="tabular-nums">{payload.liveOnline}</span>{" "}
+              {ukPlayersWord(payload.liveOnline)}
+            </p>
+            {payload.livePlayerNames && payload.livePlayerNames.length > 0 ? (
+              <div className="mt-3">
+                <p className="mb-2 text-center text-xs text-[var(--mc-text-muted)] md:text-sm">
+                  Гравці онлайн
+                </p>
+                <ul className="mx-auto flex w-full max-w-3xl flex-wrap justify-center gap-2">
+                  {payload.livePlayerNames.map((nick) => (
+                    <li
+                      key={nick}
+                      className="flex w-[calc(50%-0.25rem)] min-w-[140px] max-w-[190px] items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-2.5 py-2 sm:w-[calc(33.333%-0.34rem)] lg:w-[calc(25%-0.375rem)]"
+                    >
+                      <img
+                        src={getPlayerHeadUrl(nick)}
+                        alt={`Скін гравця ${nick}`}
+                        width={24}
+                        height={24}
+                        loading="lazy"
+                        decoding="async"
+                        onError={(event) => {
+                          const img = event.currentTarget;
+                          if (img.dataset.fallbackApplied === "1") return;
+                          img.dataset.fallbackApplied = "1";
+                          img.src = getPlayerHeadFallbackUrl(nick);
+                        }}
+                        className="size-6 shrink-0 rounded-[4px] border border-white/[0.2]"
+                      />
+                      <span
+                        className="min-w-0 truncate text-center text-xs text-[var(--mc-text-muted)] md:text-sm"
+                        title={nick}
+                      >
+                        {nick}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
+          </>
         )
       ) : null}
 
@@ -250,7 +318,7 @@ export function HeroOnlineHistoryChart() {
           </p>
         ) : data ? (
           <Line
-            key={`${payload?.labels?.length ?? 0}-${payload?.values?.at(-1) ?? ""}`}
+            key={`${payload?.labels?.length ?? 0}-${chartValues.at(-1) ?? ""}-${payload?.liveOnline ?? ""}`}
             data={data}
             options={options}
           />
@@ -260,6 +328,12 @@ export function HeroOnlineHistoryChart() {
           </p>
         )}
       </div>
+      {peakOnline != null ? (
+        <p className="mt-3 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+          Пік онлайну: <span className="tabular-nums">{peakOnline}</span>{" "}
+          {ukPlayersWord(peakOnline)}
+        </p>
+      ) : null}
     </div>
   );
 }

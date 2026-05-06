@@ -10,6 +10,7 @@ export type JavaServerStatus = {
   /** null — невідомо (немає API і немає NEXT_PUBLIC_SERVER_ONLINE) */
   playersOnline: number | null;
   playersMax: number;
+  playerNames: string[];
   source: JavaServerStatusSource;
 };
 
@@ -27,8 +28,26 @@ function parseEnvMax(raw: string | undefined): number {
 
 type McSrvPayload = {
   online?: boolean;
-  players?: { online?: number; max?: number };
+  players?: { online?: number; max?: number; list?: unknown };
 };
+
+function parsePlayerNames(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((entry) => {
+      if (typeof entry === "string") return entry.trim();
+      if (
+        entry &&
+        typeof entry === "object" &&
+        "name" in entry &&
+        typeof (entry as { name?: unknown }).name === "string"
+      ) {
+        return (entry as { name: string }).name.trim();
+      }
+      return "";
+    })
+    .filter((name) => name.length > 0);
+}
 
 /**
  * Дозволяє лише типовий Minecraft host / IPv4 / host:port без шляхів і спецсимволів,
@@ -48,7 +67,13 @@ export async function getJavaServerStatus(hostname: string): Promise<JavaServerS
   const host = sanitizeMinecraftServerHost(hostname);
 
   if (!host) {
-    return { host, playersOnline: envOnline, playersMax: envMax, source: "env-fallback" };
+    return {
+      host,
+      playersOnline: envOnline,
+      playersMax: envMax,
+      playerNames: [],
+      source: "env-fallback",
+    };
   }
 
   try {
@@ -59,7 +84,13 @@ export async function getJavaServerStatus(hostname: string): Promise<JavaServerS
     });
 
     if (!res.ok) {
-      return { host, playersOnline: envOnline, playersMax: envMax, source: "env-fallback" };
+      return {
+        host,
+        playersOnline: envOnline,
+        playersMax: envMax,
+        playerNames: [],
+        source: "env-fallback",
+      };
     }
 
     const data = (await res.json()) as McSrvPayload;
@@ -74,6 +105,7 @@ export async function getJavaServerStatus(hostname: string): Promise<JavaServerS
         host,
         playersOnline: online,
         playersMax: Math.max(max, online, 1),
+        playerNames: parsePlayerNames(data.players.list),
         source: "api",
       };
     }
@@ -82,9 +114,16 @@ export async function getJavaServerStatus(hostname: string): Promise<JavaServerS
       host,
       playersOnline: 0,
       playersMax: envMax,
+      playerNames: [],
       source: "api-offline",
     };
   } catch {
-    return { host, playersOnline: envOnline, playersMax: envMax, source: "env-fallback" };
+    return {
+      host,
+      playersOnline: envOnline,
+      playersMax: envMax,
+      playerNames: [],
+      source: "env-fallback",
+    };
   }
 }

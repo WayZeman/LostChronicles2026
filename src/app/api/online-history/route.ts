@@ -79,6 +79,7 @@ function syntheticSeries(period: Period, currentOnline: number): {
 type LiveSnapshot = {
   liveOnline: number | null;
   liveMax: number;
+  livePlayerNames: string[];
   liveProbe: "api" | "api-offline" | "env-fallback";
 };
 
@@ -89,6 +90,7 @@ async function getLiveSnapshot(): Promise<LiveSnapshot> {
   return {
     liveOnline: status.playersOnline,
     liveMax: status.playersMax,
+    livePlayerNames: status.playerNames,
     liveProbe: status.source,
   };
 }
