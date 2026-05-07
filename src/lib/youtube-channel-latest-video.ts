@@ -4,7 +4,6 @@ import {
 } from "@/data/lc-youtube-promo";
 
 const FEED_REVALIDATE_SECONDS = 300;
-const OEMBED_REVALIDATE_SECONDS = 900;
 
 function fallbackPromoVideoId(): string {
   try {
@@ -77,20 +76,6 @@ function pickHeroVideoIdFromEntries(entries: FeedEntry[]): string | null {
   return null;
 }
 
-async function isEmbeddableYoutubeVideoId(videoId: string): Promise<boolean> {
-  if (!isLikelyYoutubeVideoId(videoId)) return false;
-  try {
-    const url = `https://www.youtube.com/oembed?url=${encodeURIComponent(`https://www.youtube.com/watch?v=${videoId}`)}&format=json`;
-    const res = await fetch(url, {
-      next: { revalidate: OEMBED_REVALIDATE_SECONDS },
-      headers: { "User-Agent": "LostChroniclesSite/1.0 (+https://lost-chronicles.site)" },
-    });
-    return res.ok;
-  } catch {
-    return false;
-  }
-}
-
 /**
  * Останнє відео з публічного RSS каналу (те саме, що «Відео» на YouTube за датою).
  * Підходить для нових трансляцій / VOD без YouTube Data API.
@@ -114,21 +99,7 @@ export async function getLatestHeroYoutubeVideoId(): Promise<string> {
     const xml = await res.text();
     const entries = parseFeedEntries(xml, 15);
     const primary = pickHeroVideoIdFromEntries(entries);
-    if (primary && (await isEmbeddableYoutubeVideoId(primary))) return primary;
-
-    // Fallback 1: embeddable записаний стрім.
-    for (const entry of entries) {
-      if (isLikelyStreamTitle(entry.title) && (await isEmbeddableYoutubeVideoId(entry.id))) {
-        return entry.id;
-      }
-    }
-
-    // Fallback 2: будь-який embeddable ролик серед свіжих записів.
-    for (const entry of entries) {
-      if (await isEmbeddableYoutubeVideoId(entry.id)) return entry.id;
-    }
-
-    return fallback;
+    return primary ?? fallback;
   } catch {
     return fallback;
   }

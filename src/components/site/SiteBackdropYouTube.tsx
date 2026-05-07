@@ -13,7 +13,9 @@ import { cn } from "@/lib/utils";
 const VIDEO_ID = "_5jELltfi9U";
 
 function backdropEmbedSrc(): string {
-  return `https://www.youtube-nocookie.com/embed/${VIDEO_ID}?autoplay=1&mute=1&start=13&controls=0&loop=1&playlist=${VIDEO_ID}&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1`;
+  // YouTube інколи малює службовий текст зверху (назва/підказки).
+  // Це бекграунд, тож ми максимально вимикаємо UI параметрами embed.
+  return `https://www.youtube-nocookie.com/embed/${VIDEO_ID}?autoplay=1&mute=1&start=13&controls=0&loop=1&playlist=${VIDEO_ID}&playsinline=1&rel=0&modestbranding=1&iv_load_policy=3&disablekb=1&fs=0&showinfo=0`;
 }
 
 /**
@@ -22,7 +24,7 @@ function backdropEmbedSrc(): string {
  */
 const IFRAME_LOAD_FALLBACK_MS = 9000;
 /** Пауза після load: перший кадр декодується без «смуги знизу». */
-const REVEAL_DELAY_AFTER_LOAD_MS = 400;
+const REVEAL_DELAY_AFTER_LOAD_MS = 2200;
 
 export function SiteBackdropYouTube() {
   const [active, setActive] = useState(true);
@@ -140,7 +142,7 @@ export function SiteBackdropYouTube() {
             referrerPolicy="strict-origin-when-cross-origin"
             onLoad={scheduleRevealAfterLoad}
           />
-          {/* Вуаль знімається лише після load + пауза; без анімації opacity на iframe. */}
+          {/* Вуаль знімається лише після load + невелика пауза; без анімації opacity на iframe. */}
           <div
             className={cn(
               "mc-backdrop-youtube-cover",

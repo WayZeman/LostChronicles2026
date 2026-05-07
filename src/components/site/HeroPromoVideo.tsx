@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Play } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -17,9 +17,13 @@ function thumbUrlsFor(videoId: string) {
   ] as const;
 }
 
-function buildYoutubeEmbedSrc(videoId: string): string {
+function buildYoutubeEmbedSrc(
+  videoId: string,
+  opts: { autoplay: boolean; mute: boolean },
+): string {
   const params = new URLSearchParams({
-    autoplay: "1",
+    autoplay: opts.autoplay ? "1" : "0",
+    mute: opts.mute ? "1" : "0",
     rel: "0",
     playsinline: "1",
     modestbranding: "1",
@@ -38,15 +42,50 @@ function buildYoutubeWatchUrl(videoId: string): string {
 export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
   const [playing, setPlaying] = useState(false);
   const [thumbIndex, setThumbIndex] = useState(0);
+  const [preloadReady, setPreloadReady] = useState(false);
+  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
   const thumbUrls = useMemo(() => Array.from(thumbUrlsFor(videoId)), [videoId]);
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     setThumbIndex(0);
     setPlaying(false);
+    setPreloadReady(false);
+    setIframeSrc(null);
+  }, [videoId]);
+
+  // Підвантажуємо iframe трохи наперед (коли блок майже в кадрі), щоб перший клік одразу стартував відео.
+  useEffect(() => {
+    const el = rootRef.current;
+    if (!el) return;
+
+    if (typeof IntersectionObserver !== "function") {
+      setPreloadReady(true);
+      setIframeSrc(buildYoutubeEmbedSrc(videoId, { autoplay: false, mute: true }));
+      return;
+    }
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (!entry?.isIntersecting) return;
+        setPreloadReady(true);
+        setIframeSrc(buildYoutubeEmbedSrc(videoId, { autoplay: false, mute: true }));
+        io.disconnect();
+      },
+      { root: null, rootMargin: "600px 0px", threshold: 0.01 },
+    );
+
+    io.observe(el);
+    return () => io.disconnect();
   }, [videoId]);
 
   return (
-    <div className="w-full" aria-label="Відео про сервер Lost Chronicles на YouTube">
+    <div
+      ref={rootRef}
+      className="w-full"
+      aria-label="Відео про сервер Lost Chronicles на YouTube"
+    >
       <div
         className={cn(
           "overflow-hidden rounded-[1.75rem] border border-white/[0.14]",
@@ -56,16 +95,27 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
         )}
       >
         <div className="relative aspect-video w-full bg-black">
-          {playing ? (
+          {iframeSrc ? (
             <iframe
-              src={buildYoutubeEmbedSrc(videoId)}
-              className="absolute inset-0 h-full w-full border-0"
+              src={
+                playing
+                  ? buildYoutubeEmbedSrc(videoId, { autoplay: true, mute: false })
+                  : iframeSrc
+              }
+              className={cn(
+                "absolute inset-0 h-full w-full border-0",
+                !playing && "pointer-events-none opacity-0",
+              )}
               title="Lost Chronicles — відео на YouTube"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowFullScreen
               referrerPolicy="strict-origin-when-cross-origin"
+              aria-hidden={!playing}
+              tabIndex={playing ? 0 : -1}
             />
-          ) : (
+          ) : null}
+
+          {!playing ? (
             <>
               <Image
                 key={thumbUrls[thumbIndex]}
@@ -94,7 +144,14 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
                   "text-white transition-[opacity,transform] duration-200",
                   "hover:opacity-[0.98] active:scale-[0.99] active:opacity-95",
                 )}
-                onClick={() => setPlaying(true)}
+                onClick={() => {
+                  // Якщо iframe ще не встиг підвантажитися — стартуємо його одразу.
+                  if (!preloadReady || !iframeSrc) {
+                    setPreloadReady(true);
+                    setIframeSrc(buildYoutubeEmbedSrc(videoId, { autoplay: false, mute: true }));
+                  }
+                  setPlaying(true);
+                }}
               >
                 <span
                   className={cn(
@@ -128,7 +185,7 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
                 Відкрити на YouTube
               </a>
             </>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

@@ -160,6 +160,7 @@
   }
   body {
     @apply bg-background text-foreground overflow-x-hidden;
+    background-color: var(--mc-net-page);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     scrollbar-width: none; /* Firefox */
@@ -217,15 +218,18 @@
   position: fixed;
   left: 0;
   right: 0;
-  /* Невеликий «нахльост» за межі viewport — прибрати субпіксельну смугу зверху/знизу на мобільних */
-  top: -6px;
-  bottom: -6px;
+  /*
+    Safari (особливо iOS) при «bounce» показує область поза viewport.
+    Даємо великий запас + safe-area, щоб не було світлої смуги зверху/знизу.
+  */
+  top: calc(-96px - env(safe-area-inset-top, 0px));
+  bottom: calc(-96px - env(safe-area-inset-bottom, 0px));
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  min-height: calc(100vh + 12px);
-  min-height: calc(100dvh + 12px);
-  min-height: calc(-webkit-fill-available + 12px);
+  min-height: calc(100vh + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
+  min-height: calc(100dvh + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
+  min-height: calc(-webkit-fill-available + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
   background-color: var(--mc-net-page);
   background-image: var(--mc-bg-image-overlay), url("/fon.png");
   background-size: cover, cover;
@@ -303,7 +307,7 @@ html.has-video-bg .mc-backdrop-scrim {
   min-height: 100vh;
   min-height: 100dvh;
   min-width: 177.78vh;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -54%) scale(1.12);
   border: 0;
   opacity: 1;
 }
