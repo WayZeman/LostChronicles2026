@@ -51,7 +51,7 @@ export function sliceOumSeriesForPeriod(
   labels: string[],
   values: number[],
   period: OumHistoryPeriod,
-  maxPoints = 360,
+  maxPoints = 5000,
 ): { labels: string[]; values: number[] } {
   const pairs = labels
     .map((l, i) => ({

@@ -61,6 +61,7 @@ type ChartPayload = {
   labels: string[];
   values: number[];
   synthetic?: boolean;
+  allTimePeak?: number | null;
   liveOnline?: number | null;
   liveMax?: number;
   livePlayerNames?: string[];
@@ -116,6 +117,12 @@ export function HeroOnlineHistoryChart() {
       if (!Array.isArray(data.livePlayerNames)) {
         data.livePlayerNames = [];
       }
+      if (
+        data.allTimePeak != null &&
+        (typeof data.allTimePeak !== "number" || data.allTimePeak < 0)
+      ) {
+        data.allTimePeak = null;
+      }
       setPayload(data);
     } catch {
       setError("Не вдалося завантажити графік");
@@ -133,24 +140,19 @@ export function HeroOnlineHistoryChart() {
 
   const chartValues = useMemo(() => {
     if (!payload || payload.values.length === 0) return [];
-    const next = [...payload.values];
-    if (
-      payload.liveProbe === "api" &&
-      typeof payload.liveOnline === "number" &&
-      payload.liveOnline >= 0
-    ) {
-      next[next.length - 1] = payload.liveOnline;
-    }
-    return next;
+    return [...payload.values];
   }, [payload]);
 
   const maxY = chartValues.length > 0 ? Math.max(...chartValues) + 1 : 1;
   const peakOnline = useMemo(() => {
+    if (payload && typeof payload.allTimePeak === "number") {
+      return payload.allTimePeak;
+    }
     if (chartValues.length === 0) return null;
     const onlyOnlineValues = chartValues.filter((v) => v >= 0);
     if (onlyOnlineValues.length === 0) return null;
     return Math.max(...onlyOnlineValues);
-  }, [chartValues]);
+  }, [chartValues, payload]);
 
   const animMs =
     motionTier === "none" ? 0 : motionTier === "light" ? 520 : 1400;
@@ -260,7 +262,7 @@ export function HeroOnlineHistoryChart() {
       {payload != null && payload.liveOnline != null ? (
         payload.liveProbe === "api-offline" ? (
           <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-text-muted)] md:text-base">
-            Не вдалося перевірити сервер — спробуйте пізніше.
+            Сервер зараз офлайн.
           </p>
         ) : payload.liveOnline === 0 ? (
           <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">

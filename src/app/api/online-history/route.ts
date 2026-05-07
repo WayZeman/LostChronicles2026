@@ -14,6 +14,20 @@ function isPeriod(v: string | null): v is Period {
   return v === "day" || v === "week" || v === "month" || v === "all";
 }
 
+function calcPeak(values: number[]): number | null {
+  const onlineValues = values
+    .map((v) => Number(v))
+    .filter((v) => Number.isFinite(v) && v >= 0);
+  if (onlineValues.length === 0) return null;
+  return Math.max(...onlineValues);
+}
+
+function withLivePeak(peak: number | null, liveOnline: number | null): number | null {
+  if (typeof liveOnline !== "number" || liveOnline < 0) return peak;
+  if (peak == null) return liveOnline;
+  return Math.max(peak, liveOnline);
+}
+
 /** Лише https, без userinfo — зменшує ризик SSRF при помилковому/шкідливому env. */
 function parseTrustedOnlineHistoryUpstream(raw: string): URL | null {
   const s = raw.trim();
@@ -111,14 +125,24 @@ export async function GET(req: Request) {
       url.searchParams.set("period", period);
       const res = await fetch(url.toString(), { next: { revalidate: 60 } });
       if (res.ok) {
-        const data = (await res.json()) as { labels?: unknown; values?: unknown };
+        const data = (await res.json()) as {
+          labels?: unknown;
+          values?: unknown;
+          allTimePeak?: unknown;
+        };
         if (Array.isArray(data.labels) && Array.isArray(data.values)) {
+          const values = data.values.map((v) => Number(v) || 0);
+          const upstreamPeak =
+            typeof data.allTimePeak === "number" && data.allTimePeak >= 0
+              ? data.allTimePeak
+              : calcPeak(values);
           return Response.json({
             labels: data.labels.map(String),
-            values: data.values.map((v) => Number(v) || 0),
+            values,
             synthetic: false,
             source: "custom-api",
             historySource: "custom-api" as const,
+            allTimePeak: withLivePeak(upstreamPeak, live.liveOnline),
             ...live,
           });
         }
@@ -133,6 +157,7 @@ export async function GET(req: Request) {
     try {
       const full = await fetchOumOnlineHistory(oumPage);
       if (full && full.labels.length > 0) {
+        const allTimePeak = withLivePeak(calcPeak(full.values), live.liveOnline);
         const { labels, values } = sliceOumSeriesForPeriod(
           full.labels,
           full.values,
@@ -146,6 +171,7 @@ export async function GET(req: Request) {
             source: "minecraft-org-ua",
             historySource: "minecraft-org-ua" as const,
             attributionUrl: oumPage,
+            allTimePeak,
             ...live,
           });
         }
@@ -157,12 +183,14 @@ export async function GET(req: Request) {
 
   const online = live.liveOnline ?? 0;
   const { labels, values } = syntheticSeries(period, online);
+  const allTimePeak = withLivePeak(calcPeak(values), live.liveOnline);
 
   return Response.json({
     labels,
     values,
     synthetic: true,
     historySource: "synthetic" as const,
+    allTimePeak,
     liveOnline: live.liveOnline,
     liveMax: live.liveMax,
     liveProbe: live.liveProbe,
