@@ -7,6 +7,7 @@ import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPan
 import { HeroSocialLinks } from "@/components/site/HeroSocialLinks";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-page-shell";
+import { cn } from "@/lib/utils";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_FORM_URL } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
@@ -82,7 +83,11 @@ export default function Home() {
           <Suspense
             fallback={
               <div
-                className={`${lcGlassPanelClass} bg-[color-mix(in_srgb,#000_20%,transparent)] px-4 py-16 text-center text-sm text-[var(--mc-text-muted)] shadow-[0_16px_52px_rgba(0,0,0,0.28)]`}
+                className={cn(
+                  lcGlassPanelClass,
+                  "bg-[color-mix(in_srgb,#000_20%,transparent)] px-4 py-16 text-center text-sm text-[var(--mc-text-muted)] shadow-[0_16px_52px_rgba(0,0,0,0.28)]",
+                  "lc-skeleton-breathe",
+                )}
               >
                 Завантаження онлайну та статистики…
               </div>

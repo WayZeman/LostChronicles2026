@@ -14,6 +14,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { SoftAppear } from "@/components/site/SoftAppear";
 import { cn } from "@/lib/utils";
 
 ChartJS.register(
@@ -48,13 +49,15 @@ function ukPlayersWord(n: number): string {
   return "гравців";
 }
 
-function getPlayerHeadUrl(nick: string): string {
-  const skinUrl = `http://skinsystem.ely.by/skins/${encodeURIComponent(nick)}.png`;
-  return `https://ely.by/services/skins-renderer?url=${encodeURIComponent(skinUrl)}&scale=18.9&renderFace=1`;
+/** Швидкий рендер голови (Mojang); для Ely-акаунтів підставляється резерв нижче. */
+function getMcHeadAvatarUrl(nick: string, size: 32 | 48 = 32): string {
+  return `https://mc-heads.net/avatar/${encodeURIComponent(nick)}/${size}`;
 }
 
-function getPlayerHeadFallbackUrl(nick: string): string {
-  return `https://mc-heads.net/avatar/${encodeURIComponent(nick)}/48`;
+/** Ely — лише як fallback: менший scale швидше віддає PNG. */
+function getElyPlayerHeadUrl(nick: string): string {
+  const skinUrl = `http://skinsystem.ely.by/skins/${encodeURIComponent(nick)}.png`;
+  return `https://ely.by/services/skins-renderer?url=${encodeURIComponent(skinUrl)}&scale=10&renderFace=1`;
 }
 
 type ChartPayload = {
@@ -194,7 +197,7 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
   }, [chartValues, payload]);
 
   const animMs =
-    motionTier === "none" ? 0 : motionTier === "light" ? 520 : 1400;
+    motionTier === "none" ? 0 : motionTier === "light" ? 580 : 1650;
 
   const options: ChartOptions<"line"> = useMemo(
     () => ({
@@ -287,16 +290,17 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
       : null;
 
   return (
-    <div
-      className={cn(
-        !embedded && lcGlassPanelClass,
-        !embedded && "lc-interactive-panel-static",
-        !embedded &&
-          "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
-        embedded &&
-          "rounded-2xl border border-white/[0.08] bg-[color-mix(in_srgb,#000_24%,transparent)] p-4 md:p-5",
-      )}
-    >
+    <SoftAppear slow>
+      <div
+        className={cn(
+          !embedded && lcGlassPanelClass,
+          !embedded && "lc-interactive-panel-static",
+          !embedded &&
+            "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
+          embedded &&
+            "lc-interactive-panel-embed rounded-2xl border border-white/[0.08] bg-[color-mix(in_srgb,#000_24%,transparent)] p-4 md:p-5",
+        )}
+      >
       {!embedded ? (
         <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
           Моніторинг онлайну сервера
@@ -337,23 +341,34 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
             {payload.livePlayerNames && payload.livePlayerNames.length > 0 ? (
               <div className="mt-3">
                 <ul className="mx-auto flex w-full max-w-3xl flex-wrap justify-center gap-2">
-                  {payload.livePlayerNames.map((nick) => (
+                  {payload.livePlayerNames.map((nick, headIdx) => (
                     <li
                       key={nick}
                       className="lc-player-card flex w-[calc(50%-0.25rem)] min-w-[140px] max-w-[190px] items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.03] px-2.5 py-2 sm:w-[calc(33.333%-0.34rem)] lg:w-[calc(25%-0.375rem)]"
                     >
                       <img
-                        src={getPlayerHeadUrl(nick)}
+                        src={getMcHeadAvatarUrl(nick)}
                         alt={`Скін гравця ${nick}`}
                         width={24}
                         height={24}
-                        loading="lazy"
+                        loading={headIdx < 10 ? "eager" : "lazy"}
                         decoding="async"
+                        fetchPriority={headIdx < 4 ? "high" : undefined}
+                        data-player={nick}
+                        data-head-stage="mc"
                         onError={(event) => {
                           const img = event.currentTarget;
-                          if (img.dataset.fallbackApplied === "1") return;
-                          img.dataset.fallbackApplied = "1";
-                          img.src = getPlayerHeadFallbackUrl(nick);
+                          const playerNick = img.dataset.player ?? "";
+                          const stage = img.dataset.headStage ?? "mc";
+                          if (stage === "mc") {
+                            img.dataset.headStage = "ely";
+                            img.src = getElyPlayerHeadUrl(playerNick);
+                            return;
+                          }
+                          if (stage === "ely") {
+                            img.dataset.headStage = "steve";
+                            img.src = getMcHeadAvatarUrl("steve");
+                          }
                         }}
                         className="size-6 shrink-0 rounded-[4px] border border-white/[0.2]"
                       />
@@ -397,6 +412,7 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
           {ukPlayersWord(peakOnline)}
         </p>
       ) : null}
-    </div>
+      </div>
+    </SoftAppear>
   );
 }

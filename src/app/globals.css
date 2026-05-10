@@ -57,7 +57,11 @@
 :root {
   color-scheme: dark;
   --am-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --am-dur: 0.55s;
+  --am-dur: 0.65s;
+  /* Плавна поява підвантажених блоків (Suspense, dynamic import) */
+  --lc-stream-dur: 1.05s;
+  --lc-stream-dur-slow: 1.28s;
+  --lc-stream-ease: cubic-bezier(0.16, 1, 0.3, 1);
   /* Lost Chronicles — лише темна палітра */
   --mc-net-green: #eab308;
   --mc-net-green-hover: #facc15;
@@ -626,6 +630,139 @@ body.lc-page-enter {
   transform: scale(1.12) rotate(-2deg);
 }
 
+/* Подіум топ-3: зсув по вертикалі через --lc-podium-y-md + анімація при hover */
+.lc-podium-card {
+  transition:
+    transform 0.45s var(--am-ease),
+    filter 0.45s var(--am-ease),
+    border-color 0.35s var(--am-ease);
+}
+@media (min-width: 768px) {
+  .lc-podium-card {
+    transform: translateY(var(--lc-podium-y-md, 0px));
+  }
+  .lc-podium-card:hover {
+    transform: translateY(calc(var(--lc-podium-y-md, 0px) - 10px)) scale(1.045);
+    filter: brightness(1.1) saturate(1.08) drop-shadow(0 18px 36px rgba(250, 204, 21, 0.22));
+    border-color: rgba(255, 255, 255, 0.22);
+  }
+}
+@media (max-width: 767px) {
+  .lc-podium-card:hover {
+    transform: scale(1.035);
+    filter: brightness(1.08) saturate(1.06) drop-shadow(0 12px 28px rgba(250, 204, 21, 0.15));
+  }
+}
+
+/* Інші картки: лише легкий filter */
+.lc-hover-card-glow {
+  transition: filter 0.42s var(--am-ease);
+}
+.lc-hover-card-glow:hover {
+  filter: brightness(1.08) saturate(1.06);
+}
+
+/* Вкладені панелі Java / Bedrock на головній */
+.lc-hero-subpanel {
+  transition:
+    transform 0.38s var(--am-ease),
+    box-shadow 0.38s var(--am-ease),
+    border-color 0.32s var(--am-ease);
+}
+.lc-hero-subpanel:hover {
+  transform: translateY(-4px);
+  border-color: rgba(250, 204, 21, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.12) inset,
+    0 18px 46px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(250, 204, 21, 0.08);
+}
+
+/* Вбудований графік онлайну — легкий підйом і обводка без циклу «дихання» */
+.lc-interactive-panel-embed {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.36s var(--am-ease),
+    box-shadow 0.36s var(--am-ease),
+    border-color 0.3s var(--am-ease);
+}
+.lc-interactive-panel-embed::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(
+    110deg,
+    transparent 0%,
+    rgba(250, 204, 21, 0.14) 40%,
+    rgba(255, 255, 255, 0.22) 50%,
+    rgba(250, 204, 21, 0.14) 60%,
+    transparent 100%
+  );
+  background-size: 220% 100%;
+  background-position: 0% 50%;
+  opacity: 0;
+  transition: opacity 0.32s var(--am-ease);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  mask-composite: exclude;
+}
+.lc-interactive-panel-embed:hover {
+  transform: translateY(-3px) scale(1.006);
+  border-color: rgba(250, 204, 21, 0.2);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 16px 44px rgba(0, 0, 0, 0.3),
+    0 0 24px rgba(250, 204, 21, 0.12);
+}
+.lc-interactive-panel-embed:hover::after {
+  opacity: 1;
+  animation: lc-border-shimmer 2s linear infinite;
+}
+
+/* Рядки рейтингу 4–10 */
+.lc-hover-row {
+  transition:
+    background-color 0.3s var(--am-ease),
+    transform 0.32s var(--am-ease),
+    box-shadow 0.32s var(--am-ease);
+  border-radius: 0.875rem;
+}
+.lc-hover-row:hover {
+  background: rgba(255, 255, 255, 0.045);
+  transform: translateX(5px);
+  box-shadow: -3px 0 0 rgba(250, 204, 21, 0.35);
+}
+
+/* Посилання в списку каталогів (monobank-блок) */
+.lc-catalog-row {
+  transition: background-color 0.28s var(--am-ease);
+}
+.lc-catalog-row:hover {
+  background: rgba(255, 255, 255, 0.055);
+}
+
+/* Декоративна іконка в картці — легке збільшення */
+.lc-hover-icon-pop {
+  transition:
+    transform 0.35s var(--am-ease),
+    border-color 0.3s var(--am-ease),
+    box-shadow 0.35s var(--am-ease);
+}
+.lc-hover-icon-pop:hover {
+  transform: scale(1.06);
+  border-color: rgba(250, 204, 21, 0.28);
+  box-shadow: 0 0 24px rgba(250, 204, 21, 0.12);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .lc-interactive-panel,
   .lc-player-card,
@@ -656,6 +793,61 @@ body.lc-page-enter {
     animation: none !important;
     opacity: 0 !important;
   }
+
+  .lc-hover-card-glow:hover {
+    filter: none !important;
+  }
+
+  .lc-podium-card {
+    transition: none !important;
+  }
+  @media (min-width: 768px) {
+    .lc-podium-card,
+    .lc-podium-card:hover {
+      transform: translateY(var(--lc-podium-y-md, 0px)) !important;
+      filter: none !important;
+    }
+  }
+  @media (max-width: 767px) {
+    .lc-podium-card:hover {
+      transform: none !important;
+      filter: none !important;
+    }
+  }
+
+  .lc-hero-subpanel:hover,
+  .lc-interactive-panel-embed:hover,
+  .lc-hover-icon-pop:hover {
+    transform: none !important;
+    filter: none !important;
+    box-shadow: none !important;
+  }
+
+  .lc-hover-card-glow,
+  .lc-hero-subpanel,
+  .lc-interactive-panel-embed,
+  .lc-hover-row,
+  .lc-catalog-row,
+  .lc-hover-icon-pop {
+    transition: none !important;
+  }
+
+  .lc-interactive-panel-embed::after,
+  .lc-interactive-panel-embed:hover::after {
+    animation: none !important;
+    opacity: 0 !important;
+  }
+
+  .lc-catalog-row:hover {
+    background: transparent !important;
+  }
+
+  .lc-hover-row:hover {
+    background: transparent !important;
+    box-shadow: none !important;
+    transform: none !important;
+    filter: none !important;
+  }
 }
 
 @keyframes am-fade-up {
@@ -666,6 +858,54 @@ body.lc-page-enter {
   to {
     opacity: 1;
     transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Довша, м’якша поява для контенту після завантаження */
+@keyframes lc-stream-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lc-skeleton-breathe {
+  0%,
+  100% {
+    opacity: 0.42;
+  }
+  50% {
+    opacity: 0.78;
+  }
+}
+
+.lc-stream-in {
+  animation: lc-stream-in var(--lc-stream-dur) var(--lc-stream-ease) both;
+}
+
+.lc-stream-in-slow {
+  animation-duration: var(--lc-stream-dur-slow);
+}
+
+.lc-skeleton-breathe {
+  animation: lc-skeleton-breathe 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-stream-in,
+  .lc-stream-in-slow {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .lc-skeleton-breathe {
+    animation: none !important;
+    opacity: 0.55 !important;
   }
 }
 

@@ -233,7 +233,7 @@ export function ProposalsListClient() {
                     className={cn(
                       lcGlassPanelClass,
                       "!p-3 sm:!p-4 md:!p-5",
-                      "flex flex-col gap-2 border-[var(--mc-border-card)] transition-shadow hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)]",
+                      "flex flex-col gap-2 border-[var(--mc-border-card)] transition-[box-shadow,transform,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-white/16 hover:shadow-[0_12px_40px_rgba(0,0,0,0.35)] motion-reduce:transition-shadow motion-reduce:hover:translate-y-0",
                     )}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2 gap-y-1.5">

@@ -98,6 +98,11 @@ export default function RootLayout({
       className="scroll-pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
       suppressHydrationWarning
     >
+      <head>
+        <link rel="preconnect" href="https://mc-heads.net" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://ely.by" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
+      </head>
       <body
         className={`${inter.variable} am-bg lc-page-enter relative flex min-h-screen flex-col antialiased`}
       >

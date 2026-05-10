@@ -10,6 +10,7 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
       <div
         className={cn(
           "flex min-h-[220px] w-full items-center justify-center rounded-2xl border border-dashed border-white/[0.12] bg-black/15 md:min-h-[300px] lg:min-h-[360px]",
+          "lc-skeleton-breathe",
         )}
       >
         <p className="text-sm text-[var(--mc-text-muted)]">Завантаження графіка…</p>
@@ -21,6 +22,7 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
       className={cn(
         lcGlassPanelClass,
         "bg-[color-mix(in_srgb,#000_20%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
+        "lc-skeleton-breathe",
       )}
     >
       <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">

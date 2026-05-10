@@ -40,7 +40,7 @@ export function SupportMonobankSection() {
       aria-labelledby="support-mono-heading"
     >
       <div
-        className="flex size-14 items-center justify-center rounded-full border border-[var(--mc-border-card)] bg-[var(--mc-vote-bg)] text-[var(--mc-net-green)] shadow-sm md:size-16"
+        className="lc-hover-icon-pop flex size-14 cursor-default items-center justify-center rounded-full border border-[var(--mc-border-card)] bg-[var(--mc-vote-bg)] text-[var(--mc-net-green)] shadow-sm md:size-16"
         aria-hidden
       >
         <HeartHandshake className="size-7 md:size-8" strokeWidth={2} />
@@ -80,7 +80,7 @@ export function SupportMonobankSection() {
         </p>
         <ul className="mt-3 divide-y divide-white/[0.08] border-y border-white/[0.08]">
           {CATALOG_VOTE_LINKS.map(({ href, label }) => (
-            <li key={href}>
+            <li key={href} className="lc-catalog-row rounded-lg">
               <a
                 href={href}
                 target="_blank"

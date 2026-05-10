@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { ExternalLink } from "lucide-react";
 import {
@@ -82,9 +83,11 @@ const PODIUM = {
 function PlaytimeCell({
   totalMs,
   podiumRank,
+  className,
 }: {
   totalMs: number;
   podiumRank?: PodiumRank;
+  className?: string;
 }) {
   const tierBorder =
     podiumRank === 1
@@ -106,12 +109,20 @@ function PlaytimeCell({
         "border",
         tierBorder,
         podiumRank === 1 && "ring-1 ring-amber-400/15",
+        className,
       )}
     >
       {formatPlaytimeHours(totalMs)}
     </span>
   );
 }
+
+/** Базовий зсув подіуму на md (2↓, 1↑, 3↓) — поєднується з hover у `.lc-podium-card`. */
+const PODIUM_Y_MD: Record<PodiumRank, string> = {
+  1: "-0.5rem",
+  2: "0.25rem",
+  3: "0.5rem",
+};
 
 function PodiumCard({
   rank,
@@ -128,11 +139,16 @@ function PodiumCard({
   return (
     <article
       className={cn(
-        "relative flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border text-center",
+        "group lc-podium-card relative flex min-h-0 flex-col overflow-hidden rounded-[1.35rem] border text-center",
         "md:h-full",
         p.shell,
         className,
       )}
+      style={
+        {
+          "--lc-podium-y-md": PODIUM_Y_MD[rank],
+        } as CSSProperties
+      }
     >
       <div
         className={cn(
@@ -154,7 +170,7 @@ function PodiumCard({
         <div className="flex flex-col items-center gap-2.5 sm:gap-3">
           <span
             className={cn(
-              "flex size-[2.375rem] shrink-0 items-center justify-center rounded-full text-sm font-extrabold tabular-nums sm:size-11 sm:text-base",
+              "flex size-[2.375rem] shrink-0 items-center justify-center rounded-full text-sm font-extrabold tabular-nums transition-transform duration-300 ease-out group-hover:scale-110 motion-reduce:transition-none motion-reduce:group-hover:scale-100 sm:size-11 sm:text-base",
               p.badge,
             )}
             aria-label={`${rank} місце`}
@@ -175,7 +191,7 @@ function PodiumCard({
         <div className="mt-auto pt-5 sm:pt-6">
           <div
             className={cn(
-              "flex w-full justify-center rounded-xl border px-3 py-2.5 sm:px-3.5 sm:py-3",
+              "flex w-full justify-center rounded-xl border px-3 py-2.5 transition-[border-color,box-shadow] duration-300 ease-out group-hover:border-white/20 group-hover:shadow-[0_0_20px_rgba(250,204,21,0.08)] motion-reduce:transition-none motion-reduce:group-hover:shadow-none sm:px-3.5 sm:py-3",
               p.timeShell,
             )}
           >
@@ -218,20 +234,20 @@ function TopThreePodium({ top }: { top: [PlanTopOnlineEntry, PlanTopOnlineEntry,
         <PodiumCard
           rank={2}
           player={second}
-          className="md:order-1 md:min-h-[11.5rem] md:translate-y-1"
+          className="md:order-1 md:min-h-[11.5rem]"
         />
         <PodiumCard
           rank={1}
           player={first}
           className={cn(
             "md:order-2 md:z-[1] md:min-h-[13.5rem]",
-            "md:-translate-y-2 md:shadow-[0_20px_56px_rgba(212,160,18,0.18)]",
+            "md:shadow-[0_20px_56px_rgba(212,160,18,0.18)]",
           )}
         />
         <PodiumCard
           rank={3}
           player={third}
-          className="md:order-3 md:min-h-[10.5rem] md:translate-y-2"
+          className="md:order-3 md:min-h-[10.5rem]"
         />
       </div>
     </>
@@ -260,11 +276,11 @@ function LeaderboardRestList({
         return (
           <li
             key={p.uuid}
-            className="flex items-center gap-3 py-3.5 first:pt-4 sm:gap-4"
+            className="group/row flex items-center gap-3 py-3.5 first:pt-4 sm:gap-4 lc-hover-row"
           >
             <span
               className={cn(
-                "w-7 shrink-0 text-center text-[0.8125rem] tabular-nums sm:text-[0.875rem]",
+                "w-7 shrink-0 text-center text-[0.8125rem] tabular-nums transition-colors duration-300 group-hover/row:text-[var(--mc-net-green)] sm:text-[0.875rem]",
                 rankRestClass(rank),
               )}
             >
@@ -273,7 +289,10 @@ function LeaderboardRestList({
             <span className="min-w-0 flex-1 truncate text-[0.9375rem] font-medium tracking-tight text-[var(--mc-text)] sm:text-base">
               {p.name}
             </span>
-            <PlaytimeCell totalMs={p.playtimeTotalMs} />
+            <PlaytimeCell
+              totalMs={p.playtimeTotalMs}
+              className="transition-[transform,border-color] duration-300 group-hover/row:scale-[1.02] group-hover/row:border-white/18"
+            />
           </li>
         );
       })}
