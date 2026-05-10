@@ -3,40 +3,16 @@
 import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Play } from "lucide-react";
+import {
+  buildYoutubeEmbedSrc,
+  buildYoutubeWatchUrl,
+  youtubeThumbUrlsFor,
+} from "@/lib/youtube-embed";
 import { cn } from "@/lib/utils";
 
 export type HeroPromoVideoProps = {
   videoId: string;
 };
-
-function thumbUrlsFor(videoId: string) {
-  return [
-    `https://i.ytimg.com/vi/${videoId}/maxresdefault.jpg`,
-    `https://i.ytimg.com/vi/${videoId}/sddefault.jpg`,
-    `https://i.ytimg.com/vi/${videoId}/hqdefault.jpg`,
-  ] as const;
-}
-
-function buildYoutubeEmbedSrc(
-  videoId: string,
-  opts: { autoplay: boolean; mute: boolean },
-): string {
-  const params = new URLSearchParams({
-    autoplay: opts.autoplay ? "1" : "0",
-    mute: opts.mute ? "1" : "0",
-    rel: "0",
-    playsinline: "1",
-    modestbranding: "1",
-  });
-  if (typeof window !== "undefined" && /^https?:\/\//.test(window.location.origin)) {
-    params.set("origin", window.location.origin);
-  }
-  return `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}?${params.toString()}`;
-}
-
-function buildYoutubeWatchUrl(videoId: string): string {
-  return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
-}
 
 /** Прев’ю YouTube без iframe, поки користувач не натисне — економія трафіку на мобільних і 3G. */
 export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
@@ -44,7 +20,7 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
   const [thumbIndex, setThumbIndex] = useState(0);
   const [preloadReady, setPreloadReady] = useState(false);
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
-  const thumbUrls = useMemo(() => Array.from(thumbUrlsFor(videoId)), [videoId]);
+  const thumbUrls = useMemo(() => youtubeThumbUrlsFor(videoId), [videoId]);
   const rootRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {

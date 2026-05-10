@@ -1,3 +1,9 @@
+import { getLcPlanPanelServerUrl } from "@/lib/lc-plan";
+import {
+  fetchPlanGraphPlayersOnlineRaw,
+  fetchPlanLiveForOnlineHistory,
+  slicePlanGraphSeriesForPeriod,
+} from "@/lib/lc-plan-online-history";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
 import { getJavaServerStatus } from "@/lib/minecraft-java-status";
 import {
@@ -94,18 +100,63 @@ type LiveSnapshot = {
   liveOnline: number | null;
   liveMax: number;
   livePlayerNames: string[];
-  liveProbe: "api" | "api-offline" | "env-fallback";
+  liveProbe: "plan" | "api" | "api-offline" | "env-fallback";
+  /** Підказка піку з Plan (`serverOverview`), якщо лайв уже з Plan. */
+  planPeakHint: number | null;
 };
+
+function publicLivePayload(live: LiveSnapshot) {
+  const { planPeakHint: _hint, ...rest } = live;
+  void _hint;
+  return rest;
+}
+
+function mergeDedupeSortedPlayerNames(a: string[], b: string[]): string[] {
+  const set = new Set<string>();
+  for (const x of a) {
+    const t = x.trim();
+    if (t) set.add(t);
+  }
+  for (const x of b) {
+    const t = x.trim();
+    if (t) set.add(t);
+  }
+  return [...set].sort((x, y) => x.localeCompare(y, "uk"));
+}
 
 async function getLiveSnapshot(): Promise<LiveSnapshot> {
   const host =
     process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST;
-  const status = await getJavaServerStatus(host);
+  const [status, planLive] = await Promise.all([
+    getJavaServerStatus(host),
+    fetchPlanLiveForOnlineHistory(),
+  ]);
+
+  if (planLive) {
+    const names = mergeDedupeSortedPlayerNames(
+      planLive.playerNames,
+      status.playerNames,
+    );
+    const javaOn = status.playersOnline;
+    const liveOnline = Math.max(
+      planLive.liveOnline,
+      javaOn != null && Number.isFinite(javaOn) && javaOn >= 0 ? javaOn : -1,
+    );
+    return {
+      liveOnline,
+      liveMax: status.playersMax,
+      livePlayerNames: names,
+      liveProbe: "plan",
+      planPeakHint: planLive.peakHint,
+    };
+  }
+
   return {
     liveOnline: status.playersOnline,
     liveMax: status.playersMax,
     livePlayerNames: status.playerNames,
     liveProbe: status.source,
+    planPeakHint: null,
   };
 }
 
@@ -114,7 +165,46 @@ export async function GET(req: Request) {
   const raw = searchParams.get("period");
   const period: Period = isPeriod(raw) ? raw : "week";
 
-  const live = await getLiveSnapshot();
+  if (searchParams.get("liveOnly") === "1") {
+    const live = await getLiveSnapshot();
+    const allTimePeak = withLivePeak(live.planPeakHint, live.liveOnline);
+    return Response.json({
+      liveOnly: true,
+      allTimePeak,
+      ...publicLivePayload(live),
+    });
+  }
+
+  const [live, planPoints] = await Promise.all([
+    getLiveSnapshot(),
+    fetchPlanGraphPlayersOnlineRaw(),
+  ]);
+  if (planPoints && planPoints.length > 0) {
+    const { labels, values, maxInPeriod } = slicePlanGraphSeriesForPeriod(
+      planPoints,
+      period,
+    );
+    if (labels.length > 0) {
+      let peak = maxInPeriod ?? calcPeak(values);
+      if (live.planPeakHint != null) {
+        peak =
+          peak == null
+            ? live.planPeakHint
+            : Math.max(peak, live.planPeakHint);
+      }
+      const allTimePeak = withLivePeak(peak, live.liveOnline);
+      return Response.json({
+        labels,
+        values,
+        synthetic: false,
+        source: "plan",
+        historySource: "plan" as const,
+        attributionUrl: getLcPlanPanelServerUrl(),
+        allTimePeak,
+        ...publicLivePayload(live),
+      });
+    }
+  }
 
   const upstreamBase = parseTrustedOnlineHistoryUpstream(
     process.env.ONLINE_HISTORY_API_URL ?? "",
@@ -143,7 +233,7 @@ export async function GET(req: Request) {
             source: "custom-api",
             historySource: "custom-api" as const,
             allTimePeak: withLivePeak(upstreamPeak, live.liveOnline),
-            ...live,
+            ...publicLivePayload(live),
           });
         }
       }
@@ -172,7 +262,7 @@ export async function GET(req: Request) {
             historySource: "minecraft-org-ua" as const,
             attributionUrl: oumPage,
             allTimePeak,
-            ...live,
+            ...publicLivePayload(live),
           });
         }
       }
@@ -191,8 +281,6 @@ export async function GET(req: Request) {
     synthetic: true,
     historySource: "synthetic" as const,
     allTimePeak,
-    liveOnline: live.liveOnline,
-    liveMax: live.liveMax,
-    liveProbe: live.liveProbe,
+    ...publicLivePayload(live),
   });
 }

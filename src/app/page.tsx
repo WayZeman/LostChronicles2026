@@ -1,16 +1,15 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
-import { HeroOnlineMonitor } from "@/components/site/HeroOnlineMonitor";
-import { HeroPromoVideo } from "@/components/site/HeroPromoVideo";
+import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPanel";
 import { HeroSocialLinks } from "@/components/site/HeroSocialLinks";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_FORM_URL } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
-import { getLatestHeroYoutubeVideoId } from "@/lib/youtube-channel-latest-video";
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 
 export const metadata: Metadata = {
@@ -20,14 +19,12 @@ export const metadata: Metadata = {
 };
 
 const defaultDescription =
-  "Lost Chronicles — місце, де українські гравці об’єднуються, щоб створювати пригоди, знаходити друзів і будувати власні цивілізації у живому світі історій.";
+  "місце, де українські гравці об’єднуються, щоб створювати пригоди, знаходити друзів і будувати власні цивілізації у живому світі історій.";
 
 /** Інакше NEXT_PUBLIC_* «запікається» в статичний HTML під час build і не оновиться без перезбірки. */
 export const dynamic = "force-dynamic";
 
-export default async function Home() {
-  const heroYoutubeVideoId = await getLatestHeroYoutubeVideoId();
-
+export default function Home() {
   const settings = {
     ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST,
     version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.7",
@@ -82,7 +79,17 @@ export default async function Home() {
           className="am-reveal am-delay-1 mt-10 flex w-full flex-col gap-8 md:mt-12 md:gap-10"
           aria-label="Онлайн та підключення до сервера"
         >
-          <HeroOnlineMonitor />
+          <Suspense
+            fallback={
+              <div
+                className={`${lcGlassPanelClass} bg-[color-mix(in_srgb,#000_20%,transparent)] px-4 py-16 text-center text-sm text-[var(--mc-text-muted)] shadow-[0_16px_52px_rgba(0,0,0,0.28)]`}
+              >
+                Завантаження онлайну та статистики…
+              </div>
+            }
+          >
+            <HeroServerOverviewPanel />
+          </Suspense>
           <div className={lcGlassPanelClass}>
             <h2 className="lc-hero-title text-center text-xl font-semibold text-[var(--mc-text)] md:text-2xl">
               Підключитися до серверу
@@ -102,7 +109,6 @@ export default async function Home() {
               <HeroSocialLinks embedded />
             </div>
           </div>
-          <HeroPromoVideo videoId={heroYoutubeVideoId} />
         </div>
 
         <SupportMonobankSection />

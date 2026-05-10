@@ -65,10 +65,17 @@ type ChartPayload = {
   liveOnline?: number | null;
   liveMax?: number;
   livePlayerNames?: string[];
-  liveProbe?: "api" | "api-offline" | "env-fallback";
+  liveProbe?: "plan" | "api" | "api-offline" | "env-fallback";
+  /** true — ще тягнемо серію для графіка (після швидкого liveOnly). */
+  chartPending?: boolean;
 };
 
-export function HeroOnlineHistoryChart() {
+type Props = {
+  /** Без зовнішньої «скляної» рамки — для вбудови в спільну картку. */
+  embedded?: boolean;
+};
+
+export function HeroOnlineHistoryChart({ embedded = false }: Props) {
   const [payload, setPayload] = useState<ChartPayload | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [motionTier, setMotionTier] = useState<"full" | "light" | "none">(
@@ -97,10 +104,50 @@ export function HeroOnlineHistoryChart() {
     };
   }, []);
 
+  const normalizePayload = useCallback((data: ChartPayload): ChartPayload => {
+    if (typeof data.liveMax !== "number") {
+      data.liveMax = 80;
+    }
+    if (!("liveOnline" in data)) {
+      data.liveOnline = null;
+    }
+    if (!Array.isArray(data.livePlayerNames)) {
+      data.livePlayerNames = [];
+    }
+    if (
+      data.allTimePeak != null &&
+      (typeof data.allTimePeak !== "number" || data.allTimePeak < 0)
+    ) {
+      data.allTimePeak = null;
+    }
+    if (!Array.isArray(data.labels)) data.labels = [];
+    if (!Array.isArray(data.values)) data.values = [];
+    return data;
+  }, []);
+
   const load = useCallback(async () => {
     setError(null);
     try {
-      const res = await fetch("/api/online-history?period=month", {
+      const liveRes = await fetch("/api/online-history?liveOnly=1", {
+        cache: "no-store",
+      });
+      if (liveRes.ok) {
+        const liveData = (await liveRes.json()) as ChartPayload;
+        setPayload(
+          normalizePayload({
+            labels: [],
+            values: [],
+            chartPending: true,
+            liveOnline: liveData.liveOnline,
+            liveMax: liveData.liveMax,
+            livePlayerNames: liveData.livePlayerNames,
+            liveProbe: liveData.liveProbe,
+            allTimePeak: liveData.allTimePeak,
+          }),
+        );
+      }
+
+      const res = await fetch("/api/online-history?period=week", {
         cache: "no-store",
       });
       if (!res.ok) throw new Error(String(res.status));
@@ -108,27 +155,19 @@ export function HeroOnlineHistoryChart() {
       if (!Array.isArray(data.labels) || !Array.isArray(data.values)) {
         throw new Error("bad payload");
       }
-      if (typeof data.liveMax !== "number") {
-        data.liveMax = 80;
-      }
-      if (!("liveOnline" in data)) {
-        data.liveOnline = null;
-      }
-      if (!Array.isArray(data.livePlayerNames)) {
-        data.livePlayerNames = [];
-      }
-      if (
-        data.allTimePeak != null &&
-        (typeof data.allTimePeak !== "number" || data.allTimePeak < 0)
-      ) {
-        data.allTimePeak = null;
-      }
-      setPayload(data);
+      setPayload(normalizePayload({ ...data, chartPending: false }));
     } catch {
       setError("Не вдалося завантажити графік");
-      setPayload(null);
+      setPayload((prev) =>
+        prev
+          ? normalizePayload({
+              ...prev,
+              chartPending: false,
+            })
+          : null,
+      );
     }
-  }, []);
+  }, [normalizePayload]);
 
   useEffect(() => {
     void load();
@@ -250,27 +289,47 @@ export function HeroOnlineHistoryChart() {
   return (
     <div
       className={cn(
-        lcGlassPanelClass,
-        "lc-interactive-panel-static",
-        "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
+        !embedded && lcGlassPanelClass,
+        !embedded && "lc-interactive-panel-static",
+        !embedded &&
+          "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
+        embedded &&
+          "rounded-2xl border border-white/[0.08] bg-[color-mix(in_srgb,#000_24%,transparent)] p-4 md:p-5",
       )}
     >
-      <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
-        Моніторинг онлайну сервера
-      </h3>
+      {!embedded ? (
+        <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
+          Моніторинг онлайну сервера
+        </h3>
+      ) : null}
 
       {payload != null && payload.liveOnline != null ? (
         payload.liveProbe === "api-offline" ? (
-          <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-text-muted)] md:text-base">
+          <p
+            className={cn(
+              "text-center text-sm font-semibold text-[var(--mc-text-muted)] md:text-base",
+              embedded ? "mt-0" : "mt-2",
+            )}
+          >
             Сервер зараз офлайн.
           </p>
         ) : payload.liveOnline === 0 ? (
-          <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+          <p
+            className={cn(
+              "text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base",
+              embedded ? "mt-0" : "mt-2",
+            )}
+          >
             Зараз нікого немає онлайн.
           </p>
         ) : (
           <>
-            <p className="mt-2 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+            <p
+              className={cn(
+                "text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base",
+                embedded ? "mt-0" : "mt-2",
+              )}
+            >
               Зараз онлайн:{" "}
               <span className="tabular-nums">{payload.liveOnline}</span>{" "}
               {ukPlayersWord(payload.liveOnline)}
@@ -326,7 +385,9 @@ export function HeroOnlineHistoryChart() {
           />
         ) : (
           <p className="flex h-full items-center justify-center text-sm text-[var(--mc-text-muted)]">
-            Завантаження…
+            {payload?.chartPending
+              ? "Завантаження графіка…"
+              : "Завантаження…"}
           </p>
         )}
       </div>

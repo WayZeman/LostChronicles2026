@@ -4,7 +4,6 @@ import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
-import { SiteBackdropYouTube } from "@/components/site/SiteBackdropYouTube";
 import { SiteJsonLd } from "@/components/site/SiteJsonLd";
 import {
   LC_SEO_DESCRIPTION_SHORT,
@@ -99,12 +98,12 @@ export default function RootLayout({
       className="scroll-pt-[max(0.75rem,env(safe-area-inset-top,0px))]"
       suppressHydrationWarning
     >
-      <body className={`${inter.variable} am-bg relative flex min-h-screen flex-col antialiased`}>
+      <body
+        className={`${inter.variable} am-bg lc-page-enter relative flex min-h-screen flex-col antialiased`}
+      >
         <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />
         <div className="mc-net-backdrop" aria-hidden>
-          <SiteBackdropYouTube />
-          <div className="mc-backdrop-scrim" />
           <div className="mc-bg-blob-layer">
             <span className="mc-bg-blob mc-bg-blob-1" />
             <span className="mc-bg-blob mc-bg-blob-2" />

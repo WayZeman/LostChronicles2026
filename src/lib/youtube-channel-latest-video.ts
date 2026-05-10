@@ -35,10 +35,38 @@ function isLikelyStreamTitle(rawTitle: string): boolean {
   );
 }
 
-type FeedEntry = { id: string; title: string; publishedMs: number };
+function decodeXmlText(raw: string): string {
+  return raw
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&amp;/g, "&");
+}
 
-function parseFeedEntries(xml: string, maxEntries: number): FeedEntry[] {
-  const out: FeedEntry[] = [];
+/** Запис з каналу, знятий під час ефіру (VOD стріму), за заголовком і описом з RSS. */
+function isLikelyLiveRecording(title: string, description: string): boolean {
+  if (isLikelyStreamTitle(title)) return true;
+  const d = normalizeFeedTitle(description);
+  if (d.includes("streamed live")) return true;
+  if (d.includes("streaming live")) return true;
+  if (d.includes("was live")) return true;
+  if (d.includes("прямий ефір")) return true;
+  if (d.includes("наживо") && (d.includes("трансляц") || d.includes("stream"))) return true;
+  if (d.includes("запис") && d.includes("трансляц")) return true;
+  if (d.includes("live on youtube") || d.includes("live on twitch")) return true;
+  return false;
+}
+
+export type YoutubeFeedEntry = {
+  id: string;
+  title: string;
+  description: string;
+  publishedMs: number;
+};
+
+function parseFeedEntries(xml: string, maxEntries: number): YoutubeFeedEntry[] {
+  const out: YoutubeFeedEntry[] = [];
   const entryRe = /<entry>([\s\S]*?)<\/entry>/g;
   let m: RegExpExecArray | null;
   while ((m = entryRe.exec(xml)) !== null && out.length < maxEntries) {
@@ -46,29 +74,34 @@ function parseFeedEntries(xml: string, maxEntries: number): FeedEntry[] {
     const idMatch = block.match(/<yt:videoId>([^<]+)<\/yt:videoId>/);
     const titleMatch = block.match(/<title(?:[^>]*)>([^<]*)<\/title>/);
     const publishedMatch = block.match(/<published>([^<]+)<\/published>/);
+    const descMatch = block.match(/<media:description>([\s\S]*?)<\/media:description>/);
     const id = idMatch?.[1]?.trim();
     if (!id || !isLikelyYoutubeVideoId(id)) continue;
-    const title = titleMatch?.[1]?.trim() ?? "";
+    const title = decodeXmlText(titleMatch?.[1]?.trim() ?? "");
+    const description = decodeXmlText(descMatch?.[1]?.trim() ?? "");
     const published = publishedMatch?.[1]?.trim();
     const publishedMs = published ? Date.parse(published) : Number.NaN;
     out.push({
       id,
       title,
+      description,
       publishedMs: Number.isFinite(publishedMs) ? publishedMs : 0,
     });
   }
   return out;
 }
 
-function pickHeroVideoIdFromEntries(entries: FeedEntry[]): string | null {
+function pickHeroVideoIdFromEntries(entries: YoutubeFeedEntry[]): string | null {
   if (entries.length === 0) return null;
 
-  // 1) Пріоритет: найсвіжіша записана трансляція (VOD стріму).
+  for (const e of entries) {
+    if (isLikelyLiveRecording(e.title, e.description)) return e.id;
+  }
+
   for (const e of entries) {
     if (isLikelyStreamTitle(e.title)) return e.id;
   }
 
-  // 2) Якщо у фіді немає стрімів, беремо будь-який найсвіжіший запис.
   for (const e of entries) {
     if (isLikelyYoutubeVideoId(e.id)) return e.id;
   }
@@ -77,15 +110,15 @@ function pickHeroVideoIdFromEntries(entries: FeedEntry[]): string | null {
 }
 
 /**
- * Останнє відео з публічного RSS каналу (те саме, що «Відео» на YouTube за датою).
- * Підходить для нових трансляцій / VOD без YouTube Data API.
+ * Записи з публічного RSS каналу (без YouTube Data API).
  */
-export async function getLatestHeroYoutubeVideoId(): Promise<string> {
+export async function getYoutubeChannelFeedEntries(
+  maxEntries: number,
+): Promise<YoutubeFeedEntry[]> {
   const channelId =
     process.env.LC_YOUTUBE_CHANNEL_ID?.trim() || LC_YOUTUBE_UPLOADS_CHANNEL_ID;
-  const fallback = fallbackPromoVideoId();
 
-  if (!channelId) return fallback;
+  if (!channelId) return [];
 
   try {
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
@@ -94,13 +127,23 @@ export async function getLatestHeroYoutubeVideoId(): Promise<string> {
       headers: { "User-Agent": "LostChroniclesSite/1.0 (+https://lost-chronicles.site)" },
     });
 
-    if (!res.ok) return fallback;
+    if (!res.ok) return [];
 
     const xml = await res.text();
-    const entries = parseFeedEntries(xml, 15);
-    const primary = pickHeroVideoIdFromEntries(entries);
-    return primary ?? fallback;
+    return parseFeedEntries(xml, maxEntries);
   } catch {
-    return fallback;
+    return [];
   }
+}
+
+/**
+ * Останнє відео з публічного RSS каналу (те саме, що «Відео» на YouTube за датою).
+ * Підходить для нових трансляцій / VOD без YouTube Data API.
+ */
+export async function getLatestHeroYoutubeVideoId(): Promise<string> {
+  const fallback = fallbackPromoVideoId();
+  const entries = await getYoutubeChannelFeedEntries(15);
+  if (entries.length === 0) return fallback;
+  const primary = pickHeroVideoIdFromEntries(entries);
+  return primary ?? fallback;
 }

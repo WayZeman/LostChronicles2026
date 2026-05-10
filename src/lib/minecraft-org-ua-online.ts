@@ -59,7 +59,8 @@ export function sliceOumSeriesForPeriod(
       v: values[i] ?? 0,
       t: oumLabelToUtcMs(l),
     }))
-    .filter((p) => Number.isFinite(p.t));
+    .filter((p) => Number.isFinite(p.t))
+    .sort((a, b) => a.t - b.t);
 
   if (pairs.length === 0) return { labels: [], values: [] };
 
