@@ -1,76 +1,39 @@
-import { Suspense } from "react";
+import Link from "next/link";
+import { ExternalLink } from "lucide-react";
 import { HeroOnlineMonitorClient } from "@/components/site/HeroOnlineMonitorClient";
-import { HeroPlanTopOnlineSection } from "@/components/site/HeroPlanServerShowcase";
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
-import { SoftAppear } from "@/components/site/SoftAppear";
-import { fetchPlanTopOnlinePlayers } from "@/lib/lc-plan";
+import { getLcPlanPanelServerUrl } from "@/lib/lc-plan";
 import { cn } from "@/lib/utils";
 
 const panelClass = cn(
-  lcGlassPanelClass,
-  "bg-[color-mix(in_srgb,#000_20%,transparent)] shadow-[0_16px_52px_rgba(0,0,0,0.28)]",
+  // У `HeroOnlineMonitorClient embedded` всередині є своя рамка (`lc-interactive-panel-embed`).
+  // Щоб не було "двох рамок", зовнішній контейнер робимо без border/shadow.
+  "w-full rounded-[1.75rem] bg-[color-mix(in_srgb,#000_20%,transparent)] p-4 md:p-6",
 );
 
-function PlanTopFallback() {
-  return (
-    <div className="mt-10 border-t border-white/[0.06] pt-10 md:mt-12 md:pt-12">
-      <div
-        className={cn(
-          "rounded-2xl border border-white/[0.08] bg-black/[0.12] px-4 py-12 text-center text-sm text-[var(--mc-text-muted)] md:py-14",
-          "lc-skeleton-breathe",
-        )}
-      >
-        Завантаження топу гравців…
-      </div>
-    </div>
-  );
-}
-
-async function HeroPlanTopBlock() {
-  const planData = await fetchPlanTopOnlinePlayers(10);
-
-  return (
-    <div className="mt-10 border-t border-white/[0.06] pt-10 md:mt-12 md:pt-12">
-      <SoftAppear slow>
-        {planData ? (
-          <HeroPlanTopOnlineSection data={planData} />
-        ) : (
-          <div className="rounded-2xl border border-white/[0.1] bg-black/[0.2] px-4 py-8 text-center text-sm leading-relaxed text-[var(--mc-text-muted)]">
-            Не вдалося завантажити статистику Plan: з хостингу недоступний Plan
-            API (запити не з браузера). У продакшені додайте{" "}
-            <span className="whitespace-nowrap font-mono text-[var(--mc-text-subtle)]">
-              LC_PLAN_BASE_URL
-            </span>{" "}
-            (і за потреби{" "}
-            <span className="whitespace-nowrap font-mono text-[var(--mc-text-subtle)]">
-              LC_PLAN_SERVER_NAME
-            </span>
-            ), як у робочому <span className="font-mono">.env.local</span>. У логах
-            функцій шукайте <span className="font-mono">[lc-plan]</span>.
-          </div>
-        )}
-      </SoftAppear>
-    </div>
-  );
-}
-
 /**
- * Єдина панель: графік онлайну + топ-10 за загальним часом (активний + AFK, Plan).
- * Топ підвантажується окремим потоком — графік з’являється без очікування всіх `/v1/player`.
+ * Єдина панель: графік онлайну (Java server) + live-оновлення.
  */
 export function HeroServerOverviewPanel() {
   return (
     <section
       className={panelClass}
-      aria-label="Хронологія онлайну та рейтинг за загальним часом на сервері"
+      aria-label="Хронологія онлайну на сервері"
     >
       <div className="pt-6 md:pt-8">
         <HeroOnlineMonitorClient embedded />
       </div>
 
-      <Suspense fallback={<PlanTopFallback />}>
-        <HeroPlanTopBlock />
-      </Suspense>
+      <div className="mt-6 flex justify-center md:mt-10">
+        <Link
+          href={getLcPlanPanelServerUrl()}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center gap-2 px-7 py-2.5 text-sm"
+        >
+          Повна аналітика
+          <ExternalLink className="size-3 opacity-60" aria-hidden />
+        </Link>
+      </div>
     </section>
   );
 }
