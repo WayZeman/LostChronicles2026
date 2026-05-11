@@ -199,14 +199,18 @@ export { formatDurationMs };
 const TOP_ONLINE_DEFAULT = 10;
 
 /** Паралельних запитів `/v1/player` за раз (великі JSON — не «штормити» Plan). */
-const PLAN_PLAYER_ENRICH_BATCH = 12;
+// На Vercel під час cache-miss інколи трапляються "terminated http://.../v1/player".
+// Щоб зменшити ризик, тримаємо меншу паралельність та загальний пул збагачення.
+const PLAN_PLAYER_ENRICH_BATCH = 6;
 
 /**
  * Скількох гравців з таблиці збагачувати `/v1/player` перед сортуванням за загальним часом.
  * Менше — швидше; більше — рідші помилки рейтингу для «низький активний / великий AFK».
  */
-const TOP_ENRICH_POOL_MULT = 5;
-const TOP_ENRICH_POOL_MIN = 48;
+// Для limit=10 це дає enrichCap ≈ 30 (помітно менше запитів до `/v1/player`).
+// Менше запитів => менше шансів на "terminated" у Vercel.
+const TOP_ENRICH_POOL_MULT = 3;
+const TOP_ENRICH_POOL_MIN = 24;
 
 async function enrichPlanTableRow(p: PlanPlayerRow): Promise<PlanTopOnlineEntry> {
   const tableRaw = Number(p.playtimeActive);
