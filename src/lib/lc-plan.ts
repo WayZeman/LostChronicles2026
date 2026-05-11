@@ -94,9 +94,14 @@ async function planGetJson<T>(path: string): Promise<T | null> {
       headers: { Accept: "application/json" },
       next: { revalidate: REVALIDATE_SEC },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn("[lc-plan]", path, "HTTP", res.status, getLcPlanBaseUrl());
+      return null;
+    }
     return (await res.json()) as T;
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[lc-plan]", path, "fetch error:", msg, getLcPlanBaseUrl());
     return null;
   }
 }
@@ -113,9 +118,14 @@ async function planGetPlayerJson(playerUuid: string): Promise<PlanPlayerDetail |
       headers: { Accept: "application/json" },
       next: { revalidate: REVALIDATE_SEC },
     });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.warn("[lc-plan] /v1/player", res.status, getLcPlanBaseUrl());
+      return null;
+    }
     return (await res.json()) as PlanPlayerDetail;
-  } catch {
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.warn("[lc-plan] /v1/player fetch error:", msg, getLcPlanBaseUrl());
     return null;
   }
 }

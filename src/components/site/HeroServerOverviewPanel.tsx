@@ -36,12 +36,17 @@ async function HeroPlanTopBlock() {
           <HeroPlanTopOnlineSection data={planData} />
         ) : (
           <div className="rounded-2xl border border-white/[0.1] bg-black/[0.2] px-4 py-8 text-center text-sm leading-relaxed text-[var(--mc-text-muted)]">
-            Не вдалося завантажити статистику Plan. Перевірте з’єднання або
-            змінну{" "}
+            Не вдалося завантажити статистику Plan: з хостингу недоступний Plan
+            API (запити не з браузера). У продакшені додайте{" "}
             <span className="whitespace-nowrap font-mono text-[var(--mc-text-subtle)]">
               LC_PLAN_BASE_URL
+            </span>{" "}
+            (і за потреби{" "}
+            <span className="whitespace-nowrap font-mono text-[var(--mc-text-subtle)]">
+              LC_PLAN_SERVER_NAME
             </span>
-            .
+            ), як у робочому <span className="font-mono">.env.local</span>. У логах
+            функцій шукайте <span className="font-mono">[lc-plan]</span>.
           </div>
         )}
       </SoftAppear>
