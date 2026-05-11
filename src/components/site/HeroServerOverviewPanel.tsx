@@ -7,7 +7,8 @@ import { cn } from "@/lib/utils";
 const panelClass = cn(
   // У `HeroOnlineMonitorClient embedded` всередині є своя рамка (`lc-interactive-panel-embed`).
   // Щоб не було "двох рамок", зовнішній контейнер робимо без border/shadow.
-  "w-full rounded-[1.75rem] bg-[color-mix(in_srgb,#000_20%,transparent)] p-4 md:p-6",
+  // Також прибираємо напівпрозору "заливку", щоб не виглядало як другий шар поверх графіка.
+  "w-full",
 );
 
 /**
