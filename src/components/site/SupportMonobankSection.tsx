@@ -18,10 +18,6 @@ const CATALOG_VOTE_LINKS = [
     href: "https://allmc.in.ua/play-lost-chronicles-site",
     label: "AllMC.in.ua",
   },
-  {
-    href: "https://uamon.online/server/lost-chronicles",
-    label: "UAMon",
-  },
 ] as const;
 
 /**

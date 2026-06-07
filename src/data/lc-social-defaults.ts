@@ -3,12 +3,12 @@
  * Перевизначення: відповідні NEXT_PUBLIC_* у .env / Vercel.
  */
 
-export const LC_DEFAULT_DISCORD_URL = "https://discord.gg/EzdzwQVZN";
+export const LC_DEFAULT_DISCORD_URL = "https://discord.gg/NXzwBpUzjA";
 
 export const LC_DEFAULT_TELEGRAM_URL = "https://t.me/+4ZKtIucAlnw1ZmFi";
 
 export const LC_DEFAULT_YOUTUBE_URL =
-  "https://www.youtube.com/@LostChronicles2023";
+  "https://www.youtube.com/@LostChroniclesua";
 
 /** Без UTM — канонічний профіль. */
 export const LC_DEFAULT_TIKTOK_URL =
