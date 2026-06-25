@@ -13,6 +13,11 @@ type SearchResult = {
   originalUrl: string;
 };
 
+type SearchResponse = {
+  results?: SearchResult[];
+  popularQueries?: string[];
+};
+
 type Props = {
   className?: string;
   embedded?: boolean;
@@ -30,8 +35,33 @@ export function WikiSearchBox({
 }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
+  const [popularQueries, setPopularQueries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadPopularQueries = async () => {
+      try {
+        const res = await fetch("/api/wiki-search");
+        const data = (await res.json()) as SearchResponse;
+        if (!cancelled) {
+          setPopularQueries(data.popularQueries ?? []);
+        }
+      } catch {
+        if (!cancelled) {
+          setPopularQueries([]);
+        }
+      }
+    };
+
+    void loadPopularQueries();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -49,8 +79,9 @@ export function WikiSearchBox({
         const res = await fetch(`/api/wiki-search?q=${encodeURIComponent(trimmed)}`, {
           signal: controller.signal,
         });
-        const data = (await res.json()) as { results?: SearchResult[] };
+        const data = (await res.json()) as SearchResponse;
         setResults(data.results ?? []);
+        setPopularQueries(data.popularQueries ?? []);
       } catch {
         setResults([]);
       } finally {
@@ -106,6 +137,24 @@ export function WikiSearchBox({
           )}
         />
       </div>
+
+      {popularQueries.length > 0 ? (
+        <div className="mt-4 flex flex-wrap justify-center gap-2">
+          {popularQueries.map((popularQuery) => (
+            <button
+              key={popularQuery}
+              type="button"
+              onClick={() => {
+                setQuery(popularQuery);
+                setTouched(true);
+              }}
+              className="lc-focus-ring rounded-full border border-white/[0.1] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[var(--mc-text-muted)] transition-colors hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-[var(--mc-text)]"
+            >
+              {popularQuery}
+            </button>
+          ))}
+        </div>
+      ) : null}
 
       {loading ? (
         <p className="mt-4 text-center text-sm text-[var(--mc-text-muted)]">

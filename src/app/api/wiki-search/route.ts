@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getSql } from "@/lib/db";
 import { fandomFullPageUrlForTitle, getFandomWikiBase } from "@/lib/fandom";
 
 type MediaWikiSearchItem = {
@@ -24,12 +25,62 @@ function stripHtmlSnippet(snippet: string): string {
     .trim();
 }
 
+let tableEnsured = false;
+
+async function ensureWikiSearchTable() {
+  if (tableEnsured) return;
+  const sql = getSql();
+  await sql`
+    CREATE TABLE IF NOT EXISTS wiki_search_queries (
+      id BIGSERIAL PRIMARY KEY,
+      query TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  tableEnsured = true;
+}
+
+async function getPopularQueries(limit: number): Promise<string[]> {
+  try {
+    await ensureWikiSearchTable();
+    const sql = getSql();
+    const rows = (await sql`
+      SELECT lower(trim(query)) AS query
+      FROM wiki_search_queries
+      WHERE char_length(trim(query)) >= 2
+      GROUP BY lower(trim(query))
+      ORDER BY COUNT(*) DESC, MAX(created_at) DESC
+      LIMIT ${limit}
+    `) as Array<{ query?: string }>;
+
+    return rows
+      .map((row) => String(row.query ?? "").trim())
+      .filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function trackQuery(query: string) {
+  try {
+    await ensureWikiSearchTable();
+    const sql = getSql();
+    await sql`
+      INSERT INTO wiki_search_queries (query)
+      VALUES (${query})
+    `;
+  } catch {
+    /* ignore analytics failures */
+  }
+}
+
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() ?? "";
 
   if (query.length < 2) {
-    return NextResponse.json({ results: [] });
+    const popularQueries = await getPopularQueries(5);
+    return NextResponse.json({ results: [], popularQueries });
   }
 
   const base = getFandomWikiBase();
@@ -46,6 +97,7 @@ export async function GET(request: Request) {
   });
 
   try {
+    void trackQuery(query);
     const res = await fetch(`${base}/api.php?${params.toString()}`, {
       cache: "no-store",
       headers: {
@@ -56,7 +108,8 @@ export async function GET(request: Request) {
     });
 
     if (!res.ok) {
-      return NextResponse.json({ results: [] }, { status: 200 });
+      const popularQueries = await getPopularQueries(5);
+      return NextResponse.json({ results: [], popularQueries }, { status: 200 });
     }
 
     const data = (await res.json()) as {
@@ -75,8 +128,10 @@ export async function GET(request: Request) {
         };
       });
 
-    return NextResponse.json({ results });
+    const popularQueries = await getPopularQueries(5);
+    return NextResponse.json({ results, popularQueries });
   } catch {
-    return NextResponse.json({ results: [] }, { status: 200 });
+    const popularQueries = await getPopularQueries(5);
+    return NextResponse.json({ results: [], popularQueries }, { status: 200 });
   }
 }
