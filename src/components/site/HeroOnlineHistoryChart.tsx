@@ -298,7 +298,7 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
           !embedded &&
             "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
           embedded &&
-            "magic-bento-card lc-interactive-panel-embed rounded-2xl border border-white/[0.08] bg-[color-mix(in_srgb,#000_24%,transparent)] p-4 md:p-5",
+            "lc-interactive-panel-embed rounded-2xl border border-white/[0.08] bg-[color-mix(in_srgb,#000_24%,transparent)] p-4 md:p-5",
         )}
       >
       {!embedded ? (
