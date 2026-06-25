@@ -121,13 +121,13 @@ export default function RootLayout({
         <AtmosphereParticles />
         <MagicBentoSiteEffects
           enableStars
-          enableSpotlight
+          enableSpotlight={false}
           enableBorderGlow
           enableTilt
           enableMagnetism
           clickEffect
-          spotlightRadius={300}
-          particleCount={12}
+          spotlightRadius={210}
+          particleCount={8}
           glowColor="234, 179, 8"
         />
         <Navbar />

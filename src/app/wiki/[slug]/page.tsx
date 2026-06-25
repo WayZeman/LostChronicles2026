@@ -39,7 +39,7 @@ export default async function WikiArticlePage({
           Головна вікі
         </Link>
 
-        <WikiContentFrame>
+        <WikiContentFrame interactive={false}>
           <WikiMirrorHtml
             html={parsed.html}
             fandomBase={fandomBase}

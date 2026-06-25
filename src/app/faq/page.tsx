@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { lcGlassPanelStaticClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
 import { cn } from "@/lib/utils";
@@ -39,7 +39,7 @@ export default function FAQPage() {
           multiple={false}
           defaultValue={[]}
           className={cn(
-            lcGlassPanelClass,
+            lcGlassPanelStaticClass,
             "overflow-hidden p-1.5 sm:p-4 md:p-5",
           )}
         >

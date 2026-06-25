@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   BookOpen,
@@ -10,7 +9,7 @@ import {
   Map as MapIcon,
   Newspaper,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import Dock, { type DockItemData } from "@/components/Dock";
 
 const links = [
   { href: "/news", label: "Новини", Icon: Newspaper },
@@ -41,6 +40,21 @@ const bottomNavLinks = [
 /** Єдина навігація: нижня панель на всіх розмірах екрана. */
 export function Navbar() {
   const pathname = usePathname() ?? "";
+  const items: DockItemData[] = bottomNavLinks.map(({ href, label, Icon }) => {
+    const active = isActivePath(pathname, href);
+
+    return {
+      href,
+      label,
+      active,
+      icon: (
+        <Icon
+          className="size-[1.15rem] shrink-0 min-[380px]:size-[1.2rem] md:size-[1.3rem]"
+          strokeWidth={active ? 2.25 : 2}
+        />
+      ),
+    };
+  });
 
   return (
     <nav
@@ -51,33 +65,15 @@ export function Navbar() {
       }}
       aria-label="Головна навігація"
     >
-      <div className="mx-auto flex w-full max-w-4xl items-stretch justify-around px-1 md:px-4">
-        {bottomNavLinks.map(({ href, label, Icon }) => {
-          const active = isActivePath(pathname, href);
-          return (
-            <Link
-              key={href}
-              href={href}
-              className={cn(
-                "lc-focus-ring flex min-h-[3.25rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 rounded-2xl px-0.5 py-1 text-[9px] font-semibold leading-tight transition-colors duration-200 min-[380px]:text-[10px] md:min-h-[3.5rem] md:gap-1 md:px-2 md:text-xs",
-                active
-                  ? "text-[var(--mc-net-green)]"
-                  : "text-[var(--mc-nav-link)] hover:bg-[var(--mc-nav-link-hover-bg)]",
-              )}
-              aria-current={active ? "page" : undefined}
-            >
-              <Icon
-                className={cn(
-                  "size-[1.2rem] shrink-0 sm:size-[1.35rem] md:size-[1.4rem]",
-                  active ? "text-[var(--mc-net-green)]" : "opacity-90",
-                )}
-                strokeWidth={active ? 2.25 : 2}
-                aria-hidden
-              />
-              <span className="max-w-full truncate">{label}</span>
-            </Link>
-          );
-        })}
+      <div className="mx-auto w-full max-w-4xl px-1 md:px-4">
+        <Dock
+          items={items}
+          panelHeight={60}
+          baseItemSize={42}
+          magnification={56}
+          distance={110}
+          dockHeight={88}
+        />
       </div>
     </nav>
   );

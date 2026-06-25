@@ -3,7 +3,7 @@ import {
   getFandomNewsPageTitle,
   getFandomWikiBase,
 } from "@/lib/fandom";
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { lcGlassPanelStaticClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
@@ -23,7 +23,7 @@ export default async function NewsListPage() {
         {!parsed ? (
           <p
             className={cn(
-              lcGlassPanelClass,
+              lcGlassPanelStaticClass,
               "py-12 text-center text-sm font-medium text-[var(--mc-ink-muted)]",
             )}
           >
@@ -36,7 +36,7 @@ export default async function NewsListPage() {
         ) : null}
 
         {parsed ? (
-          <WikiContentFrame>
+          <WikiContentFrame interactive={false}>
             <WikiMirrorHtml
               html={parsed.html}
               fandomBase={base}
