@@ -4,6 +4,7 @@ import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
+import { WikiSearchBox } from "@/components/wiki/WikiSearchBox";
 import { cn } from "@/lib/utils";
 
 /** Не пререндерити під час білду — інакше на Vercel fetch до Fandom часто падає і «запікається» порожня сторінка. */
@@ -17,7 +18,7 @@ export default async function WikiIndexPage() {
     <main className={lcPageMainClass}>
       <div className={lcPageContainerClass}>
         {home ? (
-          <WikiContentFrame>
+          <WikiContentFrame topSlot={<WikiSearchBox embedded />}>
             <WikiMirrorHtml
               html={home.html}
               fandomBase={base}

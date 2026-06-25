@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 import {
   isWikiCdnImageUrl,
@@ -76,6 +76,7 @@ export function WikiMirrorHtml({
 }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   /** Звичайні <a href="/wiki/..."> роблять full reload → перемонтовується layout і фонове відео. */
   useEffect(() => {
@@ -172,6 +173,57 @@ export function WikiMirrorHtml({
       });
     }
   }, [html, rewriteWikiLinksToLocal, fandomBase]);
+
+  useEffect(() => {
+    const root = ref.current;
+    if (!root) return;
+
+    root.querySelectorAll("mark.wiki-search-hit").forEach((node) => {
+      const parent = node.parentNode;
+      if (!parent) return;
+      parent.replaceChild(document.createTextNode(node.textContent ?? ""), node);
+      parent.normalize();
+    });
+
+    const query = searchParams.get("q")?.trim();
+    if (!query || query.length < 2) return;
+
+    const lowerQuery = query.toLocaleLowerCase("uk-UA");
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        const parent = node.parentElement;
+        const text = node.textContent?.trim() ?? "";
+        if (!parent || !text) return NodeFilter.FILTER_REJECT;
+        if (["SCRIPT", "STYLE", "NOSCRIPT", "MARK"].includes(parent.tagName)) {
+          return NodeFilter.FILTER_REJECT;
+        }
+        return text.toLocaleLowerCase("uk-UA").includes(lowerQuery)
+          ? NodeFilter.FILTER_ACCEPT
+          : NodeFilter.FILTER_REJECT;
+      },
+    });
+
+    const firstMatch = walker.nextNode() as Text | null;
+    if (!firstMatch || !firstMatch.textContent) return;
+
+    const original = firstMatch.textContent;
+    const lower = original.toLocaleLowerCase("uk-UA");
+    const start = lower.indexOf(lowerQuery);
+    if (start < 0) return;
+
+    const range = document.createRange();
+    range.setStart(firstMatch, start);
+    range.setEnd(firstMatch, start + query.length);
+
+    const mark = document.createElement("mark");
+    mark.className = "wiki-search-hit";
+    try {
+      range.surroundContents(mark);
+      mark.scrollIntoView({ behavior: "smooth", block: "center" });
+    } catch {
+      /* ignore invalid ranges */
+    }
+  }, [html, searchParams]);
 
   return (
     <div
