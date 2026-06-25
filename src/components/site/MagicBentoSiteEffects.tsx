@@ -9,7 +9,6 @@ const DEFAULT_SPOTLIGHT_RADIUS = 300;
 const DEFAULT_GLOW_COLOR = "234, 179, 8";
 const MOBILE_BREAKPOINT = 768;
 const CARD_SELECTOR = ".magic-bento-card";
-const EFFECT_STRENGTH = 0.7;
 
 export type MagicBentoSiteEffectsProps = {
   enableStars?: boolean;
@@ -60,7 +59,7 @@ const updateCardGlowProperties = (
 
   card.style.setProperty("--glow-x", `${relativeX}%`);
   card.style.setProperty("--glow-y", `${relativeY}%`);
-  card.style.setProperty("--glow-intensity", (glow * EFFECT_STRENGTH).toString());
+  card.style.setProperty("--glow-intensity", glow.toString());
   card.style.setProperty("--glow-radius", `${radius}px`);
 };
 
@@ -174,8 +173,8 @@ function enhanceCard(
         );
 
         gsap.to(clone, {
-          x: (Math.random() - 0.5) * 100 * EFFECT_STRENGTH,
-          y: (Math.random() - 0.5) * 100 * EFFECT_STRENGTH,
+          x: (Math.random() - 0.5) * 100,
+          y: (Math.random() - 0.5) * 100,
           rotation: Math.random() * 360,
           duration: 2 + Math.random() * 2,
           ease: "none",
@@ -184,7 +183,7 @@ function enhanceCard(
         });
 
         gsap.to(clone, {
-          opacity: 0.21,
+          opacity: 0.3,
           duration: 1.5,
           ease: "power2.inOut",
           repeat: -1,
@@ -203,8 +202,8 @@ function enhanceCard(
 
     if (options.enableTilt) {
       gsap.to(element, {
-          rotateX: 3.5,
-          rotateY: 3.5,
+        rotateX: 5,
+        rotateY: 5,
         duration: 0.3,
         ease: "power2.out",
         transformPerspective: 1000,
@@ -248,8 +247,8 @@ function enhanceCard(
     const centerY = rect.height / 2;
 
     if (options.enableTilt) {
-      const rotateX = ((y - centerY) / centerY) * -7;
-      const rotateY = ((x - centerX) / centerX) * 7;
+      const rotateX = ((y - centerY) / centerY) * -10;
+      const rotateY = ((x - centerX) / centerX) * 10;
 
       gsap.to(element, {
         rotateX,
@@ -261,8 +260,8 @@ function enhanceCard(
     }
 
     if (options.enableMagnetism) {
-      const magnetX = (x - centerX) * 0.035;
-      const magnetY = (y - centerY) * 0.035;
+      const magnetX = (x - centerX) * 0.05;
+      const magnetY = (y - centerY) * 0.05;
 
       state.magnetismAnimation = gsap.to(element, {
         x: magnetX,
@@ -293,7 +292,7 @@ function enhanceCard(
       width: ${maxDistance * 2}px;
       height: ${maxDistance * 2}px;
       border-radius: 50%;
-      background: radial-gradient(circle, rgba(${options.glowColor}, 0.28) 0%, rgba(${options.glowColor}, 0.14) 30%, transparent 70%);
+      background: radial-gradient(circle, rgba(${options.glowColor}, 0.4) 0%, rgba(${options.glowColor}, 0.2) 30%, transparent 70%);
       left: ${x - maxDistance}px;
       top: ${y - maxDistance}px;
       pointer-events: none;
@@ -308,7 +307,7 @@ function enhanceCard(
       {
         scale: 1,
         opacity: 0,
-        duration: 0.7,
+        duration: 0.8,
         ease: "power2.out",
         onComplete: () => ripple.remove(),
       },
@@ -423,11 +422,11 @@ export function MagicBentoSiteEffects({
       border-radius: 50%;
       pointer-events: none;
       background: radial-gradient(circle,
-        rgba(${glowColor}, 0.105) 0%,
-        rgba(${glowColor}, 0.056) 15%,
-        rgba(${glowColor}, 0.028) 25%,
-        rgba(${glowColor}, 0.014) 40%,
-        rgba(${glowColor}, 0.007) 65%,
+        rgba(${glowColor}, 0.15) 0%,
+        rgba(${glowColor}, 0.08) 15%,
+        rgba(${glowColor}, 0.04) 25%,
+        rgba(${glowColor}, 0.02) 40%,
+        rgba(${glowColor}, 0.01) 65%,
         transparent 70%
       );
       z-index: 200;
@@ -472,14 +471,14 @@ export function MagicBentoSiteEffects({
 
       const targetOpacity =
         minDistance <= proximity
-          ? 0.56
+          ? 0.8
           : minDistance <= fadeDistance
-            ? ((fadeDistance - minDistance) / (fadeDistance - proximity)) * 0.56
-            : 0.084;
+            ? ((fadeDistance - minDistance) / (fadeDistance - proximity)) * 0.8
+            : 0.12;
 
       gsap.to(spotlight, {
         opacity: targetOpacity,
-        duration: targetOpacity > 0.084 ? 0.2 : 0.5,
+        duration: targetOpacity > 0.12 ? 0.2 : 0.5,
         ease: "power2.out",
       });
     };

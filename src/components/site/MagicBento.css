@@ -39,7 +39,7 @@
 .magic-bento-card--border-glow:hover {
   box-shadow:
     0 4px 20px rgba(46, 24, 78, 0.4),
-    0 0 21px rgba(var(--glow-color), 0.14);
+    0 0 30px rgba(var(--glow-color), 0.2);
 }
 
 .magic-bento-card.particle-container {
@@ -50,7 +50,7 @@
 .magic-bento-card.particle-container:hover {
   box-shadow:
     0 4px 20px rgba(46, 24, 78, 0.2),
-    0 0 21px rgba(var(--glow-color), 0.14);
+    0 0 30px rgba(var(--glow-color), 0.2);
 }
 
 .global-spotlight {

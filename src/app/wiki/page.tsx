@@ -1,6 +1,6 @@
 import { getFandomWikiBase } from "@/lib/fandom";
 import { resolveWikiHomeContent } from "@/lib/wiki-home";
-import { lcGlassPanelStaticClass } from "@/components/site/lc-glass-panel";
+import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
@@ -17,7 +17,7 @@ export default async function WikiIndexPage() {
     <main className={lcPageMainClass}>
       <div className={lcPageContainerClass}>
         {home ? (
-          <WikiContentFrame interactive={false}>
+          <WikiContentFrame>
             <WikiMirrorHtml
               html={home.html}
               fandomBase={base}
@@ -29,7 +29,7 @@ export default async function WikiIndexPage() {
         {!home ? (
           <p
             className={cn(
-              lcGlassPanelStaticClass,
+              lcGlassPanelClass,
               "py-12 text-center text-sm font-medium text-[var(--mc-ink-muted)]",
             )}
           >
