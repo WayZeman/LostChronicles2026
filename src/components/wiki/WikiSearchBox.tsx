@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Search } from "lucide-react";
+import { Clock3, Search, TrendingUp } from "lucide-react";
 import { useEffect, useState } from "react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
@@ -26,6 +26,9 @@ type Props = {
   placeholder?: string;
 };
 
+const RECENT_QUERIES_STORAGE_KEY = "lc-wiki-recent-queries";
+const MAX_RECENT_QUERIES = 5;
+
 export function WikiSearchBox({
   className,
   embedded = false,
@@ -36,11 +39,65 @@ export function WikiSearchBox({
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [popularQueries, setPopularQueries] = useState<string[]>([]);
+  const [recentQueries, setRecentQueries] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);
 
+  const saveRecentQuery = (rawQuery: string) => {
+    const trimmed = rawQuery.trim();
+    if (trimmed.length < 2) return;
+
+    setRecentQueries((current) => {
+      const normalized = trimmed.toLocaleLowerCase("uk-UA");
+      const next = [
+        trimmed,
+        ...current.filter((item) => item.toLocaleLowerCase("uk-UA") !== normalized),
+      ].slice(0, MAX_RECENT_QUERIES);
+
+      try {
+        window.localStorage.setItem(RECENT_QUERIES_STORAGE_KEY, JSON.stringify(next));
+      } catch {
+        /* ignore storage errors */
+      }
+
+      return next;
+    });
+  };
+
+  const trackConfirmedQuery = async (rawQuery: string) => {
+    const trimmed = rawQuery.trim();
+    if (trimmed.length < 2) return;
+    saveRecentQuery(trimmed);
+    try {
+      await fetch("/api/wiki-search", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ query: trimmed }),
+      });
+    } catch {
+      /* ignore analytics failures */
+    }
+  };
+
   useEffect(() => {
     let cancelled = false;
+
+    try {
+      const raw = window.localStorage.getItem(RECENT_QUERIES_STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw) as unknown;
+        if (Array.isArray(parsed)) {
+          setRecentQueries(
+            parsed
+              .map((item) => String(item ?? "").trim())
+              .filter(Boolean)
+              .slice(0, MAX_RECENT_QUERIES),
+          );
+        }
+      }
+    } catch {
+      setRecentQueries([]);
+    }
 
     const loadPopularQueries = async () => {
       try {
@@ -96,6 +153,8 @@ export function WikiSearchBox({
   }, [query]);
 
   const showEmpty = touched && query.trim().length >= 2 && !loading && results.length === 0;
+  const suggestionQueries = recentQueries.length > 0 ? recentQueries : popularQueries;
+  const suggestionLabel = recentQueries.length > 0 ? "Останні запити" : "Популярні запити";
 
   return (
     <section
@@ -138,22 +197,33 @@ export function WikiSearchBox({
         />
       </div>
 
-      {popularQueries.length > 0 ? (
-        <div className="mt-4 flex flex-wrap justify-center gap-2">
-          {popularQueries.map((popularQuery) => (
-            <button
-              key={popularQuery}
-              type="button"
-              onClick={() => {
-                setQuery(popularQuery);
-                setTouched(true);
-              }}
-              className="lc-focus-ring rounded-full border border-white/[0.1] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[var(--mc-text-muted)] transition-colors hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-[var(--mc-text)]"
-            >
-              {popularQuery}
-            </button>
-          ))}
-        </div>
+      {suggestionQueries.length > 0 ? (
+        <>
+          <div className="mt-4 flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-wide text-[var(--mc-text-subtle)]">
+            {recentQueries.length > 0 ? (
+              <Clock3 className="size-3.5" aria-hidden />
+            ) : (
+              <TrendingUp className="size-3.5" aria-hidden />
+            )}
+            <span>{suggestionLabel}</span>
+          </div>
+          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            {suggestionQueries.map((suggestionQuery) => (
+              <button
+                key={suggestionQuery}
+                type="button"
+                onClick={() => {
+                  setQuery(suggestionQuery);
+                  setTouched(true);
+                  void trackConfirmedQuery(suggestionQuery);
+                }}
+                className="lc-focus-ring rounded-full border border-white/[0.1] bg-white/[0.04] px-3 py-1.5 text-xs font-medium text-[var(--mc-text-muted)] transition-colors hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-[var(--mc-text)]"
+              >
+                {suggestionQuery}
+              </button>
+            ))}
+          </div>
+        </>
       ) : null}
 
       {loading ? (
@@ -168,6 +238,9 @@ export function WikiSearchBox({
             <Link
               key={result.href}
               href={`${result.href}?q=${encodeURIComponent(query.trim())}`}
+              onClick={() => {
+                void trackConfirmedQuery(query);
+              }}
               className="lc-focus-ring rounded-2xl border border-white/[0.08] bg-black/10 px-4 py-3 transition-colors hover:border-white/[0.14] hover:bg-white/[0.03]"
             >
               <div className="text-sm font-semibold text-[var(--mc-text)]">{result.title}</div>
