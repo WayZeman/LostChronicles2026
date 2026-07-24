@@ -5,7 +5,7 @@
 
 export const LC_DEFAULT_DISCORD_URL = "https://discord.gg/NXzwBpUzjA";
 
-export const LC_DEFAULT_TELEGRAM_URL = "https://t.me/+4ZKtIucAlnw1ZmFi";
+export const LC_DEFAULT_TELEGRAM_URL = "https://t.me/lostchronicles23";
 
 export const LC_DEFAULT_YOUTUBE_URL =
   "https://www.youtube.com/@LostChroniclesua";
