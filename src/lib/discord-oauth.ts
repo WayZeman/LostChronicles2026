@@ -1,4 +1,6 @@
 const DISCORD_API = "https://discord.com/api";
+/** Публічна сторінка авторизації — краще відкриває застосунок Discord на телефоні/ПК. */
+const DISCORD_OAUTH_AUTHORIZE = "https://discord.com/oauth2/authorize";
 
 /** Client ID не є секретом (він у URL авторизації); можна задати також як NEXT_PUBLIC_* на Vercel. */
 export function getDiscordClientId(): string {
@@ -22,9 +24,9 @@ export function buildDiscordAuthorizeUrl(state: string, redirectUri: string): st
   const clientId = getDiscordClientId();
   if (!clientId) throw new Error("DISCORD_CLIENT_ID is not set");
 
-  // Без prompt=consent: якщо Discord уже відкритий / застосунок є —
-  // часто достатньо одного «Авторизувати», а повторний вхід майже миттєвий.
-  // scope лише identify — менше дозволів, менше тертя.
+  // Без prompt=consent: повторний вхід майже миттєвий.
+  // scope лише identify — менше дозволів.
+  // URL без /api/ — Discord частіше пропонує відкрити застосунок замість веб-логіну.
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
@@ -33,7 +35,7 @@ export function buildDiscordAuthorizeUrl(state: string, redirectUri: string): st
     state,
   });
 
-  return `${DISCORD_API}/oauth2/authorize?${params.toString()}`;
+  return `${DISCORD_OAUTH_AUTHORIZE}?${params.toString()}`;
 }
 
 export async function exchangeDiscordCode(

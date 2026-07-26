@@ -40,9 +40,7 @@ function IconGoogle({ className }: { className?: string }) {
 }
 
 type Props = {
-  /** Куди повернути після логіну. */
   nextPath: string;
-  /** Короткий контекст: «пропозиції», «вікі» тощо. */
   contentLabel?: string;
   title?: string;
   description?: string;
@@ -71,7 +69,7 @@ export function AuthRequiredPanel({
 }: Props) {
   const desc =
     description ??
-    `Щоб переглянути ${contentLabel}, увійди через Discord або Google. Якщо застосунок уже відкритий — зазвичай достатньо одного підтвердження, без введення пароля.`;
+    `Щоб переглянути ${contentLabel}, увійди через Discord або Google. На телефоні Discord часто запропонує відкрити застосунок — підтверди, і пароль вводити не треба.`;
   const err = errorMessage(errorCode);
 
   return (
@@ -79,9 +77,7 @@ export function AuthRequiredPanel({
       <p className="text-xs font-bold uppercase tracking-[0.14em] text-[var(--mc-net-green)]">
         Lost Chronicles
       </p>
-      <h1 className="mt-3 text-xl font-bold text-[var(--mc-text)] md:text-2xl">
-        {title}
-      </h1>
+      <h1 className="lc-section-title mt-3 text-xl md:text-2xl">{title}</h1>
       <p className="mt-3 text-sm leading-relaxed text-[var(--mc-text-muted)] md:text-[15px]">
         {desc}
       </p>
@@ -98,22 +94,23 @@ export function AuthRequiredPanel({
       <div className="mt-7 flex w-full flex-col items-center gap-3">
         <a
           href={discordLoginPath(nextPath)}
-          className="lc-focus-ring inline-flex min-h-12 w-full max-w-sm items-center justify-center gap-2.5 rounded-[var(--radius)] border-2 border-[#4752C4] bg-[#5865F2] px-6 py-3 text-sm font-bold text-white shadow-[0_3px_0_#2f3790] transition-[transform,filter] hover:brightness-105 active:translate-y-[1px] active:shadow-[0_1px_0_#2f3790]"
+          className="lc-focus-ring mc-btn-primary min-h-12 w-full max-w-sm px-6 py-3 text-sm"
         >
-          <IconDiscord className="size-5 shrink-0" />
+          <IconDiscord className="size-5 shrink-0 text-[var(--mc-green-ink)]" />
           Увійти через Discord
         </a>
         <a
           href={googleLoginPath(nextPath)}
-          className="lc-focus-ring inline-flex min-h-12 w-full max-w-sm items-center justify-center gap-2.5 rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-white px-6 py-3 text-sm font-bold text-[#1f1f1f] shadow-[0_3px_0_#b8b8b8] transition-[transform,filter] hover:bg-[#f7f7f7] active:translate-y-[1px] active:shadow-[0_1px_0_#b8b8b8]"
+          className="lc-focus-ring mc-btn-secondary min-h-12 w-full max-w-sm px-6 py-3 text-sm"
         >
           <IconGoogle className="size-5 shrink-0" />
           Увійти через Google
         </a>
       </div>
 
-      <p className="mt-4 text-xs text-[var(--mc-text-muted)]">
-        Нічого вводити не потрібно, якщо ти вже в Discord або Google.
+      <p className="mt-4 text-xs leading-relaxed text-[var(--mc-text-muted)]">
+        Якщо Discord просить логін у браузері — обери «Відкрити в застосунку
+        Discord» (телефон) або один раз увійди в Discord у цьому ж браузері.
       </p>
 
       <div className="mt-6">
