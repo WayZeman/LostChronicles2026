@@ -129,9 +129,6 @@ export default function NewProposalPage() {
           ← Усі пропозиції
         </Link>
         <SoftAppear>
-        <p className="mb-2 text-sm text-[var(--mc-text-subtle)]">
-          Нова ідея для сервера
-        </p>
         <h1 className="lc-hero-title mb-6 text-3xl font-bold tracking-tight text-[var(--mc-text)] sm:text-4xl">
           Нова пропозиція
         </h1>
@@ -142,7 +139,7 @@ export default function NewProposalPage() {
             <div>
               <label
                 htmlFor="prop-title"
-                className="mb-1.5 block text-sm font-bold text-[var(--mc-text)]"
+                className="mb-1.5 block text-sm font-semibold text-[var(--mc-text)]"
               >
                 Заголовок
               </label>
@@ -153,14 +150,14 @@ export default function NewProposalPage() {
                 maxLength={255}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="lc-focus-ring w-full rounded-xl border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
-                placeholder="Коротко, про що ідея"
+                className="lc-focus-ring w-full rounded-[var(--radius)] border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
+                placeholder="Про що ідея"
               />
             </div>
             <div>
               <label
                 htmlFor="prop-desc"
-                className="mb-1.5 block text-sm font-bold text-[var(--mc-text)]"
+                className="mb-1.5 block text-sm font-semibold text-[var(--mc-text)]"
               >
                 Опис
               </label>
@@ -171,13 +168,13 @@ export default function NewProposalPage() {
                 rows={6}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="lc-focus-ring w-full resize-y rounded-xl border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
-                placeholder="Деталі, чому це варто зробити…"
+                className="lc-focus-ring w-full resize-y rounded-[var(--radius)] border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
+                placeholder="Деталі…"
               />
             </div>
             <div>
-              <span className="mb-2 block text-sm font-bold text-[var(--mc-text)]">
-                Тривалість голосування
+              <span className="mb-2 block text-sm font-semibold text-[var(--mc-text)]">
+                Термін · мін. {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів
               </span>
               <div className="flex flex-wrap gap-2">
                 {DURATIONS.map((d) => (
@@ -186,20 +183,16 @@ export default function NewProposalPage() {
                     type="button"
                     onClick={() => setDuration(d)}
                     className={cn(
-                      "lc-focus-ring min-h-10 rounded-xl border-2 px-4 py-2 text-sm font-bold transition-[transform,colors] active:scale-[0.98]",
+                      "lc-focus-ring min-h-10 rounded-[var(--radius)] border-2 px-4 py-2 text-sm font-bold transition-[transform,colors] active:translate-y-px",
                       duration === d
-                        ? "border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)] shadow-[0_0_0_1px_rgba(52,211,153,0.25)]"
-                        : "border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
+                        ? "border-[#2f8a18] bg-[var(--mc-net-green)] text-white"
+                        : "border-[var(--mc-border-card)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
                     )}
                   >
                     {ukDaysLabel(d)}
                   </button>
                 ))}
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-[var(--mc-text-muted)]">
-                Якщо до кінця терміну буде менше {PROPOSAL_MIN_VOTES_FOR_RESULT}{" "}
-                голосів, голосування автоматично скасується.
-              </p>
             </div>
             {error ? (
               <p className="text-sm font-medium text-rose-300" role="alert">
@@ -209,9 +202,9 @@ export default function NewProposalPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="lc-focus-ring lc-btn-accent min-h-12 w-full rounded-full border border-[var(--mc-net-green)]/50 bg-[var(--mc-vote-bg)] py-2.5 text-sm font-semibold text-[var(--mc-green-ink)] disabled:opacity-60"
+              className="lc-focus-ring lc-btn-accent min-h-12 w-full py-2.5 text-sm disabled:opacity-60"
             >
-              {submitting ? "Збереження…" : "Опублікувати"}
+              {submitting ? "…" : "Опублікувати"}
             </button>
           </form>
         </SoftAppear>

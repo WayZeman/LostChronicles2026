@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Noto_Sans } from "next/font/google";
 import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
@@ -13,11 +13,12 @@ import {
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 import "./globals.css";
 
-const inter = Inter({
+const notoSans = Noto_Sans({
   subsets: ["latin", "latin-ext", "cyrillic", "cyrillic-ext"],
-  variable: "--font-inter",
+  variable: "--font-noto",
   display: "swap",
   adjustFontFallback: true,
+  weight: ["400", "500", "600", "700", "800"],
 });
 
 /** Канонічний URL (SEO, OG). Перевизначення: NEXT_PUBLIC_SITE_URL у продакшені. */
@@ -104,7 +105,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
       </head>
       <body
-        className={`${inter.variable} am-bg lc-page-enter relative flex min-h-screen flex-col antialiased`}
+        className={`${notoSans.variable} am-bg lc-page-enter relative flex min-h-screen flex-col antialiased`}
       >
         <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />

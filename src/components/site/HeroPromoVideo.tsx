@@ -64,10 +64,9 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
     >
       <div
         className={cn(
-          "overflow-hidden rounded-[1.75rem] border border-white/[0.14]",
-          "bg-[color-mix(in_srgb,var(--mc-surface)_38%,transparent)]",
-          "shadow-[0_1px_0_rgba(255,255,255,0.08)_inset,0_16px_48px_rgba(0,0,0,0.26)]",
-          "backdrop-blur-[36px] backdrop-saturate-[1.75]",
+          "overflow-hidden rounded-[var(--radius)] border-2 border-[var(--mc-border-card)]",
+          "bg-[var(--mc-deep)]",
+          "shadow-[0_1px_0_rgba(255,255,255,0.06)_inset,0_8px_24px_rgba(0,0,0,0.35)]",
         )}
       >
         <div className="relative aspect-video w-full bg-black">
@@ -131,8 +130,8 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
               >
                 <span
                   className={cn(
-                    "flex size-14 items-center justify-center rounded-full md:size-16",
-                    "border border-white/20 bg-[color-mix(in_srgb,#000_32%,transparent)] backdrop-blur-xl",
+                    "flex size-14 items-center justify-center rounded-[var(--radius)] md:size-16",
+                    "border-2 border-white/25 bg-black/55",
                     "shadow-[0_12px_40px_rgba(0,0,0,0.3)]",
                     "transition-[border-color,background-color,transform] duration-200",
                     "group-hover:border-[color-mix(in_srgb,var(--mc-net-green)_55%,transparent)]",
@@ -153,8 +152,8 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
-                  "lc-focus-ring absolute bottom-3 right-3 rounded-full px-3 py-1.5 text-xs",
-                  "border border-white/20 bg-black/45 text-white/90 backdrop-blur-md",
+                  "lc-focus-ring absolute bottom-3 right-3 rounded-[var(--radius)] px-3 py-1.5 text-xs",
+                  "border-2 border-white/25 bg-black/60 text-white/90",
                   "transition-colors hover:border-[var(--mc-net-green)] hover:text-[var(--mc-net-green)]",
                 )}
               >

@@ -21,12 +21,11 @@ export default function MapPage() {
       <div className={lcPageContainerClass}>
         <WikiContentFrame>
           <div className="flex flex-col items-center text-center">
-            <h2 className="lc-hero-title text-xl font-semibold text-[var(--mc-text)] md:text-2xl">
+            <h2 className="lc-section-title text-xl uppercase md:text-2xl">
               Перейти до карти
             </h2>
-            <p className="mt-4 w-full max-w-lg text-sm font-medium leading-relaxed text-[var(--mc-text-muted)] md:text-base">
-              Натисніть кнопку нижче, щоб відкрити мапу сервера. Якщо вікно не відкривається,
-              перевірте блокувальник спливаючих вікон.
+            <p className="mt-3 w-full max-w-lg text-sm leading-relaxed text-[var(--mc-text-muted)] md:text-base">
+              Відкрийте інтерактивну мапу світу сервера.
             </p>
             <div className="mt-8 md:mt-10">
               <a

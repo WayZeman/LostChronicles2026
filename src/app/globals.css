@@ -7,14 +7,12 @@
 @custom-variant dark (&);
 
 @theme {
-  /* SF на Apple, Inter як єдиний веб-фолбек для кирилиці */
-  --font-sans:
-    -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display", "Segoe UI",
-    var(--font-inter), ui-sans-serif, sans-serif;
-  --font-serif: var(--font-inter);
+  /* Minecraft.net-inspired: Noto Sans (кирилиця) */
+  --font-sans: var(--font-noto), "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-noto), "Noto Sans", ui-sans-serif, sans-serif;
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-mono: var(--font-geist-mono);
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --font-heading: var(--font-sans);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -62,92 +60,92 @@
   --lc-stream-dur: 1.05s;
   --lc-stream-dur-slow: 1.28s;
   --lc-stream-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  /* Lost Chronicles — лише темна палітра */
-  --mc-net-green: #eab308;
-  --mc-net-green-hover: #facc15;
-  --mc-on-gold: #1c1206;
-  --mc-net-sky-top: #121212;
-  --mc-net-gradient-mid: #0e0e0e;
-  --mc-net-sky-mid: #0c0c0c;
-  --mc-net-page: #0a0a0a;
+  /* Lost Chronicles — збалансований насичений Minecraft green */
+  --mc-net-green: #54c530;
+  --mc-net-green-hover: #6dde42;
+  --mc-on-gold: #071208;
+  --mc-net-sky-top: #0f160f;
+  --mc-net-gradient-mid: #0c120c;
+  --mc-net-sky-mid: #0a100a;
+  --mc-net-page: #0d130d;
   --mc-backdrop-vignette-gradient: radial-gradient(
     ellipse 120% 80% at 50% 100%,
-    rgba(0, 0, 0, 0.5),
-    transparent 55%
+    rgba(0, 0, 0, 0.7),
+    transparent 58%
   );
-  --mc-backdrop-vignette-opacity: 0.65;
+  --mc-backdrop-vignette-opacity: 0.5;
   --mc-grass: var(--mc-net-green);
-  --mc-grass-bright: #facc15;
-  --mc-dirt: #525252;
-  --mc-sky: #a3a3a3;
-  --mc-stone: #737373;
-  --mc-deep: #171717;
-  --mc-text: #fafafa;
-  --mc-text-muted: #d4d4d8;
-  --mc-text-subtle: #a3a3a3;
-  --mc-ink: #fafafa;
-  --mc-ink-muted: #a3a3a3;
-  --mc-ink-subtle: #a1a1aa;
-  --mc-surface: #1c1c1c;
-  --mc-surface-elevated: #262626;
-  --mc-border: rgba(255, 255, 255, 0.1);
-  --mc-border-card: rgba(255, 255, 255, 0.09);
-  --mc-nav-bg: rgba(28, 28, 30, 0.5);
-  --mc-nav-border: rgba(255, 255, 255, 0.09);
+  --mc-grass-bright: #7ae04a;
+  --mc-dirt: #a56b3a;
+  --mc-sky: #4a9beb;
+  --mc-stone: #7a8578;
+  --mc-deep: #090f09;
+  --mc-text: #f7faf5;
+  --mc-text-muted: #c4d8ba;
+  --mc-text-subtle: #8fad84;
+  --mc-ink: #f7faf5;
+  --mc-ink-muted: #c4d8ba;
+  --mc-ink-subtle: #8fad84;
+  --mc-surface: #172316;
+  --mc-surface-elevated: #21301f;
+  --mc-border: rgba(100, 180, 70, 0.28);
+  --mc-border-card: #355033;
+  --mc-nav-bg: #142012;
+  --mc-nav-border: #355033;
   --mc-nav-shadow:
-    0 0 1px rgba(255, 255, 255, 0.06) inset,
-    0 -12px 48px rgba(0, 0, 0, 0.42);
-  --mc-nav-link: #d4d4d8;
-  --mc-nav-link-hover-bg: rgba(234, 179, 8, 0.12);
-  --mc-nav-toggle-bg: rgba(38, 38, 38, 0.92);
-  --mc-toggle-border: rgba(255, 255, 255, 0.14);
-  --mc-toggle-bg: #2a2a2a;
-  --mc-toggle-hover-bg: rgba(255, 255, 255, 0.1);
-  --mc-green-ink: #fde68a;
-  --mc-vote-bg: rgba(234, 179, 8, 0.18);
-  --mc-vote-bg-hover: rgba(234, 179, 8, 0.28);
-  --mc-bento-icon-bg: rgba(234, 179, 8, 0.16);
-  --mc-bento-icon-hover: rgba(234, 179, 8, 0.26);
-  --mc-arrow-muted: #737373;
-  --mc-btn-secondary-border: rgba(255, 255, 255, 0.18);
-  --mc-btn-secondary-bg: rgba(255, 255, 255, 0.06);
-  --mc-btn-secondary-fg: #e2e8f0;
-  --mc-btn-secondary-hover: rgba(255, 255, 255, 0.11);
-  --mc-footer-bg: #141414;
-  --mc-footer-border: rgba(255, 255, 255, 0.08);
-  --mc-footer-text: rgba(250, 250, 250, 0.42);
+    0 1px 0 rgba(122, 224, 74, 0.1) inset,
+    0 -12px 36px rgba(0, 0, 0, 0.55);
+  --mc-nav-link: #b9d2af;
+  --mc-nav-link-hover-bg: rgba(84, 197, 48, 0.22);
+  --mc-nav-toggle-bg: #21301f;
+  --mc-toggle-border: #456342;
+  --mc-toggle-bg: #21301f;
+  --mc-toggle-hover-bg: rgba(84, 197, 48, 0.14);
+  --mc-green-ink: #071208;
+  --mc-vote-bg: rgba(84, 197, 48, 0.28);
+  --mc-vote-bg-hover: rgba(84, 197, 48, 0.42);
+  --mc-bento-icon-bg: rgba(84, 197, 48, 0.24);
+  --mc-bento-icon-hover: rgba(84, 197, 48, 0.38);
+  --mc-arrow-muted: #6a8064;
+  --mc-btn-secondary-border: #456342;
+  --mc-btn-secondary-bg: #21301f;
+  --mc-btn-secondary-fg: #f2fff0;
+  --mc-btn-secondary-hover: #2a3c28;
+  --mc-footer-bg: #090f09;
+  --mc-footer-border: #243522;
+  --mc-footer-text: rgba(196, 216, 186, 0.55);
   --mc-bg-image-overlay: linear-gradient(
     180deg,
-    rgba(10, 10, 10, 0.74) 0%,
-    rgba(12, 12, 12, 0.82) 50%,
-    rgba(8, 8, 8, 0.88) 100%
+    rgba(28, 64, 26, 0.38) 0%,
+    rgba(13, 19, 13, 0.86) 42%,
+    rgba(7, 11, 7, 0.97) 100%
   );
   /* shadcn / Tailwind semantic tokens (темна тема) */
   --background: var(--mc-net-page);
   --foreground: var(--mc-text);
-  --card: oklch(0.2 0 0);
-  --card-foreground: oklch(0.97 0 0);
-  --popover: oklch(0.2 0 0);
-  --popover-foreground: oklch(0.97 0 0);
-  --primary: oklch(0.72 0.14 75);
-  --primary-foreground: oklch(0.18 0.04 75);
-  --secondary: oklch(0.26 0 0);
-  --secondary-foreground: oklch(0.95 0 0);
+  --card: #172316;
+  --card-foreground: #f7faf5;
+  --popover: #172316;
+  --popover-foreground: #f7faf5;
+  --primary: #54c530;
+  --primary-foreground: #071208;
+  --secondary: #21301f;
+  --secondary-foreground: #f2fff0;
   --muted: var(--mc-surface-elevated);
   --muted-foreground: var(--mc-text-subtle);
-  --accent: oklch(0.3 0 0);
-  --accent-foreground: oklch(0.97 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 12%);
-  --input: oklch(1 0 0 / 14%);
-  --ring: oklch(0.65 0.14 75);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  /* Більші радіуси — у дусі iOS / squircle */
-  --radius: 1rem;
+  --accent: #21301f;
+  --accent-foreground: #f7faf5;
+  --destructive: #ef4444;
+  --border: #355033;
+  --input: #456342;
+  --ring: #54c530;
+  --chart-1: #54c530;
+  --chart-2: #7ae04a;
+  --chart-3: #a56b3a;
+  --chart-4: #4a9beb;
+  --chart-5: #7a8578;
+  /* Блокові кути у дусі Minecraft */
+  --radius: 0.25rem;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -178,7 +176,7 @@
     /* Той самий колір, що й фон сторінки — при bounce/overscroll зверху не видно «смуги» */
     background-color: var(--mc-net-page);
     scroll-behavior: smooth;
-    letter-spacing: -0.011em;
+    letter-spacing: 0;
     scrollbar-width: none;
     -ms-overflow-style: none;
   }
@@ -195,8 +193,8 @@
 .lc-focus-ring:focus-visible {
   outline: none;
   box-shadow:
-    0 0 0 2px color-mix(in srgb, var(--mc-net-green) 55%, transparent),
-    0 0 0 4px color-mix(in srgb, var(--mc-net-green) 18%, transparent);
+    0 0 0 2px color-mix(in srgb, var(--mc-grass-bright) 70%, transparent),
+    0 0 0 4px color-mix(in srgb, var(--mc-net-green) 28%, transparent);
 }
 
 .am-bg {
@@ -205,16 +203,30 @@
 }
 
 .lc-hero-title {
-  letter-spacing: -0.03em;
+  letter-spacing: 0.02em;
+  font-weight: 800;
+}
+
+.lc-hero-display {
+  letter-spacing: 0.025em;
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
 }
 
 .lc-hero-accent {
-  color: var(--mc-net-green);
+  color: var(--mc-grass-bright);
 }
 
 .lc-hero-lead {
   color: var(--mc-text-muted);
   font-weight: 500;
+  letter-spacing: 0;
+  line-height: 1.55;
+}
+
+.lc-section-title {
+  letter-spacing: 0.04em;
+  font-weight: 800;
+  color: var(--mc-text);
 }
 
 /* Плавна поява сторінки (без прелоад-оверлею) */
@@ -255,10 +267,22 @@ body.lc-page-enter {
   min-height: calc(100dvh + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
   min-height: calc(-webkit-fill-available + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
   background-color: var(--mc-net-page);
-  background-image: var(--mc-bg-image-overlay), url("/fon.png");
-  background-size: cover, cover;
-  background-position: center, center;
-  background-repeat: no-repeat, no-repeat;
+  background-image:
+    var(--mc-bg-image-overlay),
+    radial-gradient(
+      ellipse 90% 55% at 50% -10%,
+      rgba(84, 197, 48, 0.28),
+      transparent 55%
+    ),
+    linear-gradient(
+      180deg,
+      #163016 0%,
+      #0e140e 42%,
+      #080c08 100%
+    );
+  background-size: cover, cover, cover;
+  background-position: center, center, center;
+  background-repeat: no-repeat, no-repeat, no-repeat;
 }
 
 .mc-net-backdrop::before {
@@ -285,9 +309,9 @@ body.lc-page-enter {
   width: clamp(200px, 42vw, 420px);
   height: clamp(200px, 42vw, 420px);
   border-radius: 50%;
-  background: rgba(250, 204, 21, 0.55);
+  background: rgba(84, 197, 48, 0.7);
   filter: blur(88px);
-  opacity: 0.09;
+  opacity: 0.1;
   mix-blend-mode: screen;
   will-change: transform;
   animation: mc-bg-blob-float var(--mc-blob-dur, 38s) ease-in-out infinite;
@@ -305,14 +329,14 @@ body.lc-page-enter {
   right: -12%;
   width: clamp(240px, 48vw, 500px);
   height: clamp(240px, 48vw, 500px);
-  background: rgba(253, 224, 71, 0.45);
+  background: rgba(122, 224, 74, 0.55);
   animation-delay: -12s;
 }
 .mc-bg-blob-3 {
   --mc-blob-dur: 36s;
   bottom: -18%;
   left: 10%;
-  background: rgba(234, 179, 8, 0.5);
+  background: rgba(47, 138, 24, 0.65);
   animation-delay: -1s;
 }
 .mc-bg-blob-4 {
@@ -321,14 +345,15 @@ body.lc-page-enter {
   left: 35%;
   width: clamp(160px, 32vw, 320px);
   height: clamp(160px, 32vw, 320px);
-  opacity: 0.05;
+  opacity: 0.1;
+  background: rgba(84, 197, 48, 0.5);
   animation-delay: -20s;
 }
 .mc-bg-blob-5 {
   --mc-blob-dur: 48s;
   bottom: 15%;
   right: 20%;
-  background: rgba(252, 211, 77, 0.5);
+  background: rgba(165, 107, 58, 0.4);
   animation-delay: -8s;
 }
 
@@ -352,62 +377,64 @@ body.lc-page-enter {
   }
 }
 
-/* Панелі — «рідке скло»: більше прозорості + сильніше розмиття фону */
+/* Панелі — charcoal-moss блок */
 .am-glass {
-  background: color-mix(in srgb, var(--mc-surface) 44%, transparent);
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(84, 197, 48, 0.07) 0%,
+      transparent 30%
+    ),
+    var(--mc-surface);
+  border: 2px solid var(--mc-border-card);
   color: var(--mc-ink);
-  backdrop-filter: blur(44px) saturate(1.8);
-  -webkit-backdrop-filter: blur(44px) saturate(1.8);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.1) inset,
-    0 20px 56px rgba(0, 0, 0, 0.32);
+    0 1px 0 rgba(122, 224, 74, 0.1) inset,
+    0 10px 28px rgba(0, 0, 0, 0.42);
 }
 
-/* Декоративні «плитки» — теж напівпрозорі */
+/* Слоти / вкладені блоки */
 .mc-slot {
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  background: color-mix(in srgb, var(--mc-surface-elevated) 52%, transparent);
-  backdrop-filter: blur(28px) saturate(1.65);
-  -webkit-backdrop-filter: blur(28px) saturate(1.65);
+  border: 2px solid var(--mc-border-card);
+  background: var(--mc-deep);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.08) inset,
-    0 8px 28px rgba(0, 0, 0, 0.24);
+    0 1px 0 rgba(122, 224, 74, 0.08) inset,
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4);
 }
 
-/* Кнопки — капсули з м’яким натиском (стиль системних кнопок Apple) */
+/* Кнопки — refined grass block */
 .mc-btn-primary {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  border: none;
-  background: var(--mc-net-green);
-  color: var(--mc-on-gold);
-  font-weight: 600;
+  border-radius: var(--radius);
+  border: 2px solid #2f8a18;
+  background: linear-gradient(180deg, #68d63e 0%, #54c530 100%);
+  color: var(--mc-green-ink);
+  font-weight: 800;
   font-size: 0.875rem;
   line-height: 1.25;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
   padding: 0.625rem 1.35rem;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.2) inset,
-    0 8px 24px rgba(0, 0, 0, 0.22);
+    0 3px 0 #1e6410,
+    0 1px 0 rgba(255, 255, 255, 0.22) inset;
   transition:
-    background-color 0.22s cubic-bezier(0.25, 0.1, 0.25, 1),
-    transform 0.18s cubic-bezier(0.25, 0.1, 0.25, 1),
-    box-shadow 0.18s ease;
+    filter 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .mc-btn-primary:hover {
-  background: var(--mc-net-green-hover);
+  filter: brightness(1.06);
 }
 
 .mc-btn-primary:active {
-  transform: scale(0.98);
+  transform: translateY(2px);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.15) inset,
-    0 4px 16px rgba(0, 0, 0, 0.2);
+    0 1px 0 #1e6410,
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
 }
 
 .mc-btn-secondary {
@@ -415,67 +442,70 @@ body.lc-page-enter {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid rgba(255, 255, 255, 0.14);
-  background: color-mix(in srgb, var(--mc-btn-secondary-bg) 85%, transparent);
-  backdrop-filter: blur(14px) saturate(1.35);
-  -webkit-backdrop-filter: blur(14px) saturate(1.35);
+  border-radius: var(--radius);
+  border: 2px solid var(--mc-btn-secondary-border);
+  background: var(--mc-btn-secondary-bg);
   color: var(--mc-btn-secondary-fg);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 0.875rem;
   line-height: 1.25;
-  letter-spacing: -0.01em;
+  letter-spacing: 0.02em;
   padding: 0.5rem 1.2rem;
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.05) inset;
+  box-shadow:
+    0 2px 0 #0a100a,
+    0 1px 0 rgba(122, 224, 74, 0.07) inset;
   transition:
-    background-color 0.22s ease,
-    border-color 0.22s ease,
-    transform 0.18s cubic-bezier(0.25, 0.1, 0.25, 1);
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    transform 0.12s ease;
 }
 
 .mc-btn-secondary:hover {
-  background: color-mix(in srgb, var(--mc-btn-secondary-hover) 90%, transparent);
+  background: var(--mc-btn-secondary-hover);
+  border-color: #547a4c;
 }
 
 .mc-btn-secondary:active {
-  transform: scale(0.98);
+  transform: translateY(2px);
+  box-shadow: 0 0 0 #0a100a;
 }
 
 .mc-btn-icon {
-  border-radius: 9999px;
+  border-radius: var(--radius);
 }
 
-/* Акцентні CTAs з золотою темою — скляна капсула */
+/* Акцентні CTAs */
 .lc-btn-accent {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 9999px;
-  border: 1px solid color-mix(in srgb, var(--mc-net-green) 42%, transparent);
-  background: color-mix(in srgb, var(--mc-vote-bg) 88%, transparent);
+  border-radius: var(--radius);
+  border: 2px solid #2f8a18;
+  background: linear-gradient(180deg, #68d63e 0%, #54c530 100%);
   color: var(--mc-green-ink);
-  font-weight: 600;
+  font-weight: 800;
   font-size: 0.875rem;
   line-height: 1.25;
-  letter-spacing: -0.01em;
-  backdrop-filter: blur(18px) saturate(1.45);
-  -webkit-backdrop-filter: blur(18px) saturate(1.45);
+  letter-spacing: 0.02em;
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.06) inset,
-    0 10px 28px rgba(0, 0, 0, 0.2);
+    0 3px 0 #1e6410,
+    0 1px 0 rgba(255, 255, 255, 0.22) inset;
   transition:
-    background-color 0.22s ease,
-    border-color 0.22s ease,
-    transform 0.18s cubic-bezier(0.25, 0.1, 0.25, 1);
+    filter 0.15s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
 }
 
 .lc-btn-accent:hover {
-  background: color-mix(in srgb, var(--mc-vote-bg-hover) 88%, transparent);
+  filter: brightness(1.06);
 }
 
 .lc-btn-accent:active {
-  transform: scale(0.98);
+  transform: translateY(2px);
+  box-shadow:
+    0 1px 0 #1e6410,
+    0 1px 0 rgba(255, 255, 255, 0.12) inset;
 }
 
 @keyframes lc-border-shimmer {
@@ -491,15 +521,13 @@ body.lc-page-enter {
   0%,
   100% {
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.1) inset,
-      0 16px 44px rgba(0, 0, 0, 0.28),
-      0 0 0 1px rgba(250, 204, 21, 0.05);
+      0 1px 0 rgba(255, 255, 255, 0.08) inset,
+      0 8px 24px rgba(0, 0, 0, 0.32);
   }
   50% {
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.12) inset,
-      0 22px 60px rgba(0, 0, 0, 0.34),
-      0 0 24px rgba(250, 204, 21, 0.1);
+      0 1px 0 rgba(255, 255, 255, 0.1) inset,
+      0 10px 28px rgba(0, 0, 0, 0.36);
   }
 }
 
@@ -509,20 +537,17 @@ body.lc-page-enter {
     transform: translateY(0);
   }
   50% {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 }
 
 .lc-interactive-panel {
   position: relative;
   overflow: hidden;
-  animation:
-    lc-panel-breathe 5.8s ease-in-out infinite,
-    lc-soft-float 4.4s ease-in-out infinite;
   transition:
-    transform 0.32s var(--am-ease),
-    box-shadow 0.32s var(--am-ease),
-    border-color 0.28s var(--am-ease);
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
 }
 
 .lc-interactive-panel::after {
@@ -531,19 +556,19 @@ body.lc-page-enter {
   inset: 0;
   pointer-events: none;
   border-radius: inherit;
-  padding: 1px;
+  padding: 2px;
   background: linear-gradient(
     110deg,
     transparent 0%,
-    rgba(250, 204, 21, 0.22) 35%,
-    rgba(255, 255, 255, 0.3) 50%,
-    rgba(250, 204, 21, 0.22) 65%,
+    rgba(84, 197, 48, 0.35) 45%,
+    rgba(255, 255, 255, 0.2) 50%,
+    rgba(84, 197, 48, 0.35) 55%,
     transparent 100%
   );
   background-size: 220% 100%;
   background-position: 0% 50%;
   opacity: 0;
-  transition: opacity 0.3s var(--am-ease);
+  transition: opacity 0.25s ease;
   -webkit-mask:
     linear-gradient(#000 0 0) content-box,
     linear-gradient(#000 0 0);
@@ -555,18 +580,15 @@ body.lc-page-enter {
 }
 
 .lc-interactive-panel:hover {
-  transform: translateY(-6px) scale(1.01);
-  border-color: rgba(250, 204, 21, 0.26);
+  transform: translateY(-2px);
+  border-color: rgba(84, 197, 48, 0.5);
   box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.12) inset,
-    0 20px 56px rgba(0, 0, 0, 0.32),
-    0 0 0 1px rgba(250, 204, 21, 0.12),
-    0 0 26px rgba(250, 204, 21, 0.13);
+    0 1px 0 rgba(122, 224, 74, 0.12) inset,
+    0 12px 28px rgba(0, 0, 0, 0.4);
 }
 
 .lc-interactive-panel:hover::after {
-  opacity: 1;
-  animation: lc-border-shimmer 1.8s linear infinite;
+  opacity: 0.55;
 }
 
 .lc-interactive-panel-static,
@@ -584,50 +606,112 @@ body.lc-page-enter {
 .lc-btn-primary:hover,
 .mc-btn-secondary:hover,
 .lc-btn-accent:hover {
-  transform: translateY(-2px) scale(1.02);
-  box-shadow:
-    0 1px 0 rgba(255, 255, 255, 0.2) inset,
-    0 14px 30px rgba(0, 0, 0, 0.26);
+  transform: translateY(-1px);
 }
 
 .lc-btn-primary:active,
 .mc-btn-secondary:active,
 .lc-btn-accent:active {
-  transform: translateY(0) scale(0.98);
+  transform: translateY(2px);
 }
 
 .lc-focus-ring {
-  transition:
-    transform 0.22s var(--am-ease),
-    filter 0.22s var(--am-ease);
+  transition: filter 0.15s ease;
 }
 
 .lc-focus-ring:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.08);
+  filter: none;
 }
 
-.lc-player-card {
+/* Смужка онлайн-гравців */
+.lc-player-strip {
+  position: relative;
+  overflow: hidden;
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent 0%,
+    #000 6%,
+    #000 94%,
+    transparent 100%
+  );
+}
+
+.lc-player-strip-grab {
+  cursor: grab;
+}
+
+.lc-player-strip-dragging {
+  cursor: grabbing;
+}
+
+.lc-player-strip-static {
+  mask-image: none;
+  -webkit-mask-image: none;
+  overflow-x: auto;
+  scrollbar-width: none;
+  touch-action: auto;
+  user-select: auto;
+  -webkit-user-select: auto;
+  cursor: default;
+}
+
+.lc-player-strip-static::-webkit-scrollbar {
+  display: none;
+}
+
+.lc-player-strip-track {
+  display: flex;
+  width: max-content;
+  align-items: center;
+  gap: 0.45rem;
+  padding-block: 0.15rem;
+  will-change: transform;
+}
+
+.lc-player-strip-static .lc-player-strip-track {
+  margin-inline: auto;
+}
+
+.lc-player-chip {
   transition:
-    transform 0.24s var(--am-ease),
-    box-shadow 0.24s var(--am-ease),
-    border-color 0.24s var(--am-ease);
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    color 0.15s ease;
 }
 
-.lc-player-card:hover {
-  transform: translateY(-3px) scale(1.03);
-  border-color: rgba(250, 204, 21, 0.3);
-  box-shadow:
-    0 10px 20px rgba(0, 0, 0, 0.25),
-    0 0 16px rgba(250, 204, 21, 0.14);
+.lc-player-chip:hover {
+  border-color: rgba(84, 197, 48, 0.55);
+  background: color-mix(in srgb, var(--mc-surface-elevated) 80%, var(--mc-net-green));
 }
 
-.lc-player-card > img {
-  transition: transform 0.24s var(--am-ease);
+.lc-player-chip-copied {
+  border-color: rgba(84, 197, 48, 0.75);
+  background: color-mix(in srgb, var(--mc-surface-elevated) 65%, var(--mc-net-green));
+  color: var(--mc-text);
 }
 
-.lc-player-card:hover > img {
-  transform: scale(1.12) rotate(-2deg);
+@media (prefers-reduced-motion: reduce) {
+  .lc-player-strip {
+    mask-image: none;
+    -webkit-mask-image: none;
+    overflow-x: auto;
+    touch-action: auto;
+    user-select: auto;
+  }
+
+  .lc-player-strip-track {
+    will-change: auto;
+  }
 }
 
 /* Подіум топ-3: зсув по вертикалі через --lc-podium-y-md + анімація при hover */
@@ -643,14 +727,14 @@ body.lc-page-enter {
   }
   .lc-podium-card:hover {
     transform: translateY(calc(var(--lc-podium-y-md, 0px) - 10px)) scale(1.045);
-    filter: brightness(1.1) saturate(1.08) drop-shadow(0 18px 36px rgba(250, 204, 21, 0.22));
+    filter: brightness(1.1) saturate(1.08) drop-shadow(0 18px 36px rgba(84, 197, 48, 0.22));
     border-color: rgba(255, 255, 255, 0.22);
   }
 }
 @media (max-width: 767px) {
   .lc-podium-card:hover {
     transform: scale(1.035);
-    filter: brightness(1.08) saturate(1.06) drop-shadow(0 12px 28px rgba(250, 204, 21, 0.15));
+    filter: brightness(1.08) saturate(1.06) drop-shadow(0 12px 28px rgba(84, 197, 48, 0.15));
   }
 }
 
@@ -671,11 +755,11 @@ body.lc-page-enter {
 }
 .lc-hero-subpanel:hover {
   transform: translateY(-4px);
-  border-color: rgba(250, 204, 21, 0.22);
+  border-color: rgba(84, 197, 48, 0.22);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.12) inset,
     0 18px 46px rgba(0, 0, 0, 0.32),
-    0 0 0 1px rgba(250, 204, 21, 0.08);
+    0 0 0 1px rgba(84, 197, 48, 0.08);
 }
 
 /* Вбудований графік онлайну — легкий підйом і обводка без циклу «дихання» */
@@ -697,9 +781,9 @@ body.lc-page-enter {
   background: linear-gradient(
     110deg,
     transparent 0%,
-    rgba(250, 204, 21, 0.14) 40%,
+    rgba(84, 197, 48, 0.14) 40%,
     rgba(255, 255, 255, 0.22) 50%,
-    rgba(250, 204, 21, 0.14) 60%,
+    rgba(84, 197, 48, 0.14) 60%,
     transparent 100%
   );
   background-size: 220% 100%;
@@ -717,11 +801,11 @@ body.lc-page-enter {
 }
 .lc-interactive-panel-embed:hover {
   transform: translateY(-3px) scale(1.006);
-  border-color: rgba(250, 204, 21, 0.2);
+  border-color: rgba(84, 197, 48, 0.2);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.1) inset,
     0 16px 44px rgba(0, 0, 0, 0.3),
-    0 0 24px rgba(250, 204, 21, 0.12);
+    0 0 24px rgba(84, 197, 48, 0.12);
 }
 .lc-interactive-panel-embed:hover::after {
   opacity: 1;
@@ -739,7 +823,7 @@ body.lc-page-enter {
 .lc-hover-row:hover {
   background: rgba(255, 255, 255, 0.045);
   transform: translateX(5px);
-  box-shadow: -3px 0 0 rgba(250, 204, 21, 0.35);
+  box-shadow: -3px 0 0 rgba(84, 197, 48, 0.35);
 }
 
 /* Посилання в списку каталогів (monobank-блок) */
@@ -759,13 +843,13 @@ body.lc-page-enter {
 }
 .lc-hover-icon-pop:hover {
   transform: scale(1.06);
-  border-color: rgba(250, 204, 21, 0.28);
-  box-shadow: 0 0 24px rgba(250, 204, 21, 0.12);
+  border-color: rgba(84, 197, 48, 0.28);
+  box-shadow: 0 0 24px rgba(84, 197, 48, 0.12);
 }
 
 @media (prefers-reduced-motion: reduce) {
   .lc-interactive-panel,
-  .lc-player-card,
+  .lc-player-chip,
   .lc-focus-ring,
   .lc-btn-primary,
   .mc-btn-secondary,
@@ -778,8 +862,6 @@ body.lc-page-enter {
     transform: none;
   }
 
-  .lc-player-card:hover,
-  .lc-player-card:hover > img,
   .lc-focus-ring:hover,
   .lc-btn-primary:hover,
   .mc-btn-secondary:hover,
@@ -1096,11 +1178,11 @@ body.lc-page-enter {
 
 .lc-proposal-card:hover {
   transform: translateY(-5px);
-  border-color: rgba(250, 204, 21, 0.22);
+  border-color: rgba(84, 197, 48, 0.22);
   box-shadow:
     0 1px 0 rgba(255, 255, 255, 0.1) inset,
     0 18px 48px rgba(0, 0, 0, 0.34),
-    0 0 20px rgba(250, 204, 21, 0.08);
+    0 0 20px rgba(84, 197, 48, 0.08);
 }
 
 @media (prefers-reduced-motion: reduce) {

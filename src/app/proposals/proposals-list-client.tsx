@@ -15,6 +15,7 @@ import {
   PROPOSAL_MIN_VOTES_FOR_RESULT,
 } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
+import "@/components/proposals/proposal-vote.css";
 
 type ProposalItem = {
   id: number;
@@ -78,30 +79,21 @@ export function ProposalsListClient() {
           <header className="mb-8 border-b border-white/[0.08] pb-6 sm:mb-10 sm:pb-8">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
               <div className="max-w-xl text-center sm:text-left">
-                <h1 className="lc-hero-title text-balance text-3xl font-bold tracking-tight text-[var(--mc-text)] sm:text-4xl">
+                <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
                   Пропозиції
                 </h1>
-                <p className="mt-3 text-pretty text-sm leading-relaxed text-[var(--mc-text-muted)] sm:text-base">
-                  Ідеї змін на сервері. Спільнота голосує; рішення чинне від{" "}
-                  {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів.
+                <p className="mt-2 text-sm text-[var(--mc-text-muted)]">
+                  Від {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів · за або проти
                 </p>
                 {list && list.length > 0 ? (
-                  <p className="mt-3 text-xs text-[var(--mc-text-subtle)] sm:text-sm">
-                    <span className="tabular-nums text-[var(--mc-text)]">
-                      {list.length}
-                    </span>{" "}
-                    усього
-                    <span className="mx-2 opacity-40">·</span>
-                    <span className="tabular-nums text-[var(--mc-net-green)]">
-                      {openCount}
-                    </span>{" "}
-                    відкритих
+                  <p className="mt-2 text-sm tabular-nums text-[var(--mc-text)]">
+                    {openCount} активних · {list.length} усього
                   </p>
                 ) : null}
               </div>
               <Link
                 href="/proposals/new"
-                className="lc-focus-ring lc-btn-accent mx-auto inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 rounded-full border border-[var(--mc-net-green)]/50 bg-[var(--mc-vote-bg)] px-5 text-sm font-semibold text-[var(--mc-green-ink)] sm:mx-0 sm:w-auto sm:max-w-none"
+                className="lc-focus-ring lc-btn-accent mx-auto inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 px-5 text-sm sm:mx-0 sm:w-auto sm:max-w-none"
               >
                 <PlusCircle className="size-4 opacity-80" aria-hidden />
                 Нова пропозиція
@@ -176,7 +168,7 @@ export function ProposalsListClient() {
                 key={i}
                 className={cn(
                   lcGlassPanelClass,
-                  "lc-skeleton-breathe h-36 !rounded-2xl",
+                  "lc-skeleton-breathe h-36 !rounded-[var(--radius)]",
                 )}
               />
             ))}
@@ -194,7 +186,7 @@ export function ProposalsListClient() {
               </p>
               <Link
                 href="/proposals/new"
-                className="lc-focus-ring mt-4 inline-flex min-h-11 items-center gap-2 rounded-full border border-[var(--mc-net-green)]/50 bg-[var(--mc-vote-bg)] px-5 text-sm font-semibold text-[var(--mc-green-ink)]"
+                className="lc-focus-ring lc-btn-accent mt-4 inline-flex min-h-11 items-center gap-2 px-5 text-sm"
               >
                 <PlusCircle className="size-4 opacity-80" aria-hidden />
                 Створити першу
@@ -210,8 +202,7 @@ export function ProposalsListClient() {
                   <article
                     className={cn(
                       lcGlassPanelClass,
-                      "lc-interactive-panel-static group !rounded-2xl !p-4 transition-[border-color,background-color] duration-300 sm:!p-5",
-                      "hover:border-white/18 hover:bg-[color-mix(in_srgb,var(--mc-surface)_52%,transparent)]",
+                      "lc-interactive-panel-static lc-proposal-match-card group !rounded-[var(--radius)] !p-4 sm:!p-5",
                     )}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2 gap-y-2">
@@ -230,32 +221,30 @@ export function ProposalsListClient() {
                       {p.description}
                     </p>
 
-                    <p className="mt-3 text-xs text-[var(--mc-text-subtle)]">
-                      <span className="text-[var(--mc-text)]">
-                        {p.author_username}
+                    <p className="mt-2.5 text-sm text-[var(--mc-text)]">
+                      {p.author_username}
+                      <span className="mx-1.5 text-[var(--mc-text-muted)]">·</span>
+                      <span className="tabular-nums text-[var(--mc-text-muted)]">
+                        {formatTimeRemainingUk(p.ends_at)}
                       </span>
-                      <span className="mx-1.5 opacity-40">·</span>
-                      {formatTimeRemainingUk(p.ends_at)}
                     </p>
 
-                    <div className="mt-4">
+                    <div className="mt-3">
                       <ProposalVoteBar
                         yes={p.yes_votes}
                         no={p.no_votes}
                         compact
                         showQuorum={open}
+                        votingOpen={open}
                       />
                     </div>
 
-                    <div className="mt-4 flex justify-end border-t border-white/[0.06] pt-3">
+                    <div className="mt-3 flex justify-end">
                       <Link
                         href={`/proposals/${p.id}`}
-                        className="lc-focus-ring text-sm font-semibold text-[var(--mc-net-green)] underline-offset-4 transition-colors hover:underline"
+                        className="lc-focus-ring text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
                       >
-                        {open ? "Голосувати" : "Деталі"}
-                        <span aria-hidden className="ml-1 opacity-70">
-                          →
-                        </span>
+                        {open ? "Голосувати →" : "Результат →"}
                       </Link>
                     </div>
                   </article>

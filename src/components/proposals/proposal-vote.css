@@ -1,0 +1,139 @@
+/* Голосування — насичений Minecraft block UI */
+
+@keyframes lc-vote-press {
+  0% {
+    transform: translateY(0);
+  }
+  45% {
+    transform: translateY(2px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.lc-vote-panel {
+  border-radius: var(--radius);
+  border: 2px solid var(--mc-border-card);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(84, 197, 48, 0.1) 0%,
+      transparent 40%
+    ),
+    var(--mc-deep);
+  box-shadow:
+    0 1px 0 rgba(122, 224, 74, 0.12) inset,
+    inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+}
+
+.lc-vote-match-stage {
+  border-radius: var(--radius);
+  border: 2px solid var(--mc-border-card);
+  background:
+    linear-gradient(
+      180deg,
+      rgba(84, 197, 48, 0.07) 0%,
+      transparent 30%
+    ),
+    var(--mc-surface);
+  box-shadow: 0 1px 0 rgba(122, 224, 74, 0.1) inset;
+}
+
+.lc-vote-tug {
+  position: relative;
+  overflow: hidden;
+  height: 0.65rem;
+  border-radius: 2px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 1px solid #2a3a28;
+}
+
+.lc-vote-tug-yes,
+.lc-vote-tug-no {
+  height: 100%;
+  transition: width 0.45s ease;
+}
+
+.lc-vote-tug-yes {
+  background: linear-gradient(90deg, #2f8a18, #54c530, #7ae04a);
+}
+
+.lc-vote-tug-no {
+  background: linear-gradient(90deg, #ef4444, #f87171);
+}
+
+.lc-vote-action {
+  border-radius: var(--radius);
+  transition:
+    border-color 0.12s ease,
+    background-color 0.12s ease,
+    filter 0.12s ease,
+    transform 0.12s ease,
+    box-shadow 0.12s ease;
+}
+
+.lc-vote-action:not(:disabled):hover {
+  transform: translateY(-1px);
+  filter: brightness(1.06);
+}
+
+.lc-vote-action:not(:disabled):active {
+  animation: lc-vote-press 0.18s ease;
+}
+
+.lc-vote-action-yes.lc-vote-action-selected {
+  box-shadow:
+    0 0 0 1px rgba(122, 224, 74, 0.55),
+    0 3px 0 #1e6410;
+}
+
+.lc-vote-action-no.lc-vote-action-selected {
+  box-shadow:
+    0 0 0 1px rgba(248, 113, 113, 0.5),
+    0 3px 0 #7f1d1d;
+}
+
+.lc-proposal-match-card {
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.lc-proposal-match-card:hover {
+  border-color: rgba(84, 197, 48, 0.65);
+  background: var(--mc-surface-elevated);
+  box-shadow:
+    0 1px 0 rgba(122, 224, 74, 0.14) inset,
+    0 10px 28px rgba(0, 0, 0, 0.4);
+}
+
+.lc-vote-status-live {
+  position: relative;
+  padding-left: 1.15rem;
+}
+
+.lc-vote-status-live::before {
+  content: "";
+  position: absolute;
+  left: 0.45rem;
+  top: 50%;
+  width: 0.4rem;
+  height: 0.4rem;
+  margin-top: -0.2rem;
+  border-radius: 999px;
+  background: var(--mc-grass-bright);
+  box-shadow: 0 0 8px rgba(122, 224, 74, 0.7);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-vote-action:not(:disabled):hover {
+    transform: none !important;
+  }
+
+  .lc-vote-tug-yes,
+  .lc-vote-tug-no {
+    transition: none !important;
+  }
+}

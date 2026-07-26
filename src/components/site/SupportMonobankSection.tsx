@@ -31,59 +31,54 @@ export function SupportMonobankSection() {
     <section
       className={cn(
         lcGlassPanelClass,
-        "am-reveal am-delay-3 mt-12 flex flex-col items-center text-center md:mt-16",
+        "lc-interactive-panel-static am-reveal am-delay-3 mt-10 flex flex-col items-center text-center md:mt-14",
       )}
       aria-labelledby="support-mono-heading"
     >
       <div
-        className="lc-hover-icon-pop flex size-14 cursor-default items-center justify-center rounded-full border border-[var(--mc-border-card)] bg-[var(--mc-vote-bg)] text-[var(--mc-net-green)] shadow-sm md:size-16"
+        className="flex size-12 cursor-default items-center justify-center rounded-[var(--radius)] border-2 border-[#2f8a18] bg-[var(--mc-net-green)] text-[var(--mc-green-ink)] shadow-[0_3px_0_#1e6410] md:size-14"
         aria-hidden
       >
-        <HeartHandshake className="size-7 md:size-8" strokeWidth={2} />
+        <HeartHandshake className="size-6 md:size-7" strokeWidth={2.25} />
       </div>
 
-      <p className="mt-4 text-xs font-bold uppercase tracking-wide text-[var(--mc-net-green)]">
-        Добровільна підтримка
+      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mc-grass-bright)]">
+        Підтримка
       </p>
 
       <h2
         id="support-mono-heading"
-        className="lc-hero-title mt-2 max-w-md text-2xl font-semibold leading-tight text-[var(--mc-text)] md:text-3xl"
+        className="lc-section-title mt-2 max-w-md text-xl leading-snug md:text-2xl"
       >
-        <span className="block">Допоможіть тримати</span>
-        <span className="mt-1 block">
-          <span className="text-[var(--mc-net-green)]">Lost Chronicles</span> онлайн
-        </span>
+        Тримаємо <span className="text-[var(--mc-grass-bright)]">Lost Chronicles</span>{" "}
+        онлайн
       </h2>
 
-      <div className="mt-4 max-w-lg space-y-3 text-sm font-medium leading-relaxed text-[var(--mc-text-muted)] md:text-base">
-        <p>Сервер існує завдяки внескам гравців і команди.</p>
-        <p>
-          Фінансово — через банку monobank. Без коштів — голосуйте за сервер у каталогах нижче: це
-          піднімає нас у рейтингах.
-        </p>
-      </div>
+      <p className="mt-3 max-w-md text-sm leading-relaxed text-[var(--mc-text-muted)] md:text-[0.9375rem]">
+        Донат через monobank або голос у каталогах — обидва варіанти допомагають
+        серверу.
+      </p>
 
       <div
-        className="mt-8 w-full max-w-md text-left"
+        className="mt-6 w-full max-w-md text-left"
         aria-labelledby="support-catalog-vote-heading"
       >
         <p
           id="support-catalog-vote-heading"
-          className="text-center text-xs text-[var(--mc-text-subtle)]"
+          className="text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-text-subtle)]"
         >
-          Голосування в каталогах
+          Голосування
         </p>
-        <ul className="mt-3 divide-y divide-white/[0.08] border-y border-white/[0.08]">
+        <ul className="mt-2 divide-y divide-[var(--mc-border-card)] border-y border-[var(--mc-border-card)]">
           {CATALOG_VOTE_LINKS.map(({ href, label }) => (
-            <li key={href} className="lc-catalog-row rounded-lg">
+            <li key={href}>
               <a
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className={cn(
                   "lc-focus-ring flex items-center justify-between gap-2 py-2.5",
-                  "text-sm text-[var(--mc-text)] transition-colors hover:text-[var(--mc-net-green)]",
+                  "text-sm text-[var(--mc-text)] transition-colors hover:text-[var(--mc-grass-bright)]",
                 )}
               >
                 <span className="min-w-0">{label}</span>
@@ -98,9 +93,9 @@ export function SupportMonobankSection() {
         href={jarUrl}
         target="_blank"
         rel="noopener noreferrer"
-        className="lc-focus-ring lc-btn-accent mt-8 w-full max-w-md min-h-[3rem] px-8 py-3.5 text-base md:min-h-[3.25rem] md:text-lg"
+        className="lc-focus-ring lc-btn-accent mt-7 w-full max-w-md min-h-[3rem] px-8 py-3 text-base"
       >
-        <HeartHandshake className="size-5 shrink-0 opacity-90" aria-hidden />
+        <HeartHandshake className="size-5 shrink-0" aria-hidden />
         Підтримати в monobank
         <ExternalLink className="size-4 shrink-0 opacity-70" aria-hidden />
       </a>

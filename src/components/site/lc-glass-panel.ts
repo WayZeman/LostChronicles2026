@@ -1,3 +1,3 @@
-/** Спільне «скляне» вікно для монітора онлайну та блоку підключення. */
+/** Спільне блокове вікно в стилі Minecraft.net */
 export const lcGlassPanelClass =
-  "lc-interactive-panel w-full rounded-[1.75rem] border border-white/[0.14] bg-[color-mix(in_srgb,var(--mc-surface)_42%,transparent)] p-4 shadow-[0_16px_52px_rgba(0,0,0,0.28)] backdrop-blur-[44px] backdrop-saturate-[1.8] md:p-6";
+  "lc-interactive-panel lc-interactive-panel-static w-full rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-surface)] p-4 shadow-[0_1px_0_rgba(122,224,74,0.1)_inset,0_10px_28px_rgba(0,0,0,0.42)] md:p-6";

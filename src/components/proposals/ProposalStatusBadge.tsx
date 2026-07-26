@@ -15,15 +15,15 @@ export function ProposalStatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex shrink-0 items-center rounded-full px-2.5 py-1 text-[10px] font-semibold tracking-wide",
+        "inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-semibold",
         votingOpen &&
-          "bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)] ring-1 ring-[var(--mc-net-green)]/35",
+          "lc-vote-status-live bg-[var(--mc-net-green)] text-[var(--mc-green-ink)] ring-1 ring-[#2f8a18]",
         !votingOpen &&
           status === "cancelled" &&
-          "bg-rose-500/10 text-rose-200/90 ring-1 ring-rose-500/25",
+          "bg-[#ef4444]/25 text-[#fecaca] ring-1 ring-[#ef4444]/50",
         !votingOpen &&
           status !== "cancelled" &&
-          "bg-white/[0.04] text-[var(--mc-text-subtle)] ring-1 ring-white/[0.08]",
+          "bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] ring-1 ring-[var(--mc-border-card)]",
         className,
       )}
     >

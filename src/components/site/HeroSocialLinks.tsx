@@ -10,7 +10,7 @@ import {
 import { cn } from "@/lib/utils";
 
 const linkClass =
-  "lc-focus-ring group inline-flex touch-manipulation items-center justify-center border border-white/[0.14] bg-[color-mix(in_srgb,var(--mc-surface)_38%,transparent)] text-sm font-medium text-[var(--mc-text)] shadow-[0_8px_28px_rgba(0,0,0,0.18)] backdrop-blur-md backdrop-saturate-[1.65] transition-[border-color,background-color,transform] active:scale-[0.98] md:backdrop-blur-[28px] md:hover:border-white/22 md:hover:bg-[color-mix(in_srgb,var(--mc-surface)_50%,transparent)]";
+  "lc-focus-ring group inline-flex touch-manipulation items-center justify-center rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-surface-elevated)] text-sm font-semibold text-[var(--mc-text)] shadow-[0_2px_0_#0a100a,0_1px_0_rgba(140,255,90,0.1)_inset] transition-[border-color,background-color,transform] active:translate-y-[1px] md:hover:border-[var(--mc-net-green)] md:hover:bg-[var(--mc-toggle-hover-bg)]";
 
 function IconYoutube({ className }: { className?: string }) {
   return (
@@ -167,9 +167,8 @@ export function HeroSocialLinks({ embedded = false }: HeroSocialLinksProps) {
               aria-label={label}
               className={cn(
                 linkClass,
-                "min-h-11 min-w-11 shrink-0 rounded-2xl p-0 sm:min-w-[2.75rem]",
-                "md:min-h-11 md:min-w-0 md:gap-2 md:rounded-full md:px-4 md:py-2.5",
-                "hover:border-white/18 hover:bg-[color-mix(in_srgb,var(--mc-surface)_46%,transparent)]",
+                "min-h-11 min-w-11 shrink-0 p-0 sm:min-w-[2.75rem]",
+                "md:min-h-11 md:min-w-0 md:gap-2 md:px-4 md:py-2.5",
               )}
             >
               <Icon

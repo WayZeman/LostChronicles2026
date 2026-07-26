@@ -9,7 +9,7 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
     return (
       <div
         className={cn(
-          "flex min-h-[220px] w-full items-center justify-center rounded-2xl border border-dashed border-white/[0.12] bg-black/15 md:min-h-[300px] lg:min-h-[360px]",
+          "flex min-h-[220px] w-full items-center justify-center rounded-[var(--radius)] border-2 border-dashed border-[var(--mc-border-card)] bg-[var(--mc-deep)] md:min-h-[300px] lg:min-h-[360px]",
           "lc-skeleton-breathe",
         )}
       >

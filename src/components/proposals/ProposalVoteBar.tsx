@@ -1,5 +1,6 @@
 "use client";
 
+import "./proposal-vote.css";
 import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 
@@ -8,6 +9,7 @@ type Props = {
   no: number;
   compact?: boolean;
   showQuorum?: boolean;
+  votingOpen?: boolean;
   className?: string;
 };
 
@@ -16,133 +18,121 @@ export function ProposalVoteBar({
   no,
   compact = false,
   showQuorum = false,
+  votingOpen = false,
   className,
 }: Props) {
   const total = yes + no;
   const yesPct = total === 0 ? 50 : Math.round((yes / total) * 100);
   const noPct = total === 0 ? 50 : 100 - yesPct;
+  const lead = yes === no ? "draw" : yes > no ? "yes" : ("no" as const);
   const quorumPct = Math.min(
     100,
     Math.round((total / PROPOSAL_MIN_VOTES_FOR_RESULT) * 100),
   );
   const quorumMet = total >= PROPOSAL_MIN_VOTES_FOR_RESULT;
+  const need = Math.max(0, PROPOSAL_MIN_VOTES_FOR_RESULT - total);
 
   return (
-    <div className={cn("w-full space-y-2.5", !compact && "mx-auto max-w-xl space-y-3", className)}>
-      <div
-        className={cn(
-          "grid grid-cols-2 gap-2",
-          compact ? "text-xs" : "text-sm",
-        )}
-      >
-        <div
-          className={cn(
-            "rounded-xl border px-3 py-2.5",
-            "border-emerald-500/30 bg-emerald-500/[0.1]",
-            !compact && "sm:px-4 sm:py-3",
-          )}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300/90">
-            За
-          </p>
-          <p
-            className={cn(
-              "mt-0.5 font-bold tabular-nums text-emerald-100",
-              compact ? "text-lg" : "text-2xl",
-            )}
-          >
-            {yes}
-            {total > 0 ? (
-              <span className="ml-1.5 text-sm font-semibold text-emerald-200/70">
-                {yesPct}%
-              </span>
-            ) : null}
-          </p>
-        </div>
-        <div
-          className={cn(
-            "rounded-xl border px-3 py-2.5 text-right",
-            "border-rose-500/30 bg-rose-500/[0.1]",
-            !compact && "sm:px-4 sm:py-3",
-          )}
-        >
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-rose-300/90">
-            Проти
-          </p>
-          <p
-            className={cn(
-              "mt-0.5 font-bold tabular-nums text-rose-100",
-              compact ? "text-lg" : "text-2xl",
-            )}
-          >
-            {total > 0 ? (
-              <span className="mr-1.5 text-sm font-semibold text-rose-200/70">
-                {noPct}%
-              </span>
-            ) : null}
-            {no}
-          </p>
-        </div>
-      </div>
-
-      <div
-        className={cn(
-          "flex w-full overflow-hidden rounded-full bg-black/45 ring-1 ring-white/[0.06]",
-          compact ? "h-2.5" : "h-3",
-        )}
-        role="img"
-        aria-label={`За ${yes} (${yesPct}%), проти ${no} (${noPct}%)`}
-      >
-        <div
-          className="h-full bg-emerald-400 transition-[width] duration-500 ease-out"
-          style={{ width: `${yesPct}%` }}
-        />
-        <div
-          className="h-full bg-rose-400 transition-[width] duration-500 ease-out"
-          style={{ width: `${noPct}%` }}
-        />
-      </div>
-
-      <p className="text-center text-[11px] text-[var(--mc-text-subtle)] sm:text-xs">
-        {total === 0
-          ? "Голосів ще немає"
-          : `Усього ${total} голос${ukVotesSuffix(total)}`}
-        {showQuorum ? (
-          <>
-            <span className="mx-1.5 opacity-40">·</span>
-            <span
+    <div
+      className={cn(
+        "lc-vote-panel",
+        compact ? "p-3" : "p-3.5 sm:p-4",
+        className,
+      )}
+    >
+      <div className="space-y-2.5">
+        <div className="grid grid-cols-[1fr_auto_1fr] items-end gap-2">
+          <div className="text-left">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[var(--mc-grass-bright)]">
+              За
+            </p>
+            <p
               className={cn(
-                "font-semibold tabular-nums",
-                quorumMet
-                  ? "text-emerald-300"
-                  : "text-[var(--mc-text-muted)]",
+                "mt-0.5 font-bold tabular-nums leading-none text-[var(--mc-text)]",
+                compact ? "text-2xl" : "text-[1.75rem] sm:text-3xl",
               )}
             >
-              кворум {total}/{PROPOSAL_MIN_VOTES_FOR_RESULT}
-            </span>
-            <span
-              className="ml-2 inline-block h-1 w-14 align-middle overflow-hidden rounded-full bg-white/[0.07]"
-              aria-hidden
+              {yes}
+            </p>
+          </div>
+
+          <p className="pb-1 text-xs font-semibold text-[var(--mc-text-muted)]">
+            {total === 0 ? "—" : `${yesPct}:${noPct}`}
+          </p>
+
+          <div className="text-right">
+            <p className="text-xs font-extrabold uppercase tracking-wide text-[#f87171]">
+              Проти
+            </p>
+            <p
+              className={cn(
+                "mt-0.5 font-bold tabular-nums leading-none text-[var(--mc-text)]",
+                compact ? "text-2xl" : "text-[1.75rem] sm:text-3xl",
+              )}
             >
-              <span
-                className={cn(
-                  "block h-full rounded-full transition-[width] duration-500",
-                  quorumMet ? "bg-emerald-400" : "bg-white/40",
-                )}
-                style={{ width: `${quorumPct}%` }}
-              />
+              {no}
+            </p>
+          </div>
+        </div>
+
+        <div
+          className="lc-vote-tug flex w-full"
+          role="img"
+          aria-label={`За ${yes}, проти ${no}`}
+        >
+          <div className="lc-vote-tug-yes" style={{ width: `${yesPct}%` }} />
+          <div className="lc-vote-tug-no" style={{ width: `${noPct}%` }} />
+        </div>
+
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 text-xs text-[var(--mc-text-muted)]">
+          {showQuorum ? (
+            <span
+              className={cn(
+                "tabular-nums font-medium",
+                quorumMet ? "text-emerald-300" : "text-[var(--mc-text)]",
+              )}
+            >
+              {total}/{PROPOSAL_MIN_VOTES_FOR_RESULT}
+              {!quorumMet && need > 0 ? (
+                <span className="ml-1.5 font-normal text-[var(--mc-text-muted)]">
+                  (−{need})
+                </span>
+              ) : null}
             </span>
-          </>
+          ) : (
+            <span className="tabular-nums">{total} голосів</span>
+          )}
+
+          {votingOpen && lead === "yes" && total > 0 ? (
+            <span className="font-bold text-[var(--mc-grass-bright)]">
+              Лідирує за
+            </span>
+          ) : null}
+          {votingOpen && lead === "no" && total > 0 ? (
+            <span className="font-bold text-[#f87171]">Лідирує проти</span>
+          ) : null}
+          {votingOpen && lead === "draw" && total > 0 ? (
+            <span className="font-bold text-[var(--mc-text)]">Нічия</span>
+          ) : null}
+          {!votingOpen ? (
+            <span className="text-[var(--mc-text-muted)]">Фініш</span>
+          ) : null}
+        </div>
+
+        {showQuorum ? (
+          <div className="h-1.5 overflow-hidden rounded-[2px] bg-black/50">
+            <div
+              className={cn(
+                "h-full rounded-[2px] transition-[width] duration-500",
+                quorumMet
+                  ? "bg-[var(--mc-grass-bright)]"
+                  : "bg-[var(--mc-net-green)]",
+              )}
+              style={{ width: `${quorumPct}%` }}
+            />
+          </div>
         ) : null}
-      </p>
+      </div>
     </div>
   );
-}
-
-function ukVotesSuffix(n: number): string {
-  const m10 = n % 10;
-  const m100 = n % 100;
-  if (m10 === 1 && m100 !== 11) return "";
-  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return "и";
-  return "ів";
 }

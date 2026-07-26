@@ -16,6 +16,7 @@ import {
   PROPOSAL_MIN_VOTES_FOR_RESULT,
 } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
+import "@/components/proposals/proposal-vote.css";
 
 type ProposalDetail = {
   id: number;
@@ -54,15 +55,11 @@ function VerdictBanner({
   if (status === "cancelled") {
     return (
       <div
-        className="rounded-xl border border-rose-500/25 bg-rose-500/[0.08] px-4 py-3 text-center"
+        className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-center"
         role="status"
       >
         <p className="text-sm font-semibold text-rose-100">
-          Голосування скасовано
-        </p>
-        <p className="mt-1 text-xs leading-relaxed text-rose-100/75">
-          Недостатня кількість учасників (менше {PROPOSAL_MIN_VOTES_FOR_RESULT}
-          ).
+          Скасовано · менше {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів
         </p>
       </div>
     );
@@ -70,26 +67,35 @@ function VerdictBanner({
 
   if (status !== "closed") return null;
 
-  let title = "Нічия";
-  let tone = "border-white/10 bg-white/[0.04] text-[var(--mc-text)]";
-  if (yes > no) {
-    title = "Рішення: за";
-    tone =
-      "border-emerald-500/30 bg-emerald-500/10 text-emerald-100";
-  } else if (no > yes) {
-    title = "Рішення: проти";
-    tone = "border-rose-500/30 bg-rose-500/10 text-rose-100";
-  } else if (yes === 0 && no === 0) {
-    title = "Голосів не було";
-  }
+  const yesWins = yes > no;
+  const noWins = no > yes;
+  const none = yes === 0 && no === 0;
 
   return (
-    <div className={cn("rounded-xl border px-4 py-3 text-center", tone)} role="status">
-      <p className="text-sm font-semibold">{title}</p>
-      <p className="mt-1 text-xs opacity-75">
-        <span className="text-emerald-300">За {yes}</span>
-        <span className="mx-1.5 opacity-40">·</span>
-        <span className="text-rose-300">Проти {no}</span>
+    <div
+      className={cn(
+        "rounded-lg border px-4 py-3 text-center",
+        yesWins && "border-emerald-500/30 bg-emerald-500/10",
+        noWins && "border-rose-500/30 bg-rose-500/10",
+        !yesWins && !noWins && "border-white/10 bg-white/[0.04]",
+      )}
+      role="status"
+    >
+      <p
+        className={cn(
+          "text-sm font-semibold",
+          yesWins && "text-emerald-100",
+          noWins && "text-rose-100",
+          !yesWins && !noWins && "text-[var(--mc-text)]",
+        )}
+      >
+        {none
+          ? "Без голосів"
+          : yesWins
+            ? `Прийнято · За ${yes} : ${no}`
+            : noWins
+              ? `Відхилено · За ${yes} : ${no}`
+              : `Нічия · ${yes} : ${no}`}
       </p>
     </div>
   );
@@ -451,15 +457,16 @@ export default function ProposalDetailPage() {
               />
             </header>
 
-            <p className="text-center text-sm text-[var(--mc-text-muted)] md:text-left">
-              <span className="text-[var(--mc-text)]">
+            <div className="flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
+              <p className="text-center text-sm text-[var(--mc-text)] sm:text-left">
                 {proposal.author_username}
-              </span>
-              <span className="mx-1.5 opacity-40">·</span>
-              {formatTimeRemainingUk(proposal.ends_at)}
-            </p>
+              </p>
+              <p className="text-sm tabular-nums text-[var(--mc-text-muted)]">
+                {open ? formatTimeRemainingUk(proposal.ends_at) : "завершено"}
+              </p>
+            </div>
 
-            <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text-muted)] [overflow-wrap:anywhere]">
+            <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text)] [overflow-wrap:anywhere]">
               {proposal.description}
             </p>
 
@@ -471,24 +478,43 @@ export default function ProposalDetailPage() {
               />
             ) : null}
 
-            <section aria-label="Результати голосування" className="space-y-4">
+            <section
+              aria-label="Голосування"
+              className="lc-vote-match-stage space-y-3 p-3 sm:space-y-4 sm:p-4"
+            >
               <ProposalVoteBar
                 yes={proposal.yes_votes}
                 no={proposal.no_votes}
                 showQuorum={open}
+                votingOpen={open}
               />
+
+              {error ? (
+                <p className="text-center text-sm text-rose-300" role="alert">
+                  {error}
+                </p>
+              ) : null}
+
+              {open ? (
+                <ProposalVoteButtons
+                  open={open}
+                  busy={voteBusy}
+                  userVote={proposal.user_vote}
+                  onVote={(v) => void vote(v)}
+                />
+              ) : null}
+
+              {!me && open ? (
+                <p className="text-center text-xs text-[var(--mc-text-muted)]">
+                  Потрібен Discord, щоб проголосувати
+                </p>
+              ) : null}
             </section>
 
-            {error ? (
-              <p className="text-center text-sm text-rose-300" role="alert">
-                {error}
-              </p>
-            ) : null}
-
             {proposal.is_author ? (
-              <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 sm:p-4 md:p-5">
-                <p className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-amber-100/90 sm:mb-3 sm:text-xs md:mb-4">
-                  Ти автор цієї пропозиції
+              <div className="rounded-[var(--radius)] border border-amber-500/35 bg-amber-500/10 p-3 sm:p-4 md:p-5">
+                <p className="mb-2.5 text-center text-xs font-semibold text-amber-100 sm:mb-3">
+                  Ти автор
                 </p>
                 <div
                   className={cn(
@@ -506,8 +532,8 @@ export default function ProposalDetailPage() {
                       className="lc-focus-ring flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border-2 border-amber-500/60 bg-amber-500/15 px-2 py-2.5 text-center text-[13px] font-bold leading-tight text-amber-100 transition-colors active:scale-[0.99] hover:bg-amber-500/25 disabled:opacity-50 sm:min-h-[3rem] sm:px-3 sm:text-sm sm:leading-snug"
                     >
                       {closeBusy
-                        ? "Закриття…"
-                        : "Закрити голосування достроково"}
+                        ? "…"
+                        : "Закрити зараз"}
                     </button>
                   ) : null}
                   <button
@@ -516,24 +542,10 @@ export default function ProposalDetailPage() {
                     onClick={() => void deleteProposal()}
                     className="lc-focus-ring flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border-2 border-rose-500/55 bg-rose-500/15 px-3 py-2.5 text-sm font-bold text-rose-100 transition-colors active:scale-[0.99] hover:bg-rose-500/25 disabled:opacity-50 sm:min-h-[3rem]"
                   >
-                    {deleteBusy ? "Видалення…" : "Видалити пропозицію"}
+                    {deleteBusy ? "…" : "Видалити"}
                   </button>
                 </div>
               </div>
-            ) : null}
-
-            <ProposalVoteButtons
-              open={open}
-              busy={voteBusy}
-              userVote={proposal.user_vote}
-              onVote={(v) => void vote(v)}
-            />
-
-            {!me && open ? (
-              <p className="px-1 text-center text-[11px] leading-relaxed text-[var(--mc-text-muted)] sm:text-xs">
-                Натисни «За» або «Проти» — відкриється вхід через Discord, після
-                чого можна проголосувати.
-              </p>
             ) : null}
           </article>
         </SoftAppear>

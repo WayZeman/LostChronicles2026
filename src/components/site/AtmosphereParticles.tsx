@@ -125,18 +125,18 @@ export function AtmosphereParticles() {
           const g = draw.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
           const c0 = p.bright ? 1.05 : 0.92;
           const c1 = p.bright ? 0.72 : 0.48;
-          g.addColorStop(0, `rgba(255, 252, 230, ${Math.min(1, a * c0)})`);
-          g.addColorStop(0.32, `rgba(253, 230, 95, ${a * c1})`);
-          g.addColorStop(0.65, `rgba(234, 179, 8, ${a * (p.bright ? 0.38 : 0.28)})`);
-          g.addColorStop(1, "rgba(234, 179, 8, 0)");
+          g.addColorStop(0, `rgba(230, 255, 220, ${Math.min(1, a * c0)})`);
+          g.addColorStop(0.32, `rgba(122, 224, 74, ${a * c1})`);
+          g.addColorStop(0.65, `rgba(84, 197, 48, ${a * (p.bright ? 0.38 : 0.28)})`);
+          g.addColorStop(1, "rgba(84, 197, 48, 0)");
           draw.fillStyle = g;
           draw.beginPath();
           draw.arc(p.x, p.y, glowR, 0, Math.PI * 2);
           draw.fill();
-          draw.fillStyle = `rgba(255, 255, 248, ${Math.min(1, a * (p.bright ? 0.98 : 0.82))})`;
+          draw.fillStyle = `rgba(240, 255, 235, ${Math.min(1, a * (p.bright ? 0.98 : 0.82))})`;
         } else {
           const ca = p.bright ? 0.72 : 0.52;
-          draw.fillStyle = `rgba(210, 212, 225, ${a * ca})`;
+          draw.fillStyle = `rgba(180, 240, 160, ${a * ca})`;
         }
         draw.beginPath();
         draw.arc(p.x, p.y, p.r, 0, Math.PI * 2);
@@ -159,7 +159,7 @@ export function AtmosphereParticles() {
   return (
     <canvas
       ref={ref}
-      className="lc-atmosphere-particles pointer-events-none fixed inset-x-0 -top-1.5 -bottom-1.5 z-[1] mix-blend-screen opacity-[0.82]"
+      className="lc-atmosphere-particles pointer-events-none fixed inset-x-0 -top-1.5 -bottom-1.5 z-[1] mix-blend-screen opacity-[0.48]"
       aria-hidden
     />
   );

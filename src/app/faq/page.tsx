@@ -27,11 +27,11 @@ export default function FAQPage() {
         )}
       >
         <header className="mb-6 text-center sm:mb-8 md:mb-12">
-          <h1 className="text-balance text-[clamp(1.5rem,4.2vw,1.625rem)] font-semibold leading-tight tracking-tight text-[var(--mc-text)] sm:text-3xl md:text-4xl">
+          <h1 className="lc-hero-title lc-hero-display text-balance text-[clamp(1.5rem,4.2vw,1.625rem)] leading-tight text-[var(--mc-text)] sm:text-3xl md:text-4xl">
             Часті запитання
           </h1>
-          <p className="mx-auto mt-2 max-w-md text-pretty text-[0.8125rem] leading-relaxed text-[var(--mc-text-muted)] sm:mt-3 sm:text-[0.9375rem]">
-            Короткі відповіді про сервер, правила та спільноту — розгорніть потрібний пункт.
+          <p className="mx-auto mt-2 max-w-md text-pretty text-sm text-[var(--mc-text-muted)] sm:mt-3 sm:text-[0.9375rem]">
+            Короткі відповіді про сервер, правила та спільноту.
           </p>
         </header>
 
