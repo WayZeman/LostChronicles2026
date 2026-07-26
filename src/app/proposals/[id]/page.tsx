@@ -4,13 +4,17 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { Clock3, Users } from "lucide-react";
+import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
+import { ProposalVoteBar } from "@/components/proposals/ProposalVoteBar";
+import { ProposalVoteButtons } from "@/components/proposals/ProposalVoteButtons";
+import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
   formatTimeRemainingUk,
   isProposalVotingOpenClient,
   PROPOSAL_MIN_VOTES_FOR_RESULT,
-  proposalStatusLabelUk,
 } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 
@@ -39,23 +43,51 @@ type ProposalComment = {
   avatarUrl: string;
 };
 
-function VoteBar({ yes, no }: { yes: number; no: number }) {
-  const total = yes + no;
-  const yesPct = total === 0 ? 50 : Math.round((yes / total) * 100);
-  return (
-    <div className="mx-auto w-full max-w-xl space-y-2 sm:space-y-2.5">
-      <div className="flex h-3.5 w-full overflow-hidden rounded-full bg-[var(--mc-deep)] ring-1 ring-[var(--mc-border)] sm:h-3">
-        <div
-          className="h-full bg-emerald-500/90 transition-[width] duration-500"
-          style={{ width: `${yesPct}%` }}
-        />
-        <div
-          className="h-full bg-rose-500/85 transition-[width] duration-500"
-          style={{ width: `${100 - yesPct}%` }}
-        />
+function VerdictBanner({
+  status,
+  yes,
+  no,
+}: {
+  status: string;
+  yes: number;
+  no: number;
+}) {
+  if (status === "cancelled") {
+    return (
+      <div
+        className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-4 py-3 text-center"
+        role="status"
+      >
+        <p className="text-sm font-extrabold text-rose-100">
+          Голосування скасовано
+        </p>
+        <p className="mt-1 text-xs leading-relaxed text-rose-100/85">
+          Недостатня кількість учасників (менше {PROPOSAL_MIN_VOTES_FOR_RESULT}
+          ).
+        </p>
       </div>
-      <p className="text-center text-sm font-bold tabular-nums text-[var(--mc-text)] max-[360px]:text-xs">
-        👍 {yes} · 👎 {no}
+    );
+  }
+
+  if (status !== "closed") return null;
+
+  let title = "Нічия";
+  let tone = "border-white/15 bg-white/[0.06] text-[var(--mc-text)]";
+  if (yes > no) {
+    title = "Перемогло «за»";
+    tone = "border-emerald-500/35 bg-emerald-500/10 text-emerald-100";
+  } else if (no > yes) {
+    title = "Перемогло «проти»";
+    tone = "border-rose-500/35 bg-rose-500/10 text-rose-100";
+  } else if (yes === 0 && no === 0) {
+    title = "Голосів не було";
+  }
+
+  return (
+    <div className={cn("rounded-xl border px-4 py-3 text-center", tone)} role="status">
+      <p className="text-sm font-extrabold">{title}</p>
+      <p className="mt-1 text-xs opacity-80">
+        Підсумок: {yes} за · {no} проти
       </p>
     </div>
   );
@@ -396,139 +428,142 @@ export default function ProposalDetailPage() {
             ← Усі пропозиції
           </Link>
         </div>
-        <article
-          className={cn(
-            lcGlassPanelClass,
-            "flex flex-col gap-4 !p-4 sm:!p-6 sm:gap-6 md:!p-8 md:gap-7",
-          )}
-        >
-          <header className="flex flex-col gap-2 border-b border-white/[0.08] pb-4 sm:gap-3 sm:pb-5 md:flex-row md:items-center md:justify-between md:gap-4 md:pb-6">
-            <h1 className="text-balance text-center text-xl font-extrabold leading-snug text-[var(--mc-text)] min-[400px]:text-2xl md:text-left md:text-3xl">
-              {proposal.title}
-            </h1>
-            <span
-              className={cn(
-                "mx-auto shrink-0 self-center rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide md:mx-0 md:self-auto",
-                open
-                  ? "bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-500/30"
-                  : proposal.status === "cancelled"
-                    ? "bg-rose-500/15 text-rose-200 ring-1 ring-rose-500/30"
-                    : "bg-[var(--mc-surface-elevated)] text-[var(--mc-text-subtle)] ring-1 ring-[var(--mc-border)]",
-              )}
-            >
-              {proposalStatusLabelUk(proposal.status, open)}
-            </span>
-          </header>
-          <p className="text-center text-xs leading-relaxed text-[var(--mc-text-muted)] sm:text-sm md:text-left">
-            <span className="text-[var(--mc-text-subtle)]">Автор: </span>
-            <span className="break-words font-semibold text-[var(--mc-text)]">
-              {proposal.author_username}
-            </span>
-            <span className="text-[var(--mc-text-subtle)]"> · </span>
-            <span className="whitespace-normal">
-              {formatTimeRemainingUk(proposal.ends_at)}
-            </span>
-          </p>
-          <div className="mx-auto max-w-none text-pretty md:mx-0">
-            <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text)] [overflow-wrap:anywhere]">
-              {proposal.description}
-            </p>
-          </div>
-          {proposal.status === "cancelled" ? (
-            <p
-              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-center text-sm text-rose-100 sm:px-4"
-              role="status"
-            >
-              Голосування скасовано у звʼязку з недостатньою кількістю
-              учасників (менше {PROPOSAL_MIN_VOTES_FOR_RESULT}).
-            </p>
-          ) : null}
-          <VoteBar yes={proposal.yes_votes} no={proposal.no_votes} />
-          {error ? (
-            <p className="text-center text-sm text-rose-300" role="alert">
-              {error}
-            </p>
-          ) : null}
-          {proposal.is_author ? (
-            <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 sm:p-4 md:p-5">
-              <p className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-amber-100/90 sm:mb-3 sm:text-xs md:mb-4">
-                Ти автор цієї пропозиції
+
+        <SoftAppear>
+          <article
+            className={cn(
+              lcGlassPanelClass,
+              "flex flex-col gap-5 !p-4 sm:!p-6 sm:gap-6 md:!p-8 md:gap-7",
+            )}
+          >
+            <header className="flex flex-col gap-3 border-b border-white/[0.08] pb-4 sm:pb-5 md:flex-row md:items-start md:justify-between md:gap-4 md:pb-6">
+              <div className="min-w-0 flex-1 text-center md:text-left">
+                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mc-text-subtle)]">
+                  Голосування спільноти
+                </p>
+                <h1 className="text-balance text-xl font-extrabold leading-snug text-[var(--mc-text)] min-[400px]:text-2xl md:text-3xl">
+                  {proposal.title}
+                </h1>
+              </div>
+              <ProposalStatusBadge
+                status={proposal.status}
+                votingOpen={open}
+                className="mx-auto md:mx-0 md:mt-1"
+              />
+            </header>
+
+            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[var(--mc-text-muted)] md:justify-start sm:text-sm">
+              <span className="inline-flex items-center gap-1.5">
+                <Users className="size-3.5 opacity-70" aria-hidden />
+                <span className="font-semibold text-[var(--mc-text)]">
+                  {proposal.author_username}
+                </span>
+              </span>
+              <span className="inline-flex items-center gap-1.5">
+                <Clock3 className="size-3.5 opacity-70" aria-hidden />
+                {formatTimeRemainingUk(proposal.ends_at)}
+              </span>
+            </div>
+
+            <div className="rounded-xl border border-white/[0.07] bg-black/20 px-3.5 py-3.5 sm:px-4 sm:py-4">
+              <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text)] [overflow-wrap:anywhere]">
+                {proposal.description}
               </p>
-              <div
-                className={cn(
-                  "grid gap-2 sm:gap-3",
-                  open
-                    ? "grid-cols-1 sm:grid-cols-2"
-                    : "mx-auto max-w-sm grid-cols-1",
-                )}
-              >
+            </div>
+
+            {!open ? (
+              <VerdictBanner
+                status={proposal.status}
+                yes={proposal.yes_votes}
+                no={proposal.no_votes}
+              />
+            ) : null}
+
+            <section
+              className="rounded-2xl border border-white/[0.08] bg-[color-mix(in_srgb,var(--mc-deep)_55%,transparent)] p-3.5 sm:p-5"
+              aria-label="Результати голосування"
+            >
+              <div className="mb-3 flex items-center justify-between gap-2">
+                <h2 className="text-xs font-bold uppercase tracking-wide text-[var(--mc-text-subtle)]">
+                  Поле голосування
+                </h2>
                 {open ? (
+                  <span className="text-[10px] font-semibold text-emerald-300/90">
+                    live
+                  </span>
+                ) : null}
+              </div>
+              <ProposalVoteBar
+                yes={proposal.yes_votes}
+                no={proposal.no_votes}
+                showQuorum={open}
+              />
+            </section>
+
+            {error ? (
+              <p className="text-center text-sm text-rose-300" role="alert">
+                {error}
+              </p>
+            ) : null}
+
+            {proposal.is_author ? (
+              <div className="rounded-xl border border-amber-500/35 bg-amber-500/10 p-3 sm:p-4 md:p-5">
+                <p className="mb-2.5 text-center text-[11px] font-semibold uppercase tracking-wide text-amber-100/90 sm:mb-3 sm:text-xs md:mb-4">
+                  Ти автор цієї пропозиції
+                </p>
+                <div
+                  className={cn(
+                    "grid gap-2 sm:gap-3",
+                    open
+                      ? "grid-cols-1 sm:grid-cols-2"
+                      : "mx-auto max-w-sm grid-cols-1",
+                  )}
+                >
+                  {open ? (
+                    <button
+                      type="button"
+                      disabled={closeBusy || deleteBusy}
+                      onClick={() => void closeVotingEarly()}
+                      className="lc-focus-ring flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border-2 border-amber-500/60 bg-amber-500/15 px-2 py-2.5 text-center text-[13px] font-bold leading-tight text-amber-100 transition-colors active:scale-[0.99] hover:bg-amber-500/25 disabled:opacity-50 sm:min-h-[3rem] sm:px-3 sm:text-sm sm:leading-snug"
+                    >
+                      {closeBusy
+                        ? "Закриття…"
+                        : "Закрити голосування достроково"}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
-                    disabled={closeBusy || deleteBusy}
-                    onClick={() => void closeVotingEarly()}
-                    className="lc-focus-ring flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border-2 border-amber-500/60 bg-amber-500/15 px-2 py-2.5 text-center text-[13px] font-bold leading-tight text-amber-100 transition-colors active:scale-[0.99] hover:bg-amber-500/25 disabled:opacity-50 sm:min-h-[3rem] sm:px-3 sm:text-sm sm:leading-snug"
+                    disabled={deleteBusy || closeBusy}
+                    onClick={() => void deleteProposal()}
+                    className="lc-focus-ring flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border-2 border-rose-500/55 bg-rose-500/15 px-3 py-2.5 text-sm font-bold text-rose-100 transition-colors active:scale-[0.99] hover:bg-rose-500/25 disabled:opacity-50 sm:min-h-[3rem]"
                   >
-                    {closeBusy ? "Закриття…" : "Закрити голосування достроково"}
+                    {deleteBusy ? "Видалення…" : "Видалити пропозицію"}
                   </button>
-                ) : null}
-                <button
-                  type="button"
-                  disabled={deleteBusy || closeBusy}
-                  onClick={() => void deleteProposal()}
-                  className="lc-focus-ring flex min-h-12 w-full touch-manipulation items-center justify-center rounded-lg border-2 border-rose-500/55 bg-rose-500/15 px-3 py-2.5 text-sm font-bold text-rose-100 transition-colors active:scale-[0.99] hover:bg-rose-500/25 disabled:opacity-50 sm:min-h-[3rem]"
-                >
-                  {deleteBusy ? "Видалення…" : "Видалити пропозицію"}
-                </button>
+                </div>
               </div>
-            </div>
-          ) : null}
-          <div className="mx-auto grid w-full max-w-md grid-cols-2 gap-2.5 pt-0.5 sm:gap-3 sm:pt-1">
-            <button
-              type="button"
-              disabled={!open || voteBusy}
-              onClick={() => void vote(1)}
-              aria-label="Голосувати «так»"
-              title="Так"
-              className={cn(
-                "lc-focus-ring flex min-h-14 w-full touch-manipulation items-center justify-center rounded-xl border-2 py-3 text-4xl leading-none transition-[transform,colors] active:scale-[0.97] sm:min-h-[3.5rem] sm:rounded-lg sm:text-3xl",
-                proposal.user_vote === 1
-                  ? "border-emerald-400 bg-emerald-500/25"
-                  : "border-emerald-500/50 bg-emerald-500/10 hover:bg-emerald-500/20",
-                (!open || voteBusy) && "cursor-not-allowed opacity-50 active:scale-100",
-              )}
-            >
-              👍
-            </button>
-            <button
-              type="button"
-              disabled={!open || voteBusy}
-              onClick={() => void vote(0)}
-              aria-label="Голосувати «ні»"
-              title="Ні"
-              className={cn(
-                "lc-focus-ring flex min-h-14 w-full touch-manipulation items-center justify-center rounded-xl border-2 py-3 text-4xl leading-none transition-[transform,colors] active:scale-[0.97] sm:min-h-[3.5rem] sm:rounded-lg sm:text-3xl",
-                proposal.user_vote === 0
-                  ? "border-rose-400 bg-rose-500/25"
-                  : "border-rose-500/50 bg-rose-500/10 hover:bg-rose-500/20",
-                (!open || voteBusy) && "cursor-not-allowed opacity-50 active:scale-100",
-              )}
-            >
-              👎
-            </button>
-          </div>
-          {!me && open ? (
-            <p className="px-1 text-center text-[11px] leading-relaxed text-[var(--mc-text-muted)] sm:text-xs">
-              Натисни 👍 або 👎 — відкриється вхід через Discord, після чого можна
-              проголосувати.
-            </p>
-          ) : null}
-        </article>
+            ) : null}
 
+            <ProposalVoteButtons
+              open={open}
+              busy={voteBusy}
+              userVote={proposal.user_vote}
+              onVote={(v) => void vote(v)}
+            />
+
+            {!me && open ? (
+              <p className="px-1 text-center text-[11px] leading-relaxed text-[var(--mc-text-muted)] sm:text-xs">
+                Натисни «За» або «Проти» — відкриється вхід через Discord, після
+                чого можна проголосувати.
+              </p>
+            ) : null}
+          </article>
+        </SoftAppear>
+
+        <SoftAppear className="mt-4 sm:mt-6">
         <section
           className={cn(
             lcGlassPanelClass,
-            "mt-4 flex flex-col gap-4 !p-4 sm:mt-6 sm:!p-6 sm:gap-5 md:!p-8",
+            "flex flex-col gap-4 !p-4 sm:!p-6 sm:gap-5 md:!p-8",
           )}
           aria-labelledby="proposal-comments-heading"
         >
@@ -654,6 +689,7 @@ export default function ProposalDetailPage() {
             </ul>
           )}
         </section>
+        </SoftAppear>
       </div>
     </main>
   );

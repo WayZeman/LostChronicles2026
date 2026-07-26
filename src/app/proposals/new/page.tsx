@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
+import { SoftAppear } from "@/components/site/SoftAppear";
 import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 
@@ -127,88 +128,93 @@ export default function NewProposalPage() {
         >
           ← Усі пропозиції
         </Link>
-        <h1 className="mb-6 text-2xl font-extrabold text-[var(--mc-text)] sm:text-3xl">
-          Нова пропозиція
-        </h1>
-        <form
-          onSubmit={(e) => void onSubmit(e)}
-          className={cn(lcGlassPanelClass, "space-y-5")}
-        >
-          <div>
-            <label
-              htmlFor="prop-title"
-              className="mb-1.5 block text-sm font-bold text-[var(--mc-text)]"
-            >
-              Заголовок
-            </label>
-            <input
-              id="prop-title"
-              name="title"
-              required
-              maxLength={255}
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="lc-focus-ring w-full rounded-md border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
-              placeholder="Коротко, про що ідея"
-            />
-          </div>
-          <div>
-            <label
-              htmlFor="prop-desc"
-              className="mb-1.5 block text-sm font-bold text-[var(--mc-text)]"
-            >
-              Опис
-            </label>
-            <textarea
-              id="prop-desc"
-              name="description"
-              required
-              rows={6}
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="lc-focus-ring w-full resize-y rounded-md border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
-              placeholder="Деталі, чому це варто зробити…"
-            />
-          </div>
-          <div>
-            <span className="mb-2 block text-sm font-bold text-[var(--mc-text)]">
-              Тривалість голосування
-            </span>
-            <div className="flex flex-wrap gap-2">
-              {DURATIONS.map((d) => (
-                <button
-                  key={d}
-                  type="button"
-                  onClick={() => setDuration(d)}
-                  className={cn(
-                    "lc-focus-ring min-h-10 rounded-md border-2 px-4 py-2 text-sm font-bold transition-colors",
-                    duration === d
-                      ? "border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)]"
-                      : "border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
-                  )}
-                >
-                  {ukDaysLabel(d)}
-                </button>
-              ))}
-            </div>
-            <p className="mt-2 text-xs leading-relaxed text-[var(--mc-text-muted)]">
-              Якщо до кінця терміну буде менше {PROPOSAL_MIN_VOTES_FOR_RESULT}{" "}
-              голосів, голосування автоматично скасується.
-            </p>
-          </div>
-          {error ? (
-            <p className="text-sm font-medium text-rose-300" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <button
-            type="submit"
-            disabled={submitting}
-            className="lc-focus-ring min-h-11 w-full rounded-md border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors hover:bg-[var(--mc-vote-bg-hover)] disabled:opacity-60"
+        <SoftAppear>
+          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mc-net-green)]">
+            Нова ідея для сервера
+          </p>
+          <h1 className="mb-6 text-2xl font-extrabold text-[var(--mc-text)] sm:text-3xl">
+            Нова пропозиція
+          </h1>
+          <form
+            onSubmit={(e) => void onSubmit(e)}
+            className={cn(lcGlassPanelClass, "space-y-5")}
           >
-            {submitting ? "Збереження…" : "Створити пропозицію"}
-          </button>
-        </form>
+            <div>
+              <label
+                htmlFor="prop-title"
+                className="mb-1.5 block text-sm font-bold text-[var(--mc-text)]"
+              >
+                Заголовок
+              </label>
+              <input
+                id="prop-title"
+                name="title"
+                required
+                maxLength={255}
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="lc-focus-ring w-full rounded-xl border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
+                placeholder="Коротко, про що ідея"
+              />
+            </div>
+            <div>
+              <label
+                htmlFor="prop-desc"
+                className="mb-1.5 block text-sm font-bold text-[var(--mc-text)]"
+              >
+                Опис
+              </label>
+              <textarea
+                id="prop-desc"
+                name="description"
+                required
+                rows={6}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                className="lc-focus-ring w-full resize-y rounded-xl border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
+                placeholder="Деталі, чому це варто зробити…"
+              />
+            </div>
+            <div>
+              <span className="mb-2 block text-sm font-bold text-[var(--mc-text)]">
+                Тривалість голосування
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {DURATIONS.map((d) => (
+                  <button
+                    key={d}
+                    type="button"
+                    onClick={() => setDuration(d)}
+                    className={cn(
+                      "lc-focus-ring min-h-10 rounded-xl border-2 px-4 py-2 text-sm font-bold transition-[transform,colors] active:scale-[0.98]",
+                      duration === d
+                        ? "border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)] shadow-[0_0_0_1px_rgba(52,211,153,0.25)]"
+                        : "border-[var(--mc-border)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
+                    )}
+                  >
+                    {ukDaysLabel(d)}
+                  </button>
+                ))}
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-[var(--mc-text-muted)]">
+                Якщо до кінця терміну буде менше {PROPOSAL_MIN_VOTES_FOR_RESULT}{" "}
+                голосів, голосування автоматично скасується.
+              </p>
+            </div>
+            {error ? (
+              <p className="text-sm font-medium text-rose-300" role="alert">
+                {error}
+              </p>
+            ) : null}
+            <button
+              type="submit"
+              disabled={submitting}
+              className="lc-focus-ring lc-btn-accent min-h-12 w-full rounded-xl border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] py-2.5 text-sm font-bold text-[var(--mc-green-ink)] disabled:opacity-60"
+            >
+              {submitting ? "Збереження…" : "Запустити голосування"}
+            </button>
+          </form>
+        </SoftAppear>
       </div>
     </main>
   );

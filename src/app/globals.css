@@ -968,3 +968,155 @@ body.lc-page-enter {
     transform: none !important;
   }
 }
+
+/* --- Пропозиції / голосування: ігровий «матч» feel --- */
+
+@keyframes lc-vote-live-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.35);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 6px rgba(52, 211, 153, 0);
+    opacity: 0.85;
+  }
+}
+
+@keyframes lc-vote-bar-shine {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes lc-vote-pop {
+  0% {
+    transform: scale(1);
+  }
+  40% {
+    transform: scale(1.08);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes lc-vote-quorum-fill {
+  from {
+    width: 0%;
+  }
+}
+
+.lc-vote-status-live::before {
+  content: "";
+  display: inline-block;
+  width: 0.45rem;
+  height: 0.45rem;
+  margin-right: 0.4rem;
+  border-radius: 999px;
+  background: #34d399;
+  vertical-align: middle;
+  animation: lc-vote-live-pulse 1.8s ease-out infinite;
+}
+
+.lc-vote-bar-track {
+  position: relative;
+  overflow: hidden;
+}
+
+.lc-vote-bar-segment {
+  position: relative;
+  overflow: hidden;
+  transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lc-vote-bar-segment::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.28),
+    transparent
+  );
+  animation: lc-vote-bar-shine 2.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
+.lc-vote-choice {
+  position: relative;
+  overflow: hidden;
+  transition:
+    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    background-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.lc-vote-choice:not(:disabled):hover {
+  transform: translateY(-3px) scale(1.02);
+}
+
+.lc-vote-choice:not(:disabled):active {
+  transform: scale(0.96);
+}
+
+.lc-vote-choice-selected {
+  animation: lc-vote-pop 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lc-vote-choice-selected.lc-vote-yes {
+  box-shadow:
+    0 0 0 1px rgba(52, 211, 153, 0.45),
+    0 10px 28px rgba(16, 185, 129, 0.22);
+}
+
+.lc-vote-choice-selected.lc-vote-no {
+  box-shadow:
+    0 0 0 1px rgba(251, 113, 133, 0.45),
+    0 10px 28px rgba(244, 63, 94, 0.2);
+}
+
+.lc-vote-quorum-fill {
+  transition: width 0.65s cubic-bezier(0.22, 1, 0.36, 1);
+  animation: lc-vote-quorum-fill 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lc-proposal-card {
+  transition:
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.32s ease,
+    border-color 0.28s ease;
+}
+
+.lc-proposal-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(250, 204, 21, 0.22);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.1) inset,
+    0 18px 48px rgba(0, 0, 0, 0.34),
+    0 0 20px rgba(250, 204, 21, 0.08);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-vote-status-live::before,
+  .lc-vote-bar-segment::after,
+  .lc-vote-choice-selected,
+  .lc-vote-quorum-fill {
+    animation: none !important;
+  }
+
+  .lc-vote-choice:not(:disabled):hover,
+  .lc-proposal-card:hover {
+    transform: none !important;
+  }
+
+  .lc-vote-bar-segment {
+    transition: none !important;
+  }
+}
