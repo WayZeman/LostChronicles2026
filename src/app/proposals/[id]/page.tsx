@@ -73,12 +73,12 @@ function VerdictBanner({
   let title = "Нічия";
   let tone = "border-white/10 bg-white/[0.04] text-[var(--mc-text)]";
   if (yes > no) {
-    title = "Підтримано";
+    title = "Рішення: за";
     tone =
-      "border-[var(--mc-net-green)]/30 bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)]";
+      "border-emerald-500/30 bg-emerald-500/10 text-emerald-100";
   } else if (no > yes) {
-    title = "Відхилено";
-    tone = "border-white/15 bg-white/[0.06] text-[var(--mc-text)]";
+    title = "Рішення: проти";
+    tone = "border-rose-500/30 bg-rose-500/10 text-rose-100";
   } else if (yes === 0 && no === 0) {
     title = "Голосів не було";
   }
@@ -87,7 +87,9 @@ function VerdictBanner({
     <div className={cn("rounded-xl border px-4 py-3 text-center", tone)} role="status">
       <p className="text-sm font-semibold">{title}</p>
       <p className="mt-1 text-xs opacity-75">
-        {yes} за · {no} проти
+        <span className="text-emerald-300">За {yes}</span>
+        <span className="mx-1.5 opacity-40">·</span>
+        <span className="text-rose-300">Проти {no}</span>
       </p>
     </div>
   );

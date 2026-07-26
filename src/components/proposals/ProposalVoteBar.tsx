@@ -28,87 +28,113 @@ export function ProposalVoteBar({
   const quorumMet = total >= PROPOSAL_MIN_VOTES_FOR_RESULT;
 
   return (
-    <div
-      className={cn(
-        "w-full",
-        compact ? "space-y-2" : "mx-auto max-w-xl space-y-3",
-        className,
-      )}
-    >
+    <div className={cn("w-full space-y-2.5", !compact && "mx-auto max-w-xl space-y-3", className)}>
       <div
         className={cn(
-          "flex w-full overflow-hidden rounded-full bg-black/40 ring-1 ring-white/[0.06]",
-          compact ? "h-2" : "h-2.5",
+          "grid grid-cols-2 gap-2",
+          compact ? "text-xs" : "text-sm",
+        )}
+      >
+        <div
+          className={cn(
+            "rounded-xl border px-3 py-2.5",
+            "border-emerald-500/30 bg-emerald-500/[0.1]",
+            !compact && "sm:px-4 sm:py-3",
+          )}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-emerald-300/90">
+            За
+          </p>
+          <p
+            className={cn(
+              "mt-0.5 font-bold tabular-nums text-emerald-100",
+              compact ? "text-lg" : "text-2xl",
+            )}
+          >
+            {yes}
+            {total > 0 ? (
+              <span className="ml-1.5 text-sm font-semibold text-emerald-200/70">
+                {yesPct}%
+              </span>
+            ) : null}
+          </p>
+        </div>
+        <div
+          className={cn(
+            "rounded-xl border px-3 py-2.5 text-right",
+            "border-rose-500/30 bg-rose-500/[0.1]",
+            !compact && "sm:px-4 sm:py-3",
+          )}
+        >
+          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-rose-300/90">
+            Проти
+          </p>
+          <p
+            className={cn(
+              "mt-0.5 font-bold tabular-nums text-rose-100",
+              compact ? "text-lg" : "text-2xl",
+            )}
+          >
+            {total > 0 ? (
+              <span className="mr-1.5 text-sm font-semibold text-rose-200/70">
+                {noPct}%
+              </span>
+            ) : null}
+            {no}
+          </p>
+        </div>
+      </div>
+
+      <div
+        className={cn(
+          "flex w-full overflow-hidden rounded-full bg-black/45 ring-1 ring-white/[0.06]",
+          compact ? "h-2.5" : "h-3",
         )}
         role="img"
         aria-label={`За ${yes} (${yesPct}%), проти ${no} (${noPct}%)`}
       >
         <div
-          className="h-full bg-[var(--mc-net-green)]/85 transition-[width] duration-500 ease-out"
+          className="h-full bg-emerald-400 transition-[width] duration-500 ease-out"
           style={{ width: `${yesPct}%` }}
         />
         <div
-          className="h-full bg-white/25 transition-[width] duration-500 ease-out"
+          className="h-full bg-rose-400 transition-[width] duration-500 ease-out"
           style={{ width: `${noPct}%` }}
         />
       </div>
 
-      <div
-        className={cn(
-          "flex items-center justify-between gap-3 tabular-nums",
-          compact ? "text-xs" : "text-sm",
-        )}
-      >
-        <span className="font-medium text-[var(--mc-net-green)]">
-          За {yes}
-          {!compact && total > 0 ? (
-            <span className="ml-1 font-normal text-[var(--mc-text-subtle)]">
-              ({yesPct}%)
-            </span>
-          ) : null}
-        </span>
-        <span className="text-[var(--mc-text-subtle)]">
-          {total === 0
-            ? "Голосів ще немає"
-            : `${total} голос${ukVotesSuffix(total)}`}
-        </span>
-        <span className="font-medium text-[var(--mc-text-muted)]">
-          Проти {no}
-          {!compact && total > 0 ? (
-            <span className="ml-1 font-normal text-[var(--mc-text-subtle)]">
-              ({noPct}%)
-            </span>
-          ) : null}
-        </span>
-      </div>
-
-      {showQuorum ? (
-        <p className="text-[11px] leading-relaxed text-[var(--mc-text-subtle)]">
-          Мінімум для рішення:{" "}
-          <span
-            className={cn(
-              "font-semibold tabular-nums",
-              quorumMet
-                ? "text-[var(--mc-net-green)]"
-                : "text-[var(--mc-text-muted)]",
-            )}
-          >
-            {total}/{PROPOSAL_MIN_VOTES_FOR_RESULT}
-          </span>
-          <span
-            className="ml-2 inline-block h-1 w-16 align-middle overflow-hidden rounded-full bg-white/[0.06]"
-            aria-hidden
-          >
+      <p className="text-center text-[11px] text-[var(--mc-text-subtle)] sm:text-xs">
+        {total === 0
+          ? "Голосів ще немає"
+          : `Усього ${total} голос${ukVotesSuffix(total)}`}
+        {showQuorum ? (
+          <>
+            <span className="mx-1.5 opacity-40">·</span>
             <span
               className={cn(
-                "block h-full rounded-full transition-[width] duration-500",
-                quorumMet ? "bg-[var(--mc-net-green)]" : "bg-white/35",
+                "font-semibold tabular-nums",
+                quorumMet
+                  ? "text-emerald-300"
+                  : "text-[var(--mc-text-muted)]",
               )}
-              style={{ width: `${quorumPct}%` }}
-            />
-          </span>
-        </p>
-      ) : null}
+            >
+              кворум {total}/{PROPOSAL_MIN_VOTES_FOR_RESULT}
+            </span>
+            <span
+              className="ml-2 inline-block h-1 w-14 align-middle overflow-hidden rounded-full bg-white/[0.07]"
+              aria-hidden
+            >
+              <span
+                className={cn(
+                  "block h-full rounded-full transition-[width] duration-500",
+                  quorumMet ? "bg-emerald-400" : "bg-white/40",
+                )}
+                style={{ width: `${quorumPct}%` }}
+              />
+            </span>
+          </>
+        ) : null}
+      </p>
     </div>
   );
 }
