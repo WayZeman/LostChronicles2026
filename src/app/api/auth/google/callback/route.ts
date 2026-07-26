@@ -10,12 +10,12 @@ import {
   sanitizeOAuthNextPath,
 } from "@/lib/auth-session";
 import {
-  discordDisplayName,
-  exchangeDiscordCode,
-  fetchDiscordMe,
-} from "@/lib/discord-oauth";
-import { buildDiscordRedirectUri } from "@/lib/discord-oauth";
-import { upsertDiscordUser } from "@/lib/proposals-queries";
+  buildGoogleRedirectUri,
+  exchangeGoogleCode,
+  fetchGoogleMe,
+  googleDisplayName,
+} from "@/lib/google-oauth";
+import { upsertGoogleUser } from "@/lib/proposals-queries";
 import { getRequestOrigin } from "@/lib/site-base-url";
 
 export const dynamic = "force-dynamic";
@@ -38,7 +38,7 @@ function clearOAuthNextCookie(res: NextResponse): void {
 
 export async function GET(req: Request) {
   const base = getRequestOrigin(req);
-  const redirectUri = buildDiscordRedirectUri(base);
+  const redirectUri = buildGoogleRedirectUri(base);
   const fail = (error: string) => {
     const res = NextResponse.redirect(
       `${base}${authRequiredPath("/proposals", error)}`,
@@ -59,13 +59,16 @@ export async function GET(req: Request) {
   }
 
   try {
-    const tokenRes = await exchangeDiscordCode(code, redirectUri);
-    const me = await fetchDiscordMe(tokenRes.access_token);
-    const display = discordDisplayName(me);
-    const userId = await upsertDiscordUser({
-      discordId: me.id,
+    const tokenRes = await exchangeGoogleCode(code, redirectUri);
+    const me = await fetchGoogleMe(tokenRes.access_token);
+    if (!me.sub) {
+      return fail("google");
+    }
+    const display = googleDisplayName(me);
+    const userId = await upsertGoogleUser({
+      googleId: me.sub,
       username: display.slice(0, 100),
-      avatar: me.avatar,
+      avatarUrl: me.picture?.trim() || null,
     });
     const session = await signSessionToken(userId);
     const nextStored = jar.get(OAUTH_NEXT_COOKIE)?.value;
@@ -76,6 +79,6 @@ export async function GET(req: Request) {
     res.cookies.set(SESSION_COOKIE, session, sessionCookieOptions());
     return res;
   } catch {
-    return fail("discord");
+    return fail("google");
   }
 }

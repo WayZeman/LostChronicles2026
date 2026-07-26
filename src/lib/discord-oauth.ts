@@ -22,13 +22,15 @@ export function buildDiscordAuthorizeUrl(state: string, redirectUri: string): st
   const clientId = getDiscordClientId();
   if (!clientId) throw new Error("DISCORD_CLIENT_ID is not set");
 
+  // Без prompt=consent: якщо Discord уже відкритий / застосунок є —
+  // часто достатньо одного «Авторизувати», а повторний вхід майже миттєвий.
+  // scope лише identify — менше дозволів, менше тертя.
   const params = new URLSearchParams({
     client_id: clientId,
     redirect_uri: redirectUri,
     response_type: "code",
-    scope: "identify email",
+    scope: "identify",
     state,
-    prompt: "consent",
   });
 
   return `${DISCORD_API}/oauth2/authorize?${params.toString()}`;

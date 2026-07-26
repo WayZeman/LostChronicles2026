@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import {
-  discordLoginPath,
+  authRequiredPath,
   getSessionUserIdFromCookies,
 } from "@/lib/auth-session";
 import "./wiki-mirror.css";
@@ -13,7 +13,7 @@ export default async function WikiLayout({
 }) {
   const userId = await getSessionUserIdFromCookies();
   if (!userId) {
-    redirect(discordLoginPath("/wiki"));
+    redirect(authRequiredPath("/wiki"));
   }
   return children;
 }

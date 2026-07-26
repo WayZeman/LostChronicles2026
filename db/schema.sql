@@ -6,9 +6,10 @@
 
 CREATE TABLE IF NOT EXISTS users (
     id SERIAL PRIMARY KEY,
-    discord_id VARCHAR(50) NOT NULL UNIQUE,
+    discord_id VARCHAR(50) UNIQUE,
+    google_id VARCHAR(64) UNIQUE,
     username VARCHAR(100) NOT NULL,
-    avatar VARCHAR(255) NULL,
+    avatar VARCHAR(512) NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 

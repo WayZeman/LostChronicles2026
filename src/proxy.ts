@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
   SESSION_COOKIE,
+  authRequiredPath,
   buildOAuthNextFromPath,
-  discordLoginPath,
   verifySessionToken,
 } from "@/lib/auth-session";
 
@@ -30,7 +30,7 @@ export default async function proxy(req: NextRequest) {
   }
 
   const next = buildOAuthNextFromPath(pathname, search);
-  return NextResponse.redirect(new URL(discordLoginPath(next), req.nextUrl));
+  return NextResponse.redirect(new URL(authRequiredPath(next), req.nextUrl));
 }
 
 export const config = {

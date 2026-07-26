@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { AuthRequiredPanel } from "@/components/site/AuthRequiredPanel";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SoftAppear } from "@/components/site/SoftAppear";
@@ -90,30 +91,13 @@ export default function NewProposalPage() {
   if (!user) {
     return (
       <main className={lcPageMainClass}>
-        <div className="site-container mx-auto max-w-2xl px-4 py-12">
-          <div className={cn(lcGlassPanelClass, "text-center")}>
-            <h1 className="text-xl font-bold text-[var(--mc-text)]">
-              Увійди через Discord
-            </h1>
-            <p className="mt-2 text-sm text-[var(--mc-text-muted)]">
-              Щоб створити пропозицію, увійди через Discord — натисни кнопку
-              нижче.
-            </p>
-            <a
-              href={`/api/auth/discord?next=${encodeURIComponent("/proposals/new")}`}
-              className="lc-focus-ring mt-6 inline-flex min-h-11 items-center justify-center rounded-md border-2 border-[#5865F2] bg-[#5865F2]/25 px-6 py-2.5 text-sm font-bold text-[var(--mc-text)]"
-            >
-              Увійти через Discord
-            </a>
-            <div className="mt-6">
-              <Link
-                href="/proposals"
-                className="text-sm font-semibold text-[var(--mc-net-green)] underline-offset-2 hover:underline"
-              >
-                ← До списку
-              </Link>
-            </div>
-          </div>
+        <div className="site-container mx-auto flex w-full max-w-2xl flex-1 items-center px-4 py-12">
+          <AuthRequiredPanel
+            nextPath="/proposals/new"
+            contentLabel="форму створення пропозиції"
+            title="Потрібна авторизація"
+            homeHref="/proposals"
+          />
         </div>
       </main>
     );

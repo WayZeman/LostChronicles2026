@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { discordCdnAvatarUrl } from "@/lib/discord-oauth";
 import { getUserPublicById } from "@/lib/proposals-queries";
+import { resolveUserAvatarUrl } from "@/lib/user-avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -15,10 +15,10 @@ export async function GET() {
     if (!u) {
       return NextResponse.json({ user: null });
     }
-    const avatarUrl = discordCdnAvatarUrl({
-      id: u.discord_id,
+    const avatarUrl = resolveUserAvatarUrl({
       username: u.username,
       avatar: u.avatar,
+      discord_id: u.discord_id,
     });
     return NextResponse.json({
       user: {

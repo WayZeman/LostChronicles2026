@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { publicDbErrorMessage } from "@/lib/db-errors";
-import { discordCdnAvatarUrl } from "@/lib/discord-oauth";
 import {
   addProposalComment,
   listProposalComments,
 } from "@/lib/proposals-queries";
+import { resolveUserAvatarUrl } from "@/lib/user-avatar";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +18,12 @@ function mapCommentToJson(row: {
   created_at: Date;
   author_username: string;
   author_avatar: string | null;
-  author_discord_id: string;
+  author_discord_id: string | null;
 }) {
-  const avatarUrl = discordCdnAvatarUrl({
-    id: row.author_discord_id,
+  const avatarUrl = resolveUserAvatarUrl({
     username: row.author_username,
     avatar: row.author_avatar,
+    discord_id: row.author_discord_id,
   });
   return {
     id: row.id,

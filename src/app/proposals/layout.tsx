@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import {
-  discordLoginPath,
+  authRequiredPath,
   getSessionUserIdFromCookies,
 } from "@/lib/auth-session";
 
@@ -12,7 +12,7 @@ export default async function ProposalsLayout({
 }) {
   const userId = await getSessionUserIdFromCookies();
   if (!userId) {
-    redirect(discordLoginPath("/proposals"));
+    redirect(authRequiredPath("/proposals"));
   }
   return children;
 }

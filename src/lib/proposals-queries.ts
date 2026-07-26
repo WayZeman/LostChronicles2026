@@ -10,6 +10,22 @@ function rowsOf(r: unknown): Record<string, unknown>[] {
   return r as Record<string, unknown>[];
 }
 
+let authProviderColumnsEnsured = false;
+
+/** Discord + Google: discord_id nullable, google_id unique. */
+async function ensureAuthProviderColumns(): Promise<void> {
+  if (authProviderColumnsEnsured) return;
+  const sql = getSql();
+  await sql`ALTER TABLE users ALTER COLUMN discord_id DROP NOT NULL`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(64)`;
+  await sql`ALTER TABLE users ALTER COLUMN avatar TYPE VARCHAR(512)`;
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_uidx
+    ON users (google_id)
+  `;
+  authProviderColumnsEnsured = true;
+}
+
 export type ProposalRow = {
   id: number;
   user_id: number;
@@ -213,6 +229,7 @@ export async function upsertDiscordUser(params: {
   username: string;
   avatar: string | null;
 }): Promise<number> {
+  await ensureAuthProviderColumns();
   const sql = getSql();
   const rows = rowsOf(await sql`
     INSERT INTO users (discord_id, username, avatar)
@@ -226,15 +243,36 @@ export async function upsertDiscordUser(params: {
   return num(id);
 }
 
+export async function upsertGoogleUser(params: {
+  googleId: string;
+  username: string;
+  avatarUrl: string | null;
+}): Promise<number> {
+  await ensureAuthProviderColumns();
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    INSERT INTO users (google_id, username, avatar)
+    VALUES (${params.googleId}, ${params.username}, ${params.avatarUrl})
+    ON CONFLICT (google_id) DO UPDATE SET
+      username = EXCLUDED.username,
+      avatar = EXCLUDED.avatar
+    RETURNING id
+  `);
+  const id = rows[0]?.id;
+  return num(id);
+}
+
 export async function getUserPublicById(id: number): Promise<{
   id: number;
   username: string;
   avatar: string | null;
-  discord_id: string;
+  discord_id: string | null;
+  google_id: string | null;
 } | null> {
+  await ensureAuthProviderColumns();
   const sql = getSql();
   const rows = rowsOf(await sql`
-    SELECT id, username, avatar, discord_id
+    SELECT id, username, avatar, discord_id, google_id
     FROM users
     WHERE id = ${id}
     LIMIT 1
@@ -245,7 +283,14 @@ export async function getUserPublicById(id: number): Promise<{
     id: num(r.id),
     username: String(r.username ?? ""),
     avatar: r.avatar === null || r.avatar === undefined ? null : String(r.avatar),
-    discord_id: String(r.discord_id ?? ""),
+    discord_id:
+      r.discord_id === null || r.discord_id === undefined
+        ? null
+        : String(r.discord_id),
+    google_id:
+      r.google_id === null || r.google_id === undefined
+        ? null
+        : String(r.google_id),
   };
 }
 
@@ -291,7 +336,7 @@ export type ProposalCommentRow = {
   created_at: Date;
   author_username: string;
   author_avatar: string | null;
-  author_discord_id: string;
+  author_discord_id: string | null;
 };
 
 function mapCommentRow(r: Record<string, unknown>): ProposalCommentRow {
@@ -305,7 +350,10 @@ function mapCommentRow(r: Record<string, unknown>): ProposalCommentRow {
       r.author_avatar === null || r.author_avatar === undefined
         ? null
         : String(r.author_avatar),
-    author_discord_id: String(r.author_discord_id ?? ""),
+    author_discord_id:
+      r.author_discord_id === null || r.author_discord_id === undefined
+        ? null
+        : String(r.author_discord_id),
   };
 }
 

@@ -132,7 +132,7 @@ export default function ProposalDetailPage() {
       });
       if (res.status === 401) {
         window.location.assign(
-          `/api/auth/discord?next=${encodeURIComponent(`/proposals/${id}`)}`,
+          `/auth-required?next=${encodeURIComponent(`/proposals/${id}`)}`,
         );
         return;
       }
@@ -255,7 +255,7 @@ export default function ProposalDetailPage() {
     if (!me) {
       const next = `/proposals/${id}`;
       window.location.assign(
-        `/api/auth/discord?next=${encodeURIComponent(next)}`,
+        `/auth-required?next=${encodeURIComponent(next)}`,
       );
       return;
     }
@@ -606,7 +606,7 @@ export default function ProposalDetailPage() {
             <p className="text-center text-sm text-[var(--mc-text-muted)] sm:text-left">
               Щоб залишати коментарі,{" "}
               <a
-                href={`/api/auth/discord?next=${encodeURIComponent(`/proposals/${id}`)}`}
+                href={`/auth-required?next=${encodeURIComponent(`/proposals/${id}`)}`}
                 className="inline-flex min-h-11 items-center font-bold text-[var(--mc-net-green)] underline-offset-2 hover:underline"
               >
                 увійди через Discord

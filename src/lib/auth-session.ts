@@ -109,6 +109,23 @@ export function discordLoginPath(nextPath: string): string {
   return `/api/auth/discord?next=${encodeURIComponent(safe)}`;
 }
 
+/** URL старту Google-логіну з поверненням на внутрішній шлях. */
+export function googleLoginPath(nextPath: string): string {
+  const safe = sanitizeOAuthNextPath(nextPath) ?? "/";
+  return `/api/auth/google?next=${encodeURIComponent(safe)}`;
+}
+
+/** Сторінка з поясненням + кнопка Discord (перед OAuth). */
+export function authRequiredPath(
+  nextPath: string,
+  error?: string | null,
+): string {
+  const safe = sanitizeOAuthNextPath(nextPath) ?? "/";
+  const params = new URLSearchParams({ next: safe });
+  if (error) params.set("error", error);
+  return `/auth-required?${params.toString()}`;
+}
+
 export function randomOAuthState(): string {
   const a = new Uint8Array(24);
   crypto.getRandomValues(a);

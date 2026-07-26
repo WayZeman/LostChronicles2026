@@ -39,7 +39,7 @@ export function ProposalsListClient() {
       const res = await fetch("/api/proposals", { credentials: "include" });
       if (res.status === 401) {
         window.location.assign(
-          `/api/auth/discord?next=${encodeURIComponent("/proposals")}`,
+          `/auth-required?next=${encodeURIComponent("/proposals")}`,
         );
         return;
       }
