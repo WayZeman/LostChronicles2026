@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  SESSION_COOKIE,
-  authRequiredPath,
-  buildOAuthNextFromPath,
-  verifySessionToken,
-} from "@/lib/auth-session";
+import { authRequiredPath, buildOAuthNextFromPath } from "@/lib/auth-paths";
+import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth-session";
 
 function isAuthRequiredPath(pathname: string): boolean {
   return (

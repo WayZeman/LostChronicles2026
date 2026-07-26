@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { discordLoginPath, googleLoginPath } from "@/lib/auth-session";
+import { discordLoginPath, googleLoginPath } from "@/lib/auth-paths";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
 

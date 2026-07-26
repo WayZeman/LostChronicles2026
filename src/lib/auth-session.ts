@@ -1,20 +1,18 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 
+export {
+  authRequiredPath,
+  buildOAuthNextFromPath,
+  discordLoginPath,
+  googleLoginPath,
+  sanitizeOAuthNextPath,
+} from "@/lib/auth-paths";
+
 export const SESSION_COOKIE = "lc_session";
 export const OAUTH_STATE_COOKIE = "lc_oauth_state";
 /** Після OAuth редірект на цей шлях (лише відносні URL). */
 export const OAUTH_NEXT_COOKIE = "lc_oauth_next";
-
-/** Безпечний внутрішній шлях після логіну (захист від open redirect). */
-export function sanitizeOAuthNextPath(raw: string | null | undefined): string | null {
-  if (raw == null) return null;
-  const t = raw.trim();
-  if (t.length === 0 || t.length > 256) return null;
-  if (!t.startsWith("/") || t.startsWith("//")) return null;
-  if (t.includes("://") || t.includes("\\") || t.includes("@")) return null;
-  return t;
-}
 
 const SESSION_MAX_AGE_SEC = 60 * 60 * 24 * 30;
 
@@ -92,38 +90,6 @@ export async function getSessionUserIdFromCookies(): Promise<number | null> {
   const v = await verifySessionToken(raw);
   if (!v) return null;
   return Number(v.sub);
-}
-
-/** Шлях для Discord OAuth `next=` (pathname + search). */
-export function buildOAuthNextFromPath(
-  pathname: string,
-  search = "",
-): string {
-  const raw = `${pathname}${search}`;
-  return sanitizeOAuthNextPath(raw) ?? pathname;
-}
-
-/** URL старту Discord-логіну з поверненням на внутрішній шлях. */
-export function discordLoginPath(nextPath: string): string {
-  const safe = sanitizeOAuthNextPath(nextPath) ?? "/";
-  return `/api/auth/discord?next=${encodeURIComponent(safe)}`;
-}
-
-/** URL старту Google-логіну з поверненням на внутрішній шлях. */
-export function googleLoginPath(nextPath: string): string {
-  const safe = sanitizeOAuthNextPath(nextPath) ?? "/";
-  return `/api/auth/google?next=${encodeURIComponent(safe)}`;
-}
-
-/** Сторінка з поясненням + кнопка Discord (перед OAuth). */
-export function authRequiredPath(
-  nextPath: string,
-  error?: string | null,
-): string {
-  const safe = sanitizeOAuthNextPath(nextPath) ?? "/";
-  const params = new URLSearchParams({ next: safe });
-  if (error) params.set("error", error);
-  return `/auth-required?${params.toString()}`;
 }
 
 export function randomOAuthState(): string {
