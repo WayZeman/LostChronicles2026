@@ -10,7 +10,7 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
     return (
       <div
         className={cn(
-          "w-full overflow-hidden rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-deep)]",
+          "w-full overflow-hidden mc-slot",
           "h-[220px] md:h-[300px] lg:h-[360px]",
         )}
       >

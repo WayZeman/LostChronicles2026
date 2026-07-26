@@ -69,29 +69,11 @@ async function fetchPlanGraphPlayersOnlineRawUncached(
     }
     if (out.length === 0) return null;
     out.sort((a, b) => a[0] - b[0]);
-    return out;
+    // Next Data Cache ліміт ~2MB — сирий Plan JSON більший і валить /api/online-history.
+    return downsamplePlanGraphForCache(out);
   } catch {
     return null;
   }
-}
-
-const getCachedPlanGraphRaw = unstable_cache(
-  async (baseTrimmed: string, server: string) =>
-    fetchPlanGraphPlayersOnlineRawUncached(baseTrimmed, server),
-  ["plan-players-online-graph-raw"],
-  { revalidate: PLAN_GRAPH_RAW_REVALIDATE_SEC },
-);
-
-/**
- * Серія «гравців онлайн» з Plan: `/v1/graph?type=playersOnline`.
- * Результат кешується (Data Cache), щоб не тягнути мегабайти на кожен запит.
- */
-export async function fetchPlanGraphPlayersOnlineRaw(): Promise<
-  [number, number][] | null
-> {
-  const base = getLcPlanBaseUrl().replace(/\/$/, "");
-  const server = getLcPlanServerQuery();
-  return getCachedPlanGraphRaw(base, server);
 }
 
 /** Прорідження: у кожному вікні лишаємо точку з максимальним онлайном (піки не губляться). */
@@ -114,6 +96,44 @@ function downsampleOnlineSeriesPreservePeaks(
   const last = pairs[pairs.length - 1]!;
   if (!out.some((p) => p.t === last.t)) out.push(last);
   return out;
+}
+
+/** Ліміт точок у Data Cache (стабільно <2MB JSON). */
+const PLAN_GRAPH_CACHE_MAX_POINTS = 8_000;
+
+function downsamplePlanGraphForCache(
+  points: [number, number][],
+): [number, number][] {
+  if (points.length <= PLAN_GRAPH_CACHE_MAX_POINTS) return points;
+  const down = downsampleOnlineSeriesPreservePeaks(
+    points.map(([t, v]) => ({ t, v })),
+    PLAN_GRAPH_CACHE_MAX_POINTS,
+  );
+  return down.map((p) => [p.t, p.v]);
+}
+
+const getCachedPlanGraphRaw = unstable_cache(
+  async (baseTrimmed: string, server: string) =>
+    fetchPlanGraphPlayersOnlineRawUncached(baseTrimmed, server),
+  ["plan-players-online-graph-raw-v2"],
+  { revalidate: PLAN_GRAPH_RAW_REVALIDATE_SEC },
+);
+
+/**
+ * Серія «гравців онлайн» з Plan: `/v1/graph?type=playersOnline`.
+ * Результат кешується (Data Cache), щоб не тягнути мегабайти на кожен запит.
+ */
+export async function fetchPlanGraphPlayersOnlineRaw(): Promise<
+  [number, number][] | null
+> {
+  const base = getLcPlanBaseUrl().replace(/\/$/, "");
+  const server = getLcPlanServerQuery();
+  try {
+    return await getCachedPlanGraphRaw(base, server);
+  } catch {
+    // Якщо Data Cache відхиляє запис — віддаємо без кешу, щоб графік не зависав.
+    return fetchPlanGraphPlayersOnlineRawUncached(base, server);
+  }
 }
 
 export function slicePlanGraphSeriesForPeriod(

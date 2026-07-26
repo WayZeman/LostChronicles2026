@@ -134,7 +134,7 @@ export default function NewProposalPage() {
                 maxLength={255}
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
-                className="lc-focus-ring w-full rounded-[var(--radius)] border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
+                className="lc-focus-ring mc-input w-full px-3 py-2.5"
                 placeholder="Про що ідея"
               />
             </div>
@@ -152,7 +152,7 @@ export default function NewProposalPage() {
                 rows={6}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                className="lc-focus-ring w-full resize-y rounded-[var(--radius)] border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-2.5 text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)]"
+                className="lc-focus-ring mc-input w-full resize-y px-3 py-2.5"
                 placeholder="Деталі…"
               />
             </div>
@@ -167,10 +167,8 @@ export default function NewProposalPage() {
                     type="button"
                     onClick={() => setDuration(d)}
                     className={cn(
-                      "lc-focus-ring min-h-10 rounded-[var(--radius)] border-2 px-4 py-2 text-sm font-bold transition-[transform,colors] active:translate-y-px",
-                      duration === d
-                        ? "border-[#2f8a18] bg-[var(--mc-net-green)] text-white"
-                        : "border-[var(--mc-border-card)] bg-[var(--mc-surface-elevated)] text-[var(--mc-text-muted)] hover:bg-[var(--mc-toggle-hover-bg)]",
+                      "lc-focus-ring min-h-10 px-4 py-2 text-sm font-bold transition-[transform,filter] active:translate-y-px",
+                      duration === d ? "mc-badge" : "mc-btn-secondary",
                     )}
                   >
                     {ukDaysLabel(d)}

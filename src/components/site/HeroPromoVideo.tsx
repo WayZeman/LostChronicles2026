@@ -64,9 +64,7 @@ export function HeroPromoVideo({ videoId }: HeroPromoVideoProps) {
     >
       <div
         className={cn(
-          "overflow-hidden rounded-[var(--radius)] border-2 border-[var(--mc-border-card)]",
-          "bg-[var(--mc-deep)]",
-          "shadow-[0_1px_0_rgba(255,255,255,0.06)_inset,0_8px_24px_rgba(0,0,0,0.35)]",
+          "mc-frame overflow-hidden bg-[var(--mc-deep)]",
         )}
       >
         <div className="relative aspect-video w-full bg-black">

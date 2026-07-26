@@ -160,14 +160,14 @@ export function WikiSearchBox({
     <section
       className={cn(
         embedded
-          ? "rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-deep)] px-4 py-4 md:px-5"
+          ? "mc-slot px-4 py-4 md:px-5"
           : lcGlassPanelClass,
         !embedded && "mb-6 p-4 md:mb-8 md:p-5",
         className,
       )}
     >
       <div className="flex flex-col items-center gap-3 text-center">
-        <div className="flex size-10 shrink-0 items-center justify-center rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-surface-elevated)] text-[var(--mc-net-green)]">
+        <div className="mc-slot flex size-10 shrink-0 items-center justify-center text-[var(--mc-net-green)]">
           <Search className="size-4" aria-hidden />
         </div>
         <div className="min-w-0 max-w-2xl">
@@ -188,12 +188,7 @@ export function WikiSearchBox({
             setTouched(true);
           }}
           placeholder={placeholder}
-          className={cn(
-            "w-full max-w-2xl rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-deep)] px-4 py-3 text-center text-sm text-[var(--mc-text)] outline-none",
-            "placeholder:text-[var(--mc-text-subtle)]",
-            "focus:border-[color-mix(in_srgb,var(--mc-net-green)_48%,transparent)]",
-            "focus:ring-2 focus:ring-[color-mix(in_srgb,var(--mc-net-green)_18%,transparent)]",
-          )}
+          className="mc-input w-full max-w-2xl px-4 py-3 text-center text-sm"
         />
       </div>
 
@@ -217,7 +212,7 @@ export function WikiSearchBox({
                   setTouched(true);
                   void trackConfirmedQuery(suggestionQuery);
                 }}
-                className="lc-focus-ring rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-surface-elevated)] px-3 py-1.5 text-xs font-medium text-[var(--mc-text-muted)] transition-colors hover:border-white/[0.16] hover:bg-white/[0.07] hover:text-[var(--mc-text)]"
+                className="lc-focus-ring mc-btn-secondary px-3 py-1.5 text-xs"
               >
                 {suggestionQuery}
               </button>
@@ -241,7 +236,7 @@ export function WikiSearchBox({
               onClick={() => {
                 void trackConfirmedQuery(query);
               }}
-              className="lc-focus-ring rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-deep)] px-4 py-3 transition-colors hover:border-white/[0.14] hover:bg-white/[0.03]"
+              className="lc-focus-ring mc-slot block px-4 py-3 transition-[filter] hover:brightness-110"
             >
               <div className="text-sm font-semibold text-[var(--mc-text)]">{result.title}</div>
               {result.snippet ? (

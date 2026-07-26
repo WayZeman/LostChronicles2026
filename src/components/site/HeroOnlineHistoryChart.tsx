@@ -614,7 +614,7 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
         )
       ) : null}
 
-      <div className="relative mt-4 h-[220px] w-full md:h-[300px] lg:h-[360px]">
+      <div className="relative mt-4 h-[220px] w-full overflow-hidden md:h-[300px] lg:h-[360px]">
         {error ? (
           <p className="flex h-full items-center justify-center text-sm text-[var(--mc-text-muted)]">
             {error}

@@ -7,7 +7,7 @@
 @custom-variant dark (&);
 
 @theme {
-  /* Minecraft.net-inspired: Noto Sans (кирилиця) */
+  /* Noto Sans (кирилиця) */
   --font-sans: var(--font-noto), "Noto Sans", ui-sans-serif, system-ui, sans-serif;
   --font-serif: var(--font-noto), "Noto Sans", ui-sans-serif, sans-serif;
   --color-background: var(--background);
@@ -60,92 +60,108 @@
   --lc-stream-dur: 1.05s;
   --lc-stream-dur-slow: 1.28s;
   --lc-stream-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  /* Lost Chronicles — збалансований насичений Minecraft green */
-  --mc-net-green: #54c530;
-  --mc-net-green-hover: #6dde42;
-  --mc-on-gold: #071208;
-  --mc-net-sky-top: #0f160f;
-  --mc-net-gradient-mid: #0c120c;
-  --mc-net-sky-mid: #0a100a;
-  --mc-net-page: #0d130d;
+  /* Lost Chronicles — пауза-меню Minecraft (камінь / dirt) */
+  --mc-net-green: #55ff55;
+  --mc-net-green-hover: #7fff7f;
+  --mc-on-gold: #ffffa0;
+  --mc-net-sky-top: #1a1a1a;
+  --mc-net-gradient-mid: #141414;
+  --mc-net-sky-mid: #101010;
+  --mc-net-page: #121212;
   --mc-backdrop-vignette-gradient: radial-gradient(
     ellipse 120% 80% at 50% 100%,
-    rgba(0, 0, 0, 0.7),
+    rgba(0, 0, 0, 0.82),
     transparent 58%
   );
-  --mc-backdrop-vignette-opacity: 0.5;
-  --mc-grass: var(--mc-net-green);
-  --mc-grass-bright: #7ae04a;
-  --mc-dirt: #a56b3a;
-  --mc-sky: #4a9beb;
-  --mc-stone: #7a8578;
-  --mc-deep: #090f09;
-  --mc-text: #f7faf5;
-  --mc-text-muted: #c4d8ba;
-  --mc-text-subtle: #8fad84;
-  --mc-ink: #f7faf5;
-  --mc-ink-muted: #c4d8ba;
-  --mc-ink-subtle: #8fad84;
-  --mc-surface: #172316;
-  --mc-surface-elevated: #21301f;
-  --mc-border: rgba(100, 180, 70, 0.28);
-  --mc-border-card: #355033;
-  --mc-nav-bg: #142012;
-  --mc-nav-border: #355033;
+  --mc-backdrop-vignette-opacity: 0.65;
+  --mc-grass: #55ff55;
+  --mc-grass-bright: #7fff7f;
+  --mc-dirt: #8b6914;
+  --mc-sky: #55ffff;
+  --mc-stone: #8b8b8b;
+  --mc-deep: #1a1a1a;
+  --mc-text: #ffffff;
+  --mc-text-muted: #c6c6c6;
+  --mc-text-subtle: #8b8b8b;
+  --mc-ink: #ffffff;
+  --mc-ink-muted: #c6c6c6;
+  --mc-ink-subtle: #8b8b8b;
+  --mc-surface: #2c2c2c;
+  --mc-surface-elevated: #3c3c3c;
+  --mc-border: rgba(139, 139, 139, 0.45);
+  --mc-border-card: #1a1a1a;
+  --mc-nav-bg: #2c2c2c;
+  --mc-nav-border: #000000;
   --mc-nav-shadow:
-    0 1px 0 rgba(122, 224, 74, 0.1) inset,
-    0 -12px 36px rgba(0, 0, 0, 0.55);
-  --mc-nav-link: #b9d2af;
-  --mc-nav-link-hover-bg: rgba(84, 197, 48, 0.22);
-  --mc-nav-toggle-bg: #21301f;
-  --mc-toggle-border: #456342;
-  --mc-toggle-bg: #21301f;
-  --mc-toggle-hover-bg: rgba(84, 197, 48, 0.14);
-  --mc-green-ink: #071208;
-  --mc-vote-bg: rgba(84, 197, 48, 0.28);
-  --mc-vote-bg-hover: rgba(84, 197, 48, 0.42);
-  --mc-bento-icon-bg: rgba(84, 197, 48, 0.24);
-  --mc-bento-icon-hover: rgba(84, 197, 48, 0.38);
-  --mc-arrow-muted: #6a8064;
-  --mc-btn-secondary-border: #456342;
-  --mc-btn-secondary-bg: #21301f;
-  --mc-btn-secondary-fg: #f2fff0;
-  --mc-btn-secondary-hover: #2a3c28;
-  --mc-footer-bg: #090f09;
-  --mc-footer-border: #243522;
-  --mc-footer-text: rgba(196, 216, 186, 0.55);
+    inset 2px 2px 0 rgba(255, 255, 255, 0.18),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.55);
+  --mc-nav-link: #ffffff;
+  --mc-nav-link-hover-bg: rgba(255, 255, 160, 0.12);
+  --mc-nav-toggle-bg: #3c3c3c;
+  --mc-toggle-border: #1a1a1a;
+  --mc-toggle-bg: #3c3c3c;
+  --mc-toggle-hover-bg: rgba(255, 255, 160, 0.1);
+  --mc-green-ink: #ffffff;
+  --mc-vote-bg: #5a5a5a;
+  --mc-vote-bg-hover: #6f6f6f;
+  --mc-bento-icon-bg: #3c3c3c;
+  --mc-bento-icon-hover: #4c4c4c;
+  --mc-arrow-muted: #8b8b8b;
+  --mc-btn-secondary-border: #000000;
+  --mc-btn-secondary-bg: #6f6f6f;
+  --mc-btn-secondary-fg: #ffffff;
+  --mc-btn-secondary-hover: #808080;
+  --mc-footer-bg: #0a0a0a;
+  --mc-footer-border: #1a1a1a;
+  --mc-footer-text: rgba(198, 198, 198, 0.55);
   --mc-bg-image-overlay: linear-gradient(
     180deg,
-    rgba(28, 64, 26, 0.38) 0%,
-    rgba(13, 19, 13, 0.86) 42%,
-    rgba(7, 11, 7, 0.97) 100%
+    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.72) 42%,
+    rgba(0, 0, 0, 0.88) 100%
   );
   /* shadcn / Tailwind semantic tokens (темна тема) */
   --background: var(--mc-net-page);
   --foreground: var(--mc-text);
-  --card: #172316;
-  --card-foreground: #f7faf5;
-  --popover: #172316;
-  --popover-foreground: #f7faf5;
-  --primary: #54c530;
-  --primary-foreground: #071208;
-  --secondary: #21301f;
-  --secondary-foreground: #f2fff0;
-  --muted: var(--mc-surface-elevated);
-  --muted-foreground: var(--mc-text-subtle);
-  --accent: #21301f;
-  --accent-foreground: #f7faf5;
-  --destructive: #ef4444;
-  --border: #355033;
-  --input: #456342;
-  --ring: #54c530;
-  --chart-1: #54c530;
-  --chart-2: #7ae04a;
-  --chart-3: #a56b3a;
-  --chart-4: #4a9beb;
-  --chart-5: #7a8578;
-  /* Блокові кути у дусі Minecraft */
-  --radius: 0.25rem;
+  --card: #2c2c2c;
+  --card-foreground: #ffffff;
+  --popover: #2c2c2c;
+  --popover-foreground: #ffffff;
+  --primary: #6f6f6f;
+  --primary-foreground: #ffffff;
+  --secondary: #3c3c3c;
+  --secondary-foreground: #ffffff;
+  --muted: #3c3c3c;
+  --muted-foreground: #8b8b8b;
+  --accent: #3c3c3c;
+  --accent-foreground: #ffffff;
+  --destructive: #ff5555;
+  --border: #1a1a1a;
+  --input: #1a1a1a;
+  --ring: #ffffa0;
+  --chart-1: #55ff55;
+  --chart-2: #ffff55;
+  --chart-3: #55ffff;
+  --chart-4: #ff5555;
+  --chart-5: #8b8b8b;
+  /* Гострі блоки як у GUI Minecraft */
+  --radius: 0;
+  --mc-frame-outer: #000000;
+  --mc-frame-edge: #1a1a1a;
+  --mc-frame-hi: #5a5a5a;
+  --mc-frame-lo: #141414;
+  --mc-btn-face: #6f6f6f;
+  --mc-btn-face-top: #8b8b8b;
+  --mc-btn-face-bot: #5a5a5a;
+  --mc-btn-hi: #ffffff;
+  --mc-btn-lo: #373737;
+  --mc-btn-hover-top: #9a9aff;
+  --mc-btn-hover-mid: #7a7aff;
+  --mc-btn-hover-bot: #5a5ad4;
+  --mc-menu-yellow: #ffff55;
+  --mc-menu-red: #ff5555;
+  --mc-menu-cyan: #55ffff;
+  --mc-menu-green: #55ff55;
   --sidebar: oklch(0.205 0 0);
   --sidebar-foreground: oklch(0.985 0 0);
   --sidebar-primary: oklch(0.488 0.243 264.376);
@@ -208,12 +224,12 @@
 }
 
 .lc-hero-display {
-  letter-spacing: 0.025em;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.4);
+  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.45);
 }
 
 .lc-hero-accent {
-  color: var(--mc-grass-bright);
+  color: var(--mc-menu-yellow);
 }
 
 .lc-hero-lead {
@@ -269,20 +285,20 @@ body.lc-page-enter {
   background-color: var(--mc-net-page);
   background-image:
     var(--mc-bg-image-overlay),
-    radial-gradient(
-      ellipse 90% 55% at 50% -10%,
-      rgba(84, 197, 48, 0.28),
-      transparent 55%
+    repeating-linear-gradient(
+      45deg,
+      rgba(80, 60, 30, 0.18) 0 8px,
+      rgba(40, 30, 16, 0.22) 8px 16px
     ),
     linear-gradient(
       180deg,
-      #163016 0%,
-      #0e140e 42%,
-      #080c08 100%
+      #2a2218 0%,
+      #141210 45%,
+      #0a0a0a 100%
     );
-  background-size: cover, cover, cover;
+  background-size: cover, 48px 48px, cover;
   background-position: center, center, center;
-  background-repeat: no-repeat, no-repeat, no-repeat;
+  background-repeat: no-repeat, repeat, no-repeat;
 }
 
 .mc-net-backdrop::before {
@@ -309,7 +325,7 @@ body.lc-page-enter {
   width: clamp(200px, 42vw, 420px);
   height: clamp(200px, 42vw, 420px);
   border-radius: 50%;
-  background: rgba(84, 197, 48, 0.7);
+  background: rgba(139, 139, 139, 0.35);
   filter: blur(88px);
   opacity: 0.1;
   mix-blend-mode: screen;
@@ -329,14 +345,14 @@ body.lc-page-enter {
   right: -12%;
   width: clamp(240px, 48vw, 500px);
   height: clamp(240px, 48vw, 500px);
-  background: rgba(122, 224, 74, 0.55);
+  background: rgba(100, 80, 40, 0.35);
   animation-delay: -12s;
 }
 .mc-bg-blob-3 {
   --mc-blob-dur: 36s;
   bottom: -18%;
   left: 10%;
-  background: rgba(47, 138, 24, 0.65);
+  background: rgba(80, 80, 90, 0.4);
   animation-delay: -1s;
 }
 .mc-bg-blob-4 {
@@ -346,7 +362,7 @@ body.lc-page-enter {
   width: clamp(160px, 32vw, 320px);
   height: clamp(160px, 32vw, 320px);
   opacity: 0.1;
-  background: rgba(84, 197, 48, 0.5);
+  background: rgba(139, 139, 139, 0.4);
   animation-delay: -20s;
 }
 .mc-bg-blob-5 {
@@ -377,135 +393,180 @@ body.lc-page-enter {
   }
 }
 
-/* Панелі — charcoal-moss блок */
+/* ——— Minecraft pause-menu GUI ——— */
+
+.lc-hero-title,
+.lc-hero-display,
+.lc-section-title,
+.mc-btn-primary,
+.mc-btn-secondary,
+.lc-btn-accent,
+.mc-badge,
+nav[aria-label="Головна навігація"] {
+  font-family: var(--font-noto), "Noto Sans", ui-sans-serif, system-ui, sans-serif;
+}
+
+.lc-hero-title,
+.lc-section-title {
+  letter-spacing: 0.04em;
+  font-weight: 800;
+}
+
+nav[aria-label="Головна навігація"] a {
+  text-shadow: none;
+  letter-spacing: 0.01em;
+}
+
+.mc-btn-primary,
+.mc-btn-secondary,
+.lc-btn-accent,
+.mc-badge {
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.02em;
+}
+
+/* Кам’яна панель (як нижній блок у меню сервера) */
+.mc-frame,
 .am-glass {
+  border: 2px solid #000;
+  border-radius: 0;
   background:
-    linear-gradient(
-      180deg,
-      rgba(84, 197, 48, 0.07) 0%,
-      transparent 30%
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 2px,
+      rgba(0, 0, 0, 0.04) 2px,
+      rgba(0, 0, 0, 0.04) 4px
     ),
-    var(--mc-surface);
-  border: 2px solid var(--mc-border-card);
+    linear-gradient(180deg, #3a3a3a 0%, #2c2c2c 55%, #242424 100%);
   color: var(--mc-ink);
   box-shadow:
-    0 1px 0 rgba(122, 224, 74, 0.1) inset,
-    0 10px 28px rgba(0, 0, 0, 0.42);
+    inset 3px 3px 0 var(--mc-frame-hi),
+    inset -3px -3px 0 var(--mc-frame-lo),
+    0 0 0 1px #000;
 }
 
-/* Слоти / вкладені блоки */
+/* Вдавлений слот */
 .mc-slot {
-  border: 2px solid var(--mc-border-card);
-  background: var(--mc-deep);
+  border: 2px solid #000;
+  border-radius: 0;
+  background: #1a1a1a;
   box-shadow:
-    0 1px 0 rgba(122, 224, 74, 0.08) inset,
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4);
+    inset 3px 3px 0 #0a0a0a,
+    inset -2px -2px 0 #3a3a3a;
 }
 
-/* Кнопки — refined grass block */
-.mc-btn-primary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--radius);
-  border: 2px solid #2f8a18;
-  background: linear-gradient(180deg, #68d63e 0%, #54c530 100%);
-  color: var(--mc-green-ink);
-  font-weight: 800;
-  font-size: 0.875rem;
-  line-height: 1.25;
-  letter-spacing: 0.02em;
-  padding: 0.625rem 1.35rem;
+/* Поля вводу */
+.mc-input,
+input.mc-input,
+textarea.mc-input {
+  border: 2px solid #000;
+  border-radius: 0;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-noto), "Noto Sans", ui-sans-serif, system-ui, sans-serif;
   box-shadow:
-    0 3px 0 #1e6410,
-    0 1px 0 rgba(255, 255, 255, 0.22) inset;
-  transition:
-    filter 0.15s ease,
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+    inset 2px 2px 0 #3f3f3f,
+    inset -2px -2px 0 #101010;
 }
 
-.mc-btn-primary:hover {
-  filter: brightness(1.06);
+.mc-input::placeholder,
+input.mc-input::placeholder,
+textarea.mc-input::placeholder {
+  color: #8b8b8b;
 }
 
-.mc-btn-primary:active {
-  transform: translateY(2px);
+.mc-input:focus,
+input.mc-input:focus,
+textarea.mc-input:focus {
+  outline: none;
+  border-color: #000;
   box-shadow:
-    0 1px 0 #1e6410,
-    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+    inset 2px 2px 0 #3f3f3f,
+    inset -2px -2px 0 #101010,
+    0 0 0 2px var(--mc-menu-yellow);
 }
 
-.mc-btn-secondary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  border-radius: var(--radius);
-  border: 2px solid var(--mc-btn-secondary-border);
-  background: var(--mc-btn-secondary-bg);
-  color: var(--mc-btn-secondary-fg);
-  font-weight: 700;
-  font-size: 0.875rem;
-  line-height: 1.25;
-  letter-spacing: 0.02em;
-  padding: 0.5rem 1.2rem;
-  box-shadow:
-    0 2px 0 #0a100a,
-    0 1px 0 rgba(122, 224, 74, 0.07) inset;
-  transition:
-    background-color 0.15s ease,
-    border-color 0.15s ease,
-    transform 0.12s ease;
-}
-
-.mc-btn-secondary:hover {
-  background: var(--mc-btn-secondary-hover);
-  border-color: #547a4c;
-}
-
-.mc-btn-secondary:active {
-  transform: translateY(2px);
-  box-shadow: 0 0 0 #0a100a;
-}
-
-.mc-btn-icon {
-  border-radius: var(--radius);
-}
-
-/* Акцентні CTAs */
+/* Кнопки меню — smooth stone */
+.mc-btn-primary,
+.mc-btn-secondary,
 .lc-btn-accent {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: var(--radius);
-  border: 2px solid #2f8a18;
-  background: linear-gradient(180deg, #68d63e 0%, #54c530 100%);
-  color: var(--mc-green-ink);
-  font-weight: 800;
+  border-radius: 0;
+  border: 2px solid #000;
+  background: linear-gradient(
+    180deg,
+    var(--mc-btn-face-top) 0%,
+    var(--mc-btn-face) 48%,
+    var(--mc-btn-face-bot) 100%
+  );
+  color: #fff;
+  font-weight: 700;
   font-size: 0.875rem;
   line-height: 1.25;
   letter-spacing: 0.02em;
+  padding: 0.65rem 1.35rem;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
   box-shadow:
-    0 3px 0 #1e6410,
-    0 1px 0 rgba(255, 255, 255, 0.22) inset;
+    inset 2px 2px 0 rgba(255, 255, 255, 0.35),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.45);
   transition:
-    filter 0.15s ease,
-    transform 0.12s ease,
-    box-shadow 0.12s ease;
+    background 0.08s linear,
+    color 0.08s linear,
+    box-shadow 0.08s linear;
 }
 
+.mc-btn-primary:hover,
+.mc-btn-secondary:hover,
 .lc-btn-accent:hover {
-  filter: brightness(1.06);
+  color: var(--mc-on-gold);
+  background: linear-gradient(
+    180deg,
+    var(--mc-btn-hover-top) 0%,
+    var(--mc-btn-hover-mid) 48%,
+    var(--mc-btn-hover-bot) 100%
+  );
+  filter: none;
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.28),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.4);
 }
 
+.mc-btn-primary:active,
+.mc-btn-secondary:active,
 .lc-btn-accent:active {
-  transform: translateY(2px);
+  transform: translateY(1px);
   box-shadow:
-    0 1px 0 #1e6410,
-    0 1px 0 rgba(255, 255, 255, 0.12) inset;
+    inset 2px 2px 0 rgba(0, 0, 0, 0.45),
+    inset -1px -1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.mc-btn-icon {
+  border-radius: 0;
+}
+
+/* Активний бейдж / вкладка */
+.mc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  border-radius: 0;
+  border: 2px solid #000;
+  background: linear-gradient(
+    180deg,
+    var(--mc-btn-hover-top) 0%,
+    var(--mc-btn-hover-mid) 48%,
+    var(--mc-btn-hover-bot) 100%
+  );
+  color: var(--mc-on-gold);
+  font-weight: 700;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+  box-shadow:
+    inset 2px 2px 0 rgba(255, 255, 255, 0.28),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.4);
 }
 
 @keyframes lc-border-shimmer {
@@ -580,15 +641,16 @@ body.lc-page-enter {
 }
 
 .lc-interactive-panel:hover {
-  transform: translateY(-2px);
-  border-color: rgba(84, 197, 48, 0.5);
+  transform: none;
+  border-color: #000;
   box-shadow:
-    0 1px 0 rgba(122, 224, 74, 0.12) inset,
-    0 12px 28px rgba(0, 0, 0, 0.4);
+    inset 3px 3px 0 var(--mc-frame-hi),
+    inset -3px -3px 0 var(--mc-frame-lo),
+    0 0 0 1px #000;
 }
 
 .lc-interactive-panel:hover::after {
-  opacity: 0.55;
+  opacity: 0;
 }
 
 .lc-interactive-panel-static,
@@ -606,13 +668,13 @@ body.lc-page-enter {
 .lc-btn-primary:hover,
 .mc-btn-secondary:hover,
 .lc-btn-accent:hover {
-  transform: translateY(-1px);
+  transform: none;
 }
 
 .lc-btn-primary:active,
 .mc-btn-secondary:active,
 .lc-btn-accent:active {
-  transform: translateY(2px);
+  transform: translateY(1px);
 }
 
 .lc-focus-ring {
@@ -965,66 +1027,18 @@ body.lc-page-enter {
   }
 }
 
-@keyframes lc-chart-skel-draw {
-  0% {
-    stroke-dashoffset: 1;
-    opacity: 0.35;
+@keyframes lc-chart-skel-enter {
+  from {
+    opacity: 0;
   }
-  18% {
+  to {
     opacity: 1;
-  }
-  55% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-  78% {
-    opacity: 0.85;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 0.25;
   }
 }
 
-@keyframes lc-chart-skel-area {
-  0%,
-  100% {
-    opacity: 0.28;
-  }
-  50% {
-    opacity: 0.55;
-  }
-}
-
-@keyframes lc-chart-skel-sweep {
-  0% {
-    transform: translateX(-120%);
-  }
-  100% {
-    transform: translateX(220%);
-  }
-}
-
-@keyframes lc-chart-skel-dot {
-  0%,
-  80%,
-  100% {
-    opacity: 0.28;
-    transform: translateY(0);
-  }
-  40% {
-    opacity: 1;
-    transform: translateY(-3px);
-  }
-}
-
-@keyframes lc-chart-skel-label {
-  0%,
-  100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 1;
+@keyframes lc-chart-skel-spin {
+  to {
+    transform: rotate(360deg);
   }
 }
 
@@ -1040,71 +1054,18 @@ body.lc-page-enter {
   animation: lc-skeleton-breathe 2.4s ease-in-out infinite;
 }
 
-.lc-chart-skeleton-grid {
-  stroke: rgba(255, 255, 255, 0.06);
-  stroke-width: 1;
+.lc-chart-skeleton {
+  animation: lc-chart-skel-enter 0.55s var(--am-ease) both;
 }
 
-.lc-chart-skeleton-grid-v {
-  stroke: rgba(255, 255, 255, 0.035);
-}
-
-.lc-chart-skeleton-axis {
-  stroke: rgba(236, 175, 45, 0.28);
-  stroke-width: 1.5;
-}
-
-.lc-chart-skeleton-line {
-  stroke-dasharray: 1;
-  stroke-dashoffset: 1;
-  animation: lc-chart-skel-draw 2.6s ease-in-out infinite;
-}
-
-.lc-chart-skeleton-area {
-  animation: lc-chart-skel-area 2.6s ease-in-out infinite;
-}
-
-.lc-chart-skeleton-sweep {
-  position: absolute;
-  inset: 8% auto 18% 0;
-  width: 28%;
-  pointer-events: none;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(245, 208, 106, 0.08) 40%,
-    rgba(255, 255, 255, 0.12) 50%,
-    rgba(245, 208, 106, 0.08) 60%,
-    transparent 100%
-  );
-  animation: lc-chart-skel-sweep 2.6s ease-in-out infinite;
-}
-
-.lc-chart-skeleton-dots {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.lc-chart-skeleton-dots > i {
+.lc-chart-skeleton-spinner {
   display: block;
-  width: 0.35rem;
-  height: 0.35rem;
-  border-radius: 1px;
-  background: #ecaf2d;
-  animation: lc-chart-skel-dot 1.2s ease-in-out infinite;
-}
-
-.lc-chart-skeleton-dots > i:nth-child(2) {
-  animation-delay: 0.15s;
-}
-
-.lc-chart-skeleton-dots > i:nth-child(3) {
-  animation-delay: 0.3s;
-}
-
-.lc-chart-skeleton-label {
-  animation: lc-chart-skel-label 2.2s ease-in-out infinite;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 2px solid color-mix(in srgb, var(--mc-text-subtle) 35%, transparent);
+  border-top-color: color-mix(in srgb, var(--mc-text-muted) 85%, #ecaf2d);
+  animation: lc-chart-skel-spin 0.75s linear infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -1120,35 +1081,18 @@ body.lc-page-enter {
     opacity: 0.55 !important;
   }
 
-  .lc-chart-skeleton-line,
-  .lc-chart-skeleton-area,
-  .lc-chart-skeleton-sweep,
-  .lc-chart-skeleton-dots > i,
-  .lc-chart-skeleton-label {
+  .lc-chart-skeleton,
+  .lc-chart-skeleton-spinner {
     animation: none !important;
   }
 
-  .lc-chart-skeleton-line {
-    stroke-dasharray: none;
-    stroke-dashoffset: 0;
+  .lc-chart-skeleton {
+    opacity: 1;
+  }
+
+  .lc-chart-skeleton-spinner {
+    border-top-color: var(--mc-text-muted);
     opacity: 0.75;
-  }
-
-  .lc-chart-skeleton-area {
-    opacity: 0.4;
-  }
-
-  .lc-chart-skeleton-sweep {
-    display: none;
-  }
-
-  .lc-chart-skeleton-dots > i {
-    opacity: 0.7;
-    transform: none;
-  }
-
-  .lc-chart-skeleton-label {
-    opacity: 0.85;
   }
 }
 

@@ -36,7 +36,7 @@ export function SupportMonobankSection() {
       aria-labelledby="support-mono-heading"
     >
       <div
-        className="flex size-12 cursor-default items-center justify-center rounded-[var(--radius)] border-2 border-[#2f8a18] bg-[var(--mc-net-green)] text-[var(--mc-green-ink)] shadow-[0_3px_0_#1e6410] md:size-14"
+        className="mc-badge flex size-12 cursor-default items-center justify-center md:size-14"
         aria-hidden
       >
         <HeartHandshake className="size-6 md:size-7" strokeWidth={2.25} />
@@ -50,14 +50,8 @@ export function SupportMonobankSection() {
         id="support-mono-heading"
         className="lc-section-title mt-2 max-w-md text-xl leading-snug md:text-2xl"
       >
-        Тримаємо <span className="text-[var(--mc-grass-bright)]">Lost Chronicles</span>{" "}
-        онлайн
+        Тримаємо онлайн разом
       </h2>
-
-      <p className="mt-3 max-w-md text-sm leading-relaxed text-[var(--mc-text-muted)] md:text-[0.9375rem]">
-        Донат через monobank або голос у каталогах — обидва варіанти допомагають
-        серверу.
-      </p>
 
       <div
         className="mt-6 w-full max-w-md text-left"

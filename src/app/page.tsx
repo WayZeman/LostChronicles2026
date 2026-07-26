@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
@@ -20,7 +21,7 @@ export const metadata: Metadata = {
 };
 
 const defaultDescription =
-  "Український сервер, де гравці будують історії, знаходять друзів і творять світ разом.";
+  "Місце де гравці будують історії, знаходять друзів і творять світ разом.";
 
 /** Інакше NEXT_PUBLIC_* «запікається» в статичний HTML під час build і не оновиться без перезбірки. */
 export const dynamic = "force-dynamic";
@@ -29,7 +30,7 @@ export default function Home() {
   const settings = {
     ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST,
     version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.7",
-    description: process.env.NEXT_PUBLIC_SERVER_DESCRIPTION?.trim() || defaultDescription,
+    description: defaultDescription,
     bedrockAddress:
       process.env.NEXT_PUBLIC_BEDROCK_ADDRESS?.trim() || "play.lost-chronicles.site",
     bedrockPort: process.env.NEXT_PUBLIC_BEDROCK_PORT?.trim() || "19132",
@@ -41,9 +42,17 @@ export default function Home() {
     <main className={lcPageMainClass}>
       <div className={lcPageContainerHomeClass}>
         <section className="am-reveal flex flex-col items-center pt-0 text-center md:pt-0">
-          <h1 className="lc-hero-title lc-hero-display max-w-[min(100%,36rem)] text-[clamp(2.75rem,9vw,4.25rem)] leading-[1.05] text-[var(--mc-text)]">
-            Lost <span className="lc-hero-accent">Chronicles</span>
-          </h1>
+          <h1 className="sr-only">Lost Chronicles — Ukrainian Minecraft Server</h1>
+          <Image
+            src="/lc-logo-hero.png"
+            alt="Lost Chronicles — Ukrainian Minecraft Server"
+            width={926}
+            height={153}
+            priority
+            unoptimized
+            className="h-auto w-full max-w-[min(100%,36rem)] md:max-w-[min(100%,42rem)]"
+            draggable={false}
+          />
           <p className="lc-hero-lead mt-5 max-w-lg text-base md:mt-6 md:text-lg">
             {settings.description}
           </p>

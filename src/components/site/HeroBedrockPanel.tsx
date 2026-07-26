@@ -18,7 +18,7 @@ export function HeroBedrockPanel({ address, port, className, embedded }: Props) 
   const shell = embedded ? heroPanelEmbeddedClass : heroPanelShellClass;
   return (
     <div className={cn(shell, className)}>
-      <span className="inline-flex items-center gap-1.5 rounded-[var(--radius)] border-2 border-[#2f8a18] bg-[var(--mc-net-green)] px-3 py-1 text-[11px] font-extrabold text-[var(--mc-green-ink)] shadow-[0_2px_0_#1e6410]">
+      <span className="mc-badge px-3 py-1 text-[11px]">
         <span className="relative flex h-1.5 w-1.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--mc-green-ink)] opacity-40 motion-reduce:animate-none" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--mc-green-ink)]" />

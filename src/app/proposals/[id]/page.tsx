@@ -587,7 +587,7 @@ export default function ProposalDetailPage() {
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
                 placeholder="Напиши коментар…"
-                className="lc-focus-ring min-h-[5.5rem] w-full resize-y rounded-lg border border-[var(--mc-border)] bg-[var(--mc-deep)] px-3 py-3 text-base text-[var(--mc-text)] placeholder:text-[var(--mc-text-subtle)] sm:min-h-0 sm:py-2.5 sm:text-sm"
+                className="lc-focus-ring mc-input min-h-[5.5rem] w-full resize-y px-3 py-3 text-base sm:min-h-0 sm:py-2.5 sm:text-sm"
               />
               {commentError ? (
                 <p className="text-sm text-rose-300" role="alert">
@@ -597,7 +597,7 @@ export default function ProposalDetailPage() {
               <button
                 type="submit"
                 disabled={commentBusy || !commentBody.trim()}
-                className="lc-focus-ring min-h-12 w-full touch-manipulation rounded-lg border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] py-2.5 text-sm font-bold text-[var(--mc-green-ink)] transition-colors active:scale-[0.99] hover:bg-[var(--mc-vote-bg-hover)] disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:w-auto sm:self-end sm:px-8"
+                className="lc-focus-ring lc-btn-accent min-h-12 w-full touch-manipulation py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:w-auto sm:self-end sm:px-8"
               >
                 {commentBusy ? "Надсилання…" : "Надіслати коментар"}
               </button>
