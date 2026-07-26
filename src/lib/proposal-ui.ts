@@ -13,9 +13,9 @@ export function proposalStatusLabelUk(
   status: string,
   votingOpen: boolean,
 ): string {
-  if (votingOpen) return "активна";
-  if (status === "cancelled") return "скасована";
-  return "закрита";
+  if (votingOpen) return "Відкрите";
+  if (status === "cancelled") return "Скасоване";
+  return "Завершене";
 }
 
 /** Локалізований зворотний відлік до кінця голосування. */

@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { Clock3, Users } from "lucide-react";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
 import { ProposalVoteBar } from "@/components/proposals/ProposalVoteBar";
 import { ProposalVoteButtons } from "@/components/proposals/ProposalVoteButtons";
@@ -55,13 +54,13 @@ function VerdictBanner({
   if (status === "cancelled") {
     return (
       <div
-        className="rounded-xl border border-rose-500/35 bg-rose-500/10 px-4 py-3 text-center"
+        className="rounded-xl border border-rose-500/25 bg-rose-500/[0.08] px-4 py-3 text-center"
         role="status"
       >
-        <p className="text-sm font-extrabold text-rose-100">
+        <p className="text-sm font-semibold text-rose-100">
           Голосування скасовано
         </p>
-        <p className="mt-1 text-xs leading-relaxed text-rose-100/85">
+        <p className="mt-1 text-xs leading-relaxed text-rose-100/75">
           Недостатня кількість учасників (менше {PROPOSAL_MIN_VOTES_FOR_RESULT}
           ).
         </p>
@@ -72,22 +71,23 @@ function VerdictBanner({
   if (status !== "closed") return null;
 
   let title = "Нічия";
-  let tone = "border-white/15 bg-white/[0.06] text-[var(--mc-text)]";
+  let tone = "border-white/10 bg-white/[0.04] text-[var(--mc-text)]";
   if (yes > no) {
-    title = "Перемогло «за»";
-    tone = "border-emerald-500/35 bg-emerald-500/10 text-emerald-100";
+    title = "Підтримано";
+    tone =
+      "border-[var(--mc-net-green)]/30 bg-[var(--mc-vote-bg)] text-[var(--mc-green-ink)]";
   } else if (no > yes) {
-    title = "Перемогло «проти»";
-    tone = "border-rose-500/35 bg-rose-500/10 text-rose-100";
+    title = "Відхилено";
+    tone = "border-white/15 bg-white/[0.06] text-[var(--mc-text)]";
   } else if (yes === 0 && no === 0) {
     title = "Голосів не було";
   }
 
   return (
     <div className={cn("rounded-xl border px-4 py-3 text-center", tone)} role="status">
-      <p className="text-sm font-extrabold">{title}</p>
-      <p className="mt-1 text-xs opacity-80">
-        Підсумок: {yes} за · {no} проти
+      <p className="text-sm font-semibold">{title}</p>
+      <p className="mt-1 text-xs opacity-75">
+        {yes} за · {no} проти
       </p>
     </div>
   );
@@ -436,40 +436,30 @@ export default function ProposalDetailPage() {
               "flex flex-col gap-5 !p-4 sm:!p-6 sm:gap-6 md:!p-8 md:gap-7",
             )}
           >
-            <header className="flex flex-col gap-3 border-b border-white/[0.08] pb-4 sm:pb-5 md:flex-row md:items-start md:justify-between md:gap-4 md:pb-6">
+            <header className="flex flex-col gap-3 border-b border-white/[0.08] pb-5 sm:pb-6 md:flex-row md:items-start md:justify-between md:gap-4">
               <div className="min-w-0 flex-1 text-center md:text-left">
-                <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mc-text-subtle)]">
-                  Голосування спільноти
-                </p>
-                <h1 className="text-balance text-xl font-extrabold leading-snug text-[var(--mc-text)] min-[400px]:text-2xl md:text-3xl">
+                <h1 className="lc-hero-title text-balance text-2xl font-bold leading-snug tracking-tight text-[var(--mc-text)] min-[400px]:text-[1.75rem] md:text-3xl">
                   {proposal.title}
                 </h1>
               </div>
               <ProposalStatusBadge
                 status={proposal.status}
                 votingOpen={open}
-                className="mx-auto md:mx-0 md:mt-1"
+                className="mx-auto md:mx-0 md:mt-1.5"
               />
             </header>
 
-            <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-xs text-[var(--mc-text-muted)] md:justify-start sm:text-sm">
-              <span className="inline-flex items-center gap-1.5">
-                <Users className="size-3.5 opacity-70" aria-hidden />
-                <span className="font-semibold text-[var(--mc-text)]">
-                  {proposal.author_username}
-                </span>
+            <p className="text-center text-sm text-[var(--mc-text-muted)] md:text-left">
+              <span className="text-[var(--mc-text)]">
+                {proposal.author_username}
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <Clock3 className="size-3.5 opacity-70" aria-hidden />
-                {formatTimeRemainingUk(proposal.ends_at)}
-              </span>
-            </div>
+              <span className="mx-1.5 opacity-40">·</span>
+              {formatTimeRemainingUk(proposal.ends_at)}
+            </p>
 
-            <div className="rounded-xl border border-white/[0.07] bg-black/20 px-3.5 py-3.5 sm:px-4 sm:py-4">
-              <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text)] [overflow-wrap:anywhere]">
-                {proposal.description}
-              </p>
-            </div>
+            <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text-muted)] [overflow-wrap:anywhere]">
+              {proposal.description}
+            </p>
 
             {!open ? (
               <VerdictBanner
@@ -479,20 +469,7 @@ export default function ProposalDetailPage() {
               />
             ) : null}
 
-            <section
-              className="rounded-2xl border border-white/[0.08] bg-[color-mix(in_srgb,var(--mc-deep)_55%,transparent)] p-3.5 sm:p-5"
-              aria-label="Результати голосування"
-            >
-              <div className="mb-3 flex items-center justify-between gap-2">
-                <h2 className="text-xs font-bold uppercase tracking-wide text-[var(--mc-text-subtle)]">
-                  Поле голосування
-                </h2>
-                {open ? (
-                  <span className="text-[10px] font-semibold text-emerald-300/90">
-                    live
-                  </span>
-                ) : null}
-              </div>
+            <section aria-label="Результати голосування" className="space-y-4">
               <ProposalVoteBar
                 yes={proposal.yes_votes}
                 no={proposal.no_votes}

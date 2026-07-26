@@ -6,9 +6,7 @@ import { cn } from "@/lib/utils";
 type Props = {
   yes: number;
   no: number;
-  /** Компактний вигляд для карток у списку */
   compact?: boolean;
-  /** Показати прогрес до кворуму (лише для відкритих) */
   showQuorum?: boolean;
   className?: string;
 };
@@ -33,88 +31,83 @@ export function ProposalVoteBar({
     <div
       className={cn(
         "w-full",
-        compact ? "space-y-1.5" : "mx-auto max-w-xl space-y-3",
+        compact ? "space-y-2" : "mx-auto max-w-xl space-y-3",
         className,
       )}
     >
       <div
         className={cn(
-          "lc-vote-bar-track flex w-full overflow-hidden rounded-full bg-[var(--mc-deep)] ring-1 ring-[var(--mc-border)]",
-          compact ? "h-2.5" : "h-3.5 sm:h-4",
+          "flex w-full overflow-hidden rounded-full bg-black/40 ring-1 ring-white/[0.06]",
+          compact ? "h-2" : "h-2.5",
         )}
         role="img"
-        aria-label={`Так ${yes} (${yesPct}%), ні ${no} (${noPct}%)`}
+        aria-label={`За ${yes} (${yesPct}%), проти ${no} (${noPct}%)`}
       >
         <div
-          className="lc-vote-bar-segment h-full bg-gradient-to-r from-emerald-600 to-emerald-400"
+          className="h-full bg-[var(--mc-net-green)]/85 transition-[width] duration-500 ease-out"
           style={{ width: `${yesPct}%` }}
         />
         <div
-          className="lc-vote-bar-segment h-full bg-gradient-to-r from-rose-500 to-rose-400"
+          className="h-full bg-white/25 transition-[width] duration-500 ease-out"
           style={{ width: `${noPct}%` }}
         />
       </div>
 
       <div
         className={cn(
-          "flex items-center justify-between gap-3 font-bold tabular-nums",
-          compact
-            ? "text-[11px] text-[var(--mc-text-muted)] sm:text-xs"
-            : "text-sm text-[var(--mc-text)]",
+          "flex items-center justify-between gap-3 tabular-nums",
+          compact ? "text-xs" : "text-sm",
         )}
       >
-        <span className="inline-flex items-center gap-1.5 text-emerald-300">
-          <span aria-hidden>👍</span>
-          <span>
-            {yes}
-            {!compact ? (
-              <span className="ml-1 font-semibold text-emerald-200/70">
-                {yesPct}%
-              </span>
-            ) : null}
-          </span>
+        <span className="font-medium text-[var(--mc-net-green)]">
+          За {yes}
+          {!compact && total > 0 ? (
+            <span className="ml-1 font-normal text-[var(--mc-text-subtle)]">
+              ({yesPct}%)
+            </span>
+          ) : null}
         </span>
         <span className="text-[var(--mc-text-subtle)]">
-          {total === 0 ? "Ще немає голосів" : `${total} голос${ukVotesSuffix(total)}`}
+          {total === 0
+            ? "Голосів ще немає"
+            : `${total} голос${ukVotesSuffix(total)}`}
         </span>
-        <span className="inline-flex items-center gap-1.5 text-rose-300">
-          <span>
-            {no}
-            {!compact ? (
-              <span className="ml-1 font-semibold text-rose-200/70">
-                {noPct}%
-              </span>
-            ) : null}
-          </span>
-          <span aria-hidden>👎</span>
+        <span className="font-medium text-[var(--mc-text-muted)]">
+          Проти {no}
+          {!compact && total > 0 ? (
+            <span className="ml-1 font-normal text-[var(--mc-text-subtle)]">
+              ({noPct}%)
+            </span>
+          ) : null}
         </span>
       </div>
 
       {showQuorum ? (
-        <div className="space-y-1.5">
-          <div className="flex items-center justify-between gap-2 text-[11px] font-semibold text-[var(--mc-text-muted)]">
-            <span>Кворум для рішення</span>
+        <p className="text-[11px] leading-relaxed text-[var(--mc-text-subtle)]">
+          Мінімум для рішення:{" "}
+          <span
+            className={cn(
+              "font-semibold tabular-nums",
+              quorumMet
+                ? "text-[var(--mc-net-green)]"
+                : "text-[var(--mc-text-muted)]",
+            )}
+          >
+            {total}/{PROPOSAL_MIN_VOTES_FOR_RESULT}
+          </span>
+          <span
+            className="ml-2 inline-block h-1 w-16 align-middle overflow-hidden rounded-full bg-white/[0.06]"
+            aria-hidden
+          >
             <span
               className={cn(
-                "tabular-nums",
-                quorumMet ? "text-emerald-300" : "text-amber-200/90",
-              )}
-            >
-              {total}/{PROPOSAL_MIN_VOTES_FOR_RESULT}
-            </span>
-          </div>
-          <div className="h-1.5 overflow-hidden rounded-full bg-black/35 ring-1 ring-white/[0.06]">
-            <div
-              className={cn(
-                "lc-vote-quorum-fill h-full rounded-full",
-                quorumMet
-                  ? "bg-emerald-400/90"
-                  : "bg-gradient-to-r from-amber-500/80 to-amber-300/90",
+                "block h-full rounded-full transition-[width] duration-500",
+                quorumMet ? "bg-[var(--mc-net-green)]" : "bg-white/35",
               )}
               style={{ width: `${quorumPct}%` }}
             />
-          </div>
-        </div>
+          </span>
+        </p>
       ) : null}
     </div>
   );

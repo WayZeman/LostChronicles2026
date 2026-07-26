@@ -129,12 +129,12 @@ export default function NewProposalPage() {
           ← Усі пропозиції
         </Link>
         <SoftAppear>
-          <p className="mb-2 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--mc-net-green)]">
-            Нова ідея для сервера
-          </p>
-          <h1 className="mb-6 text-2xl font-extrabold text-[var(--mc-text)] sm:text-3xl">
-            Нова пропозиція
-          </h1>
+        <p className="mb-2 text-sm text-[var(--mc-text-subtle)]">
+          Нова ідея для сервера
+        </p>
+        <h1 className="lc-hero-title mb-6 text-3xl font-bold tracking-tight text-[var(--mc-text)] sm:text-4xl">
+          Нова пропозиція
+        </h1>
           <form
             onSubmit={(e) => void onSubmit(e)}
             className={cn(lcGlassPanelClass, "space-y-5")}
@@ -209,9 +209,9 @@ export default function NewProposalPage() {
             <button
               type="submit"
               disabled={submitting}
-              className="lc-focus-ring lc-btn-accent min-h-12 w-full rounded-xl border-2 border-[var(--mc-net-green)] bg-[var(--mc-vote-bg)] py-2.5 text-sm font-bold text-[var(--mc-green-ink)] disabled:opacity-60"
+              className="lc-focus-ring lc-btn-accent min-h-12 w-full rounded-full border border-[var(--mc-net-green)]/50 bg-[var(--mc-vote-bg)] py-2.5 text-sm font-semibold text-[var(--mc-green-ink)] disabled:opacity-60"
             >
-              {submitting ? "Збереження…" : "Запустити голосування"}
+              {submitting ? "Збереження…" : "Опублікувати"}
             </button>
           </form>
         </SoftAppear>
