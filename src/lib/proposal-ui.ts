@@ -1,9 +1,21 @@
+/** Мінімум голосів після закінчення терміну, інакше голосування скасовується. */
+export const PROPOSAL_MIN_VOTES_FOR_RESULT = 6;
+
 export function isProposalVotingOpenClient(
   status: string,
   endsAtIso: string,
 ): boolean {
   if (status !== "active") return false;
   return new Date(endsAtIso).getTime() > Date.now();
+}
+
+export function proposalStatusLabelUk(
+  status: string,
+  votingOpen: boolean,
+): string {
+  if (votingOpen) return "активна";
+  if (status === "cancelled") return "скасована";
+  return "закрита";
 }
 
 /** Локалізований зворотний відлік до кінця голосування. */

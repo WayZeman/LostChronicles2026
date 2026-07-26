@@ -9,6 +9,7 @@ import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
   formatTimeRemainingUk,
   isProposalVotingOpenClient,
+  proposalStatusLabelUk,
 } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 
@@ -245,10 +246,12 @@ export function ProposalsListClient() {
                           "shrink-0 rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide",
                           open
                             ? "bg-emerald-500/20 text-emerald-200"
-                            : "bg-[var(--mc-surface-elevated)] text-[var(--mc-text-subtle)]",
+                            : p.status === "cancelled"
+                              ? "bg-rose-500/15 text-rose-200"
+                              : "bg-[var(--mc-surface-elevated)] text-[var(--mc-text-subtle)]",
                         )}
                       >
-                        {open ? "активна" : "закрита"}
+                        {proposalStatusLabelUk(p.status, open)}
                       </span>
                     </div>
                     <p className="text-[11px] leading-relaxed text-[var(--mc-text-muted)] sm:text-xs">

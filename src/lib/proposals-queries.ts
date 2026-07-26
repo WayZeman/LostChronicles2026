@@ -3,6 +3,7 @@ import {
   notifyProposalResultsBatch,
   type ProposalExpiredNotifyRow,
 } from "@/lib/notify-proposal";
+import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
 
 /** Результат `sql` у режимі рядків-об’єктів; тип драйвера занадто широкий для union. */
 function rowsOf(r: unknown): Record<string, unknown>[] {
@@ -56,30 +57,48 @@ function mapProposalRow(r: Record<string, unknown>): ProposalRow {
   };
 }
 
-/** Закриває прострочені active-пропозиції; надсилає Discord/Telegram про результати (не блокує відповідь при помилках вебхуків). */
+/** Закриває прострочені active-пропозиції; надсилає Discord/Telegram про результати (не блокує відповідь при помилках вебхуків).
+ *  Якщо голосів менше PROPOSAL_MIN_VOTES_FOR_RESULT — статус cancelled (скасовано через низьку явку). */
 async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   const sql = getSql();
+  const minVotes = PROPOSAL_MIN_VOTES_FOR_RESULT;
   const rows = rowsOf(await sql`
-    WITH upd AS (
-      UPDATE proposals
-      SET status = 'closed'
-      WHERE status = 'active' AND ends_at < NOW()
-      RETURNING id, title
+    WITH expired AS (
+      SELECT
+        p.id,
+        p.title,
+        COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+        COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes
+      FROM proposals p
+      LEFT JOIN votes v ON v.proposal_id = p.id
+      WHERE p.status = 'active' AND p.ends_at < NOW()
+      GROUP BY p.id, p.title
+    ),
+    upd AS (
+      UPDATE proposals p
+      SET status = CASE
+        WHEN e.yes_votes + e.no_votes < ${minVotes} THEN 'cancelled'
+        ELSE 'closed'
+      END
+      FROM expired e
+      WHERE p.id = e.id
+      RETURNING p.id, p.title, p.status
     )
     SELECT
       upd.id,
       upd.title,
-      COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
-      COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes
+      upd.status,
+      e.yes_votes,
+      e.no_votes
     FROM upd
-    LEFT JOIN votes v ON v.proposal_id = upd.id
-    GROUP BY upd.id, upd.title
+    INNER JOIN expired e ON e.id = upd.id
   `);
   const closed: ProposalExpiredNotifyRow[] = rows.map((r) => ({
     id: num(r.id),
     title: String(r.title ?? ""),
     yes_votes: num(r.yes_votes),
     no_votes: num(r.no_votes),
+    status: String(r.status ?? "closed"),
   }));
   if (closed.length > 0) {
     void notifyProposalResultsBatch(closed).catch(() => {});

@@ -9,6 +9,8 @@ import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
   formatTimeRemainingUk,
   isProposalVotingOpenClient,
+  PROPOSAL_MIN_VOTES_FOR_RESULT,
+  proposalStatusLabelUk,
 } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 
@@ -409,10 +411,12 @@ export default function ProposalDetailPage() {
                 "mx-auto shrink-0 self-center rounded-full px-3 py-1.5 text-[10px] font-bold uppercase tracking-wide md:mx-0 md:self-auto",
                 open
                   ? "bg-emerald-500/20 text-emerald-200 ring-1 ring-emerald-500/30"
-                  : "bg-[var(--mc-surface-elevated)] text-[var(--mc-text-subtle)] ring-1 ring-[var(--mc-border)]",
+                  : proposal.status === "cancelled"
+                    ? "bg-rose-500/15 text-rose-200 ring-1 ring-rose-500/30"
+                    : "bg-[var(--mc-surface-elevated)] text-[var(--mc-text-subtle)] ring-1 ring-[var(--mc-border)]",
               )}
             >
-              {open ? "активна" : "закрита"}
+              {proposalStatusLabelUk(proposal.status, open)}
             </span>
           </header>
           <p className="text-center text-xs leading-relaxed text-[var(--mc-text-muted)] sm:text-sm md:text-left">
@@ -430,6 +434,15 @@ export default function ProposalDetailPage() {
               {proposal.description}
             </p>
           </div>
+          {proposal.status === "cancelled" ? (
+            <p
+              className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-3 py-2.5 text-center text-sm text-rose-100 sm:px-4"
+              role="status"
+            >
+              Голосування скасовано у звʼязку з недостатньою кількістю
+              учасників (менше {PROPOSAL_MIN_VOTES_FOR_RESULT}).
+            </p>
+          ) : null}
           <VoteBar yes={proposal.yes_votes} no={proposal.no_votes} />
           {error ? (
             <p className="text-center text-sm text-rose-300" role="alert">

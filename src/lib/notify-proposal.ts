@@ -1,4 +1,5 @@
 import { getSiteBaseUrl } from "@/lib/site-base-url";
+import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
 
 function proposalUrl(id: number): string {
   return `${getSiteBaseUrl()}/proposals/${id}`;
@@ -22,8 +23,19 @@ function escapeTelegramHtml(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
+function isCancelledLowTurnout(status: string | undefined): boolean {
+  return status === "cancelled";
+}
+
 /** Висновок після підрахунку (без цифр — лічильники окремим рядком). */
-function verdictOutcomePlain(yes: number, no: number): string {
+function verdictOutcomePlain(
+  yes: number,
+  no: number,
+  status?: string,
+): string {
+  if (isCancelledLowTurnout(status)) {
+    return `Голосування скасовано у звʼязку з недостатньою кількістю учасників (менше ${PROPOSAL_MIN_VOTES_FOR_RESULT}).`;
+  }
   if (yes === 0 && no === 0) return "Голосів не було.";
   if (yes > no) return "Перемогло «так».";
   if (no > yes) return "Перемогло «ні».";
@@ -31,7 +43,14 @@ function verdictOutcomePlain(yes: number, no: number): string {
 }
 
 /** Те саме для Discord description (легкий акцент). */
-function verdictOutcomeMarkdown(yes: number, no: number): string {
+function verdictOutcomeMarkdown(
+  yes: number,
+  no: number,
+  status?: string,
+): string {
+  if (isCancelledLowTurnout(status)) {
+    return `Голосування скасовано у звʼязку з **недостатньою кількістю учасників** (менше ${PROPOSAL_MIN_VOTES_FOR_RESULT}).`;
+  }
   if (yes === 0 && no === 0) return "Голосів не було.";
   if (yes > no) return "Перемогло **«так»**.";
   if (no > yes) return "Перемогло **«ні»**.";
@@ -139,21 +158,26 @@ export async function notifyProposalClosedDiscord(params: {
   proposalId: number;
   yes: number;
   no: number;
+  status?: string;
 }): Promise<void> {
   const link = proposalUrl(params.proposalId);
   const title = escapeDiscordBoldFragment(truncateTitle(params.title));
-  const outcome = verdictOutcomeMarkdown(params.yes, params.no);
+  const cancelled = isCancelledLowTurnout(params.status);
+  const outcome = verdictOutcomeMarkdown(params.yes, params.no, params.status);
 
   await postDiscordWebhook({
     embeds: [
       {
-        title: "Голосування завершено",
+        title: cancelled ? "Голосування скасовано" : "Голосування завершено",
         description:
           `**${title}**\n\n` +
-          `**${params.yes}** так · **${params.no}** ні\n` +
-          `${outcome}\n\n` +
+          (cancelled
+            ? `${outcome}\n\n` +
+              `Було **${params.yes}** так · **${params.no}** ні\n\n`
+            : `**${params.yes}** так · **${params.no}** ні\n` +
+              `${outcome}\n\n`) +
           `[Відкрити пропозицію ↗](${link})`,
-        color: 0xf0b132,
+        color: cancelled ? 0xed4245 : 0xf0b132,
         footer: { text: "Lost Chronicles" },
       },
     ],
@@ -165,20 +189,23 @@ export async function notifyProposalClosedTelegram(params: {
   proposalId: number;
   yes: number;
   no: number;
+  status?: string;
 }): Promise<void> {
   const link = proposalUrl(params.proposalId);
   const title = escapeTelegramHtml(truncateTitle(params.title));
+  const cancelled = isCancelledLowTurnout(params.status);
   const outcome = escapeTelegramHtml(
-    verdictOutcomePlain(params.yes, params.no),
+    verdictOutcomePlain(params.yes, params.no, params.status),
   );
   const safeLink = escapeTelegramHtml(link);
 
   const html =
-    `<b>Голосування завершено</b>\n` +
-    `<i>Підсумок голосування</i>\n\n` +
+    `<b>${cancelled ? "Голосування скасовано" : "Голосування завершено"}</b>\n` +
+    `<i>${cancelled ? "Недостатня кількість учасників" : "Підсумок голосування"}</i>\n\n` +
     `<b>${title}</b>\n\n` +
-    `👍 ${params.yes} · 👎 ${params.no}\n` +
-    `${outcome}\n\n` +
+    (cancelled
+      ? `${outcome}\n\n👍 ${params.yes} · 👎 ${params.no}\n\n`
+      : `👍 ${params.yes} · 👎 ${params.no}\n${outcome}\n\n`) +
     `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
     `<i>Lost Chronicles</i>`;
 
@@ -190,6 +217,7 @@ export type ProposalExpiredNotifyRow = {
   title: string;
   yes_votes: number;
   no_votes: number;
+  status: string;
 };
 
 /** Після автоматичного закриття (термін вичерпано) — один вебхук на кожну пропозицію. */
@@ -204,12 +232,14 @@ export async function notifyProposalResultsBatch(
         proposalId: row.id,
         yes: row.yes_votes,
         no: row.no_votes,
+        status: row.status,
       }),
       notifyProposalClosedTelegram({
         title: row.title,
         proposalId: row.id,
         yes: row.yes_votes,
         no: row.no_votes,
+        status: row.status,
       }),
     ]),
   );

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
+import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 
 const DURATIONS = [1, 3, 7] as const;
@@ -190,6 +191,10 @@ export default function NewProposalPage() {
                 </button>
               ))}
             </div>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--mc-text-muted)]">
+              Якщо до кінця терміну буде менше {PROPOSAL_MIN_VOTES_FOR_RESULT}{" "}
+              голосів, голосування автоматично скасується.
+            </p>
           </div>
           {error ? (
             <p className="text-sm font-medium text-rose-300" role="alert">
