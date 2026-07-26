@@ -130,6 +130,12 @@ export default function ProposalDetailPage() {
       const res = await fetch(`/api/proposals/${id}`, {
         credentials: "include",
       });
+      if (res.status === 401) {
+        window.location.assign(
+          `/api/auth/discord?next=${encodeURIComponent(`/proposals/${id}`)}`,
+        );
+        return;
+      }
       if (res.status === 404) {
         setNotFound(true);
         setProposal(null);

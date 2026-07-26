@@ -2,6 +2,7 @@ import {
   decodeWikiImgSrcUrl,
   isWikiCdnImageUrl,
 } from "@/lib/wiki-image-proxy";
+import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 
 export const dynamic = "force-dynamic";
 
@@ -13,6 +14,11 @@ const UPSTREAM_HEADERS = {
 } as const;
 
 export async function GET(request: Request) {
+  const userId = await getSessionUserIdFromCookies();
+  if (!userId) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const raw = new URL(request.url).searchParams.get("url");
   if (!raw) {
     return new Response("Missing url", { status: 400 });

@@ -21,6 +21,7 @@ import {
 } from "chart.js";
 import { Line } from "react-chartjs-2";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { OnlineChartSkeleton } from "@/components/site/OnlineChartSkeleton";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { cn } from "@/lib/utils";
 
@@ -625,11 +626,14 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
             options={options}
           />
         ) : (
-          <p className="flex h-full items-center justify-center text-sm text-[var(--mc-text-muted)]">
-            {payload?.chartPending
-              ? "Завантаження графіка…"
-              : "Завантаження…"}
-          </p>
+          <OnlineChartSkeleton
+            className="h-full min-h-0"
+            label={
+              payload?.chartPending
+                ? "Завантаження графіка…"
+                : "Завантаження…"
+            }
+          />
         )}
       </div>
       {peakOnline != null ? (

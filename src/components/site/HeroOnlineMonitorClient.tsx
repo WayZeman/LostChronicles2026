@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { OnlineChartSkeleton } from "@/components/site/OnlineChartSkeleton";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
 
@@ -9,11 +10,11 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
     return (
       <div
         className={cn(
-          "flex min-h-[220px] w-full items-center justify-center rounded-[var(--radius)] border-2 border-dashed border-[var(--mc-border-card)] bg-[var(--mc-deep)] md:min-h-[300px] lg:min-h-[360px]",
-          "lc-skeleton-breathe",
+          "w-full overflow-hidden rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-deep)]",
+          "h-[220px] md:h-[300px] lg:h-[360px]",
         )}
       >
-        <p className="text-sm text-[var(--mc-text-muted)]">Завантаження графіка…</p>
+        <OnlineChartSkeleton className="h-full min-h-0" />
       </div>
     );
   }
@@ -22,14 +23,13 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
       className={cn(
         lcGlassPanelClass,
         "bg-[color-mix(in_srgb,#000_20%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
-        "lc-skeleton-breathe",
       )}
     >
       <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
         Моніторинг онлайну сервера
       </h3>
-      <div className="relative mt-4 flex h-[220px] w-full items-center justify-center md:h-[300px] lg:h-[360px]">
-        <p className="text-sm text-[var(--mc-text-muted)]">Завантаження графіка…</p>
+      <div className="relative mt-4 h-[220px] w-full overflow-hidden md:h-[300px] lg:h-[360px]">
+        <OnlineChartSkeleton className="h-full min-h-0" />
       </div>
     </div>
   );

@@ -965,6 +965,69 @@ body.lc-page-enter {
   }
 }
 
+@keyframes lc-chart-skel-draw {
+  0% {
+    stroke-dashoffset: 1;
+    opacity: 0.35;
+  }
+  18% {
+    opacity: 1;
+  }
+  55% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  78% {
+    opacity: 0.85;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 0.25;
+  }
+}
+
+@keyframes lc-chart-skel-area {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@keyframes lc-chart-skel-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  100% {
+    transform: translateX(220%);
+  }
+}
+
+@keyframes lc-chart-skel-dot {
+  0%,
+  80%,
+  100% {
+    opacity: 0.28;
+    transform: translateY(0);
+  }
+  40% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
+}
+
+@keyframes lc-chart-skel-label {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
 .lc-stream-in {
   animation: lc-stream-in var(--lc-stream-dur) var(--lc-stream-ease) both;
 }
@@ -975,6 +1038,73 @@ body.lc-page-enter {
 
 .lc-skeleton-breathe {
   animation: lc-skeleton-breathe 2.4s ease-in-out infinite;
+}
+
+.lc-chart-skeleton-grid {
+  stroke: rgba(255, 255, 255, 0.06);
+  stroke-width: 1;
+}
+
+.lc-chart-skeleton-grid-v {
+  stroke: rgba(255, 255, 255, 0.035);
+}
+
+.lc-chart-skeleton-axis {
+  stroke: rgba(236, 175, 45, 0.28);
+  stroke-width: 1.5;
+}
+
+.lc-chart-skeleton-line {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation: lc-chart-skel-draw 2.6s ease-in-out infinite;
+}
+
+.lc-chart-skeleton-area {
+  animation: lc-chart-skel-area 2.6s ease-in-out infinite;
+}
+
+.lc-chart-skeleton-sweep {
+  position: absolute;
+  inset: 8% auto 18% 0;
+  width: 28%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(245, 208, 106, 0.08) 40%,
+    rgba(255, 255, 255, 0.12) 50%,
+    rgba(245, 208, 106, 0.08) 60%,
+    transparent 100%
+  );
+  animation: lc-chart-skel-sweep 2.6s ease-in-out infinite;
+}
+
+.lc-chart-skeleton-dots {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.lc-chart-skeleton-dots > i {
+  display: block;
+  width: 0.35rem;
+  height: 0.35rem;
+  border-radius: 1px;
+  background: #ecaf2d;
+  animation: lc-chart-skel-dot 1.2s ease-in-out infinite;
+}
+
+.lc-chart-skeleton-dots > i:nth-child(2) {
+  animation-delay: 0.15s;
+}
+
+.lc-chart-skeleton-dots > i:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+.lc-chart-skeleton-label {
+  animation: lc-chart-skel-label 2.2s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -988,6 +1118,37 @@ body.lc-page-enter {
   .lc-skeleton-breathe {
     animation: none !important;
     opacity: 0.55 !important;
+  }
+
+  .lc-chart-skeleton-line,
+  .lc-chart-skeleton-area,
+  .lc-chart-skeleton-sweep,
+  .lc-chart-skeleton-dots > i,
+  .lc-chart-skeleton-label {
+    animation: none !important;
+  }
+
+  .lc-chart-skeleton-line {
+    stroke-dasharray: none;
+    stroke-dashoffset: 0;
+    opacity: 0.75;
+  }
+
+  .lc-chart-skeleton-area {
+    opacity: 0.4;
+  }
+
+  .lc-chart-skeleton-sweep {
+    display: none;
+  }
+
+  .lc-chart-skeleton-dots > i {
+    opacity: 0.7;
+    transform: none;
+  }
+
+  .lc-chart-skeleton-label {
+    opacity: 0.85;
   }
 }
 

@@ -17,6 +17,9 @@ const DURATIONS = new Set([1, 3, 7]);
 export async function GET() {
   try {
     const userId = await getSessionUserIdFromCookies();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const list = await listProposalsForUser(userId);
     return NextResponse.json({
       proposals: list.map((p) => ({

@@ -94,6 +94,21 @@ export async function getSessionUserIdFromCookies(): Promise<number | null> {
   return Number(v.sub);
 }
 
+/** Шлях для Discord OAuth `next=` (pathname + search). */
+export function buildOAuthNextFromPath(
+  pathname: string,
+  search = "",
+): string {
+  const raw = `${pathname}${search}`;
+  return sanitizeOAuthNextPath(raw) ?? pathname;
+}
+
+/** URL старту Discord-логіну з поверненням на внутрішній шлях. */
+export function discordLoginPath(nextPath: string): string {
+  const safe = sanitizeOAuthNextPath(nextPath) ?? "/";
+  return `/api/auth/discord?next=${encodeURIComponent(safe)}`;
+}
+
 export function randomOAuthState(): string {
   const a = new Uint8Array(24);
   crypto.getRandomValues(a);

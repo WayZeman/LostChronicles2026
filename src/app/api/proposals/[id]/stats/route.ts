@@ -16,6 +16,9 @@ export async function GET(
 
   try {
     const userId = await getSessionUserIdFromCookies();
+    if (!userId) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
     const p = await getProposalForUser(id, userId);
     if (!p) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

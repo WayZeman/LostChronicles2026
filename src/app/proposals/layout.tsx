@@ -3,17 +3,16 @@ import {
   discordLoginPath,
   getSessionUserIdFromCookies,
 } from "@/lib/auth-session";
-import "./wiki-mirror.css";
 
-/** Перегляд вікі — лише для авторизованих (Discord). */
-export default async function WikiLayout({
+/** Перегляд пропозицій — лише для авторизованих (Discord). */
+export default async function ProposalsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const userId = await getSessionUserIdFromCookies();
   if (!userId) {
-    redirect(discordLoginPath("/wiki"));
+    redirect(discordLoginPath("/proposals"));
   }
   return children;
 }
