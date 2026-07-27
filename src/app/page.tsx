@@ -20,17 +20,13 @@ export const metadata: Metadata = {
   },
 };
 
-const defaultDescription =
-  "Місце де гравці будують історії, знаходять друзів і творять світ разом.";
-
 /** Інакше NEXT_PUBLIC_* «запікається» в статичний HTML під час build і не оновиться без перезбірки. */
 export const dynamic = "force-dynamic";
 
 export default function Home() {
   const settings = {
     ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST,
-    version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.7",
-    description: defaultDescription,
+    version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.11",
     bedrockAddress:
       process.env.NEXT_PUBLIC_BEDROCK_ADDRESS?.trim() || "play.lost-chronicles.site",
     bedrockPort: process.env.NEXT_PUBLIC_BEDROCK_PORT?.trim() || "19132",
@@ -41,33 +37,35 @@ export default function Home() {
   return (
     <main className={lcPageMainClass}>
       <div className={lcPageContainerHomeClass}>
-        <section className="am-reveal flex flex-col items-center pt-0 text-center md:pt-0">
+        <section className="am-reveal relative z-10 flex flex-col items-center pt-0 text-center md:pt-0">
           <h1 className="sr-only">Lost Chronicles — Ukrainian Minecraft Server</h1>
-          <Image
-            src="/lc-logo-hero.png"
-            alt="Lost Chronicles — Ukrainian Minecraft Server"
-            width={926}
-            height={153}
-            priority
-            unoptimized
-            className="h-auto w-full max-w-[min(100%,36rem)] md:max-w-[min(100%,42rem)]"
-            draggable={false}
-          />
-          <p className="lc-hero-lead mt-5 max-w-lg text-base md:mt-6 md:text-lg">
-            {settings.description}
-          </p>
-          <a
-            href={LC_FORM_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lc-focus-ring lc-btn-accent mt-6 min-h-11 px-8 py-2.5 text-sm"
-          >
-            Подати заявку
-            <ExternalLink className="size-3.5 opacity-70" aria-hidden />
-          </a>
+
+          <div className="relative w-full max-w-[min(100%,28rem)] sm:max-w-[min(100%,32rem)] md:max-w-[min(100%,36rem)]">
+            <Image
+              src="/lc-logo-hero-v2.png"
+              alt="Lost Chronicles — Ukrainian Minecraft Server"
+              width={900}
+              height={606}
+              priority
+              unoptimized
+              className="relative z-0 h-auto w-full drop-shadow-[0_8px_28px_rgba(0,0,0,0.55)]"
+              draggable={false}
+            />
+            <div className="pointer-events-none absolute inset-x-0 bottom-[7%] z-10 flex justify-center sm:bottom-[8%] md:bottom-[9%]">
+              <a
+                href={LC_FORM_URL}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="lc-focus-ring lc-btn-accent pointer-events-auto min-h-11 px-8 py-2.5 text-sm shadow-[0_6px_20px_rgba(0,0,0,0.5)]"
+              >
+                Подати заявку
+                <ExternalLink className="size-3.5 opacity-70" aria-hidden />
+              </a>
+            </div>
+          </div>
 
           {voteUrl ? (
-            <div className="mt-4 flex flex-wrap justify-center gap-3">
+            <div className="relative z-10 mt-5 flex flex-wrap justify-center gap-3">
               <a
                 href={voteUrl}
                 target="_blank"
