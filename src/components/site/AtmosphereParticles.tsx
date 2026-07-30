@@ -11,9 +11,10 @@ type Particle = {
   r: number;
   baseA: number;
   phase: number;
-  warm: boolean;
-  /** Яскраві «іскри» — сильніше світіння */
-  bright: boolean;
+  /** ~20% жовті іскри (золото лого), решта зелені */
+  yellow: boolean;
+  /** 0 тьмяні · 1 звичайні · 2 яскраві спалахи */
+  glowTier: 0 | 1 | 2;
 };
 
 /** 0 біля верху екрана → 1 біля низу (плавно) */
@@ -27,19 +28,32 @@ function fadeFromBottom(y: number, screenH: number): number {
 function initParticles(count: number, w: number, h: number): Particle[] {
   const out: Particle[] = [];
   for (let i = 0; i < count; i++) {
-    const warm = Math.random() < 0.64;
-    const bright = Math.random() < 0.22;
+    const yellow = Math.random() < 0.2;
+    const roll = Math.random();
+    const glowTier: 0 | 1 | 2 = roll < 0.55 ? 0 : roll < 0.82 ? 1 : 2;
+    const baseA =
+      glowTier === 2
+        ? 0.38 + Math.random() * 0.42
+        : glowTier === 1
+          ? 0.14 + Math.random() * 0.24
+          : 0.05 + Math.random() * 0.1;
+    const r =
+      glowTier === 2
+        ? 0.65 + Math.random() * 0.75
+        : glowTier === 1
+          ? 0.35 + Math.random() * 0.55
+          : 0.2 + Math.random() * 0.4;
     out.push({
       x: Math.random() * w,
       // Старт у нижній половині / під екраном — рух лише вгору
       y: h * (0.48 + Math.random() * 0.62),
       vx: (Math.random() - 0.5) * 0.22,
       vy: -0.14 - Math.random() * 0.52,
-      r: Math.random() * 1.25 + 0.35,
-      baseA: bright ? 0.22 + Math.random() * 0.38 : 0.12 + Math.random() * 0.34,
+      r,
+      baseA,
       phase: Math.random() * Math.PI * 2,
-      warm,
-      bright,
+      yellow,
+      glowTier,
     });
   }
   return out;
@@ -113,30 +127,43 @@ export function AtmosphereParticles() {
 
         // Легке мерехтіння, але головне — згасання до верху
         const tw = 0.72 + 0.28 * Math.sin(p.phase * 2.05);
-        const brightBoost = p.bright ? 1.35 : 1;
+        const brightBoost =
+          p.glowTier === 2 ? 1.65 : p.glowTier === 1 ? 1.05 : 0.72;
         const verticalFade = fadeFromBottom(p.y, h);
         const a = Math.min(
-          0.95,
+          1,
           p.baseA * tw * brightBoost * verticalFade,
         );
 
-        if (p.warm) {
-          const glowR = Math.max(2.4, p.r * (p.bright ? 5.6 : 4.9));
-          const g = draw.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
-          const c0 = p.bright ? 1.05 : 0.92;
-          const c1 = p.bright ? 0.72 : 0.48;
+        const glowMul =
+          p.glowTier === 2 ? 4.4 : p.glowTier === 1 ? 3.3 : 2.5;
+        const glowR = Math.max(1.6, p.r * glowMul);
+        const g = draw.createRadialGradient(p.x, p.y, 0, p.x, p.y, glowR);
+        const c0 = p.glowTier === 2 ? 1.12 : p.glowTier === 1 ? 0.9 : 0.7;
+        const c1 = p.glowTier === 2 ? 0.82 : p.glowTier === 1 ? 0.48 : 0.3;
+        const midA =
+          a * (p.glowTier === 2 ? 0.42 : p.glowTier === 1 ? 0.26 : 0.14);
+
+        if (p.yellow) {
+          g.addColorStop(0, `rgba(255, 250, 210, ${Math.min(1, a * c0)})`);
+          g.addColorStop(0.32, `rgba(255, 214, 64, ${a * c1})`);
+          g.addColorStop(0.65, `rgba(236, 175, 45, ${midA})`);
+          g.addColorStop(1, "rgba(236, 175, 45, 0)");
+          draw.fillStyle = g;
+          draw.beginPath();
+          draw.arc(p.x, p.y, glowR, 0, Math.PI * 2);
+          draw.fill();
+          draw.fillStyle = `rgba(255, 248, 200, ${Math.min(1, a * (p.glowTier === 2 ? 1 : p.glowTier === 1 ? 0.78 : 0.55))})`;
+        } else {
           g.addColorStop(0, `rgba(230, 255, 220, ${Math.min(1, a * c0)})`);
           g.addColorStop(0.32, `rgba(122, 224, 74, ${a * c1})`);
-          g.addColorStop(0.65, `rgba(84, 197, 48, ${a * (p.bright ? 0.38 : 0.28)})`);
+          g.addColorStop(0.65, `rgba(84, 197, 48, ${midA})`);
           g.addColorStop(1, "rgba(84, 197, 48, 0)");
           draw.fillStyle = g;
           draw.beginPath();
           draw.arc(p.x, p.y, glowR, 0, Math.PI * 2);
           draw.fill();
-          draw.fillStyle = `rgba(240, 255, 235, ${Math.min(1, a * (p.bright ? 0.98 : 0.82))})`;
-        } else {
-          const ca = p.bright ? 0.72 : 0.52;
-          draw.fillStyle = `rgba(180, 240, 160, ${a * ca})`;
+          draw.fillStyle = `rgba(240, 255, 235, ${Math.min(1, a * (p.glowTier === 2 ? 1 : p.glowTier === 1 ? 0.78 : 0.55))})`;
         }
         draw.beginPath();
         draw.arc(p.x, p.y, p.r, 0, Math.PI * 2);
@@ -159,7 +186,7 @@ export function AtmosphereParticles() {
   return (
     <canvas
       ref={ref}
-      className="lc-atmosphere-particles pointer-events-none fixed inset-x-0 -top-1.5 -bottom-1.5 z-[1] mix-blend-screen opacity-[0.48]"
+      className="lc-atmosphere-particles pointer-events-none fixed inset-x-0 -top-1.5 -bottom-1.5 z-[1] mix-blend-screen opacity-[0.62]"
       aria-hidden
     />
   );

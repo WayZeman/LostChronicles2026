@@ -18,7 +18,15 @@ export default async function WikiIndexPage() {
     <main className={lcPageMainClass}>
       <div className={lcPageContainerClass}>
         {home ? (
-          <WikiContentFrame topSlot={<WikiSearchBox embedded />}>
+          <WikiContentFrame
+            topSlot={
+              <WikiSearchBox
+                embedded
+                title="Пошук по вікі та новинах"
+                description="Знайди сторінки та новини за назвою чи згадкою."
+              />
+            }
+          >
             <WikiMirrorHtml
               html={home.html}
               fandomBase={base}

@@ -399,6 +399,9 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
 
   const load = useCallback(async () => {
     setError(null);
+    const mobile =
+      typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 639px)").matches;
     try {
       const liveRes = await fetch("/api/online-history?liveOnly=1", {
         cache: "no-store",
@@ -409,7 +412,7 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
           normalizePayload({
             labels: [],
             values: [],
-            chartPending: true,
+            chartPending: !mobile,
             liveOnline: liveData.liveOnline,
             liveMax: liveData.liveMax,
             livePlayerNames: liveData.livePlayerNames,
@@ -418,6 +421,9 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
           }),
         );
       }
+
+      // На мобільному — лише live-статус, без графіка з датами.
+      if (mobile) return;
 
       const res = await fetch("/api/online-history?period=week", {
         cache: "no-store",
@@ -443,6 +449,12 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
 
   useEffect(() => {
     void load();
+    const mq = window.matchMedia("(max-width: 639px)");
+    const onChange = () => {
+      void load();
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
   }, [load]);
 
   const hasOfflineTicks = Boolean(
@@ -451,10 +463,27 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
 
   const chartValues = useMemo(() => {
     if (!payload || payload.values.length === 0) return [];
-    return [...payload.values];
+    const values = [...payload.values];
+    // Live-онлайн свіжіший за серію Plan (кеш + крок знімків) — остання точка = «зараз».
+    if (
+      typeof payload.liveOnline === "number" &&
+      payload.liveOnline >= 0 &&
+      payload.liveProbe !== "api-offline"
+    ) {
+      values[values.length - 1] = payload.liveOnline;
+    }
+    return values;
   }, [payload]);
 
-  const maxY = chartValues.length > 0 ? Math.max(...chartValues) + 1 : 1;
+  const maxY = useMemo(() => {
+    const seriesMax =
+      chartValues.length > 0 ? Math.max(...chartValues.map((v) => Math.max(0, v))) : 0;
+    const live =
+      payload?.liveOnline != null && payload.liveOnline >= 0
+        ? payload.liveOnline
+        : 0;
+    return Math.max(seriesMax, live) + 1;
+  }, [chartValues, payload?.liveOnline]);
   const peakOnline = useMemo(() => {
     if (payload && typeof payload.allTimePeak === "number") {
       return payload.allTimePeak;
@@ -614,7 +643,7 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
         )
       ) : null}
 
-      <div className="relative mt-4 h-[220px] w-full overflow-hidden md:h-[300px] lg:h-[360px]">
+      <div className="relative mt-4 hidden h-[220px] w-full overflow-hidden sm:block md:h-[300px] lg:h-[360px]">
         {error ? (
           <p className="flex h-full items-center justify-center text-sm text-[var(--mc-text-muted)]">
             {error}
@@ -637,7 +666,7 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
         )}
       </div>
       {peakOnline != null ? (
-        <p className="mt-3 text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+        <p className="mt-3 hidden text-center text-sm font-semibold text-[var(--mc-net-green)] sm:block md:text-base">
           Пік онлайну: <span className="tabular-nums">{peakOnline}</span>{" "}
           {ukPlayersWord(peakOnline)}
         </p>

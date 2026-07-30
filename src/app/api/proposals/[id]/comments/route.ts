@@ -46,10 +46,6 @@ export async function GET(
   }
 
   try {
-    const userId = await getSessionUserIdFromCookies();
-    if (!userId) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    }
     const rows = await listProposalComments(id);
     return NextResponse.json({
       comments: rows.map((r) => mapCommentToJson(r)),

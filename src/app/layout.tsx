@@ -4,6 +4,7 @@ import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
+import { SiteCursor } from "@/components/site/SiteCursor";
 import { SiteJsonLd } from "@/components/site/SiteJsonLd";
 import {
   LC_SEO_DESCRIPTION_SHORT,
@@ -119,6 +120,7 @@ export default function RootLayout({
           </div>
         </div>
         <AtmosphereParticles />
+        <SiteCursor />
         <Navbar />
         <div className="relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] [&>*:only-child]:flex [&>*:only-child]:min-h-0 [&>*:only-child]:w-full [&>*:only-child]:flex-1 [&>*:only-child]:flex-col [&>*:only-child]:pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
           {children}

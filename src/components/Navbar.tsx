@@ -38,21 +38,13 @@ const bottomNavLinks = [
   ...links,
 ] as const;
 
-/** Єдина навігація: нижня панель на всіх розмірах екрана. */
+/** Єдина навігація: приклеєна до низу viewport на всіх розмірах екрана. */
 export function Navbar() {
   const pathname = usePathname() ?? "";
 
   return (
-    <nav
-      className="mc-frame fixed inset-x-2 bottom-[max(0.5rem,env(safe-area-inset-bottom,0px))] z-[100] overflow-hidden bg-[var(--mc-nav-bg)] sm:inset-x-3"
-      style={{
-        paddingBottom:
-          "max(0.35rem, calc(env(safe-area-inset-bottom, 0px) * 0.35))",
-        paddingTop: "0.35rem",
-      }}
-      aria-label="Головна навігація"
-    >
-      <div className="mx-auto flex w-full max-w-4xl items-stretch justify-around gap-0.5 px-1 md:px-2">
+    <nav className="lc-bottom-nav mc-frame" aria-label="Головна навігація">
+      <div className="mx-auto flex w-full items-stretch justify-around gap-0.5 px-1 md:px-2">
         {bottomNavLinks.map(({ href, label, Icon }) => {
           const active = isActivePath(pathname, href);
           return (

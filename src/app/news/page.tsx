@@ -7,6 +7,7 @@ import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
+import { WikiSearchBox } from "@/components/wiki/WikiSearchBox";
 import { cn } from "@/lib/utils";
 
 /** Див. /wiki — Fandom підвантажується під час запиту, не на етапі `next build`. */
@@ -36,7 +37,15 @@ export default async function NewsListPage() {
         ) : null}
 
         {parsed ? (
-          <WikiContentFrame>
+          <WikiContentFrame
+            topSlot={
+              <WikiSearchBox
+                embedded
+                title="Пошук по новинах і вікі"
+                description="Швидко знайди згадки в новинах або статтях вікі."
+              />
+            }
+          >
             <WikiMirrorHtml
               html={parsed.html}
               fandomBase={base}

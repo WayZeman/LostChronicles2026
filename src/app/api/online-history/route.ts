@@ -34,6 +34,24 @@ function withLivePeak(peak: number | null, liveOnline: number | null): number | 
   return Math.max(peak, liveOnline);
 }
 
+/** Остання точка графіка = поточний онлайн (історія Plan/ОУМ відстає від live). */
+function alignSeriesTailWithLive(
+  values: number[],
+  liveOnline: number | null,
+): number[] {
+  if (
+    values.length === 0 ||
+    typeof liveOnline !== "number" ||
+    !Number.isFinite(liveOnline) ||
+    liveOnline < 0
+  ) {
+    return values;
+  }
+  const next = [...values];
+  next[next.length - 1] = Math.floor(liveOnline);
+  return next;
+}
+
 /** Лише https, без userinfo — зменшує ризик SSRF при помилковому/шкідливому env. */
 function parseTrustedOnlineHistoryUpstream(raw: string): URL | null {
   const s = raw.trim();
@@ -185,7 +203,8 @@ export async function GET(req: Request) {
       period,
     );
     if (labels.length > 0) {
-      let peak = maxInPeriod ?? calcPeak(values);
+      const aligned = alignSeriesTailWithLive(values, live.liveOnline);
+      let peak = maxInPeriod ?? calcPeak(aligned);
       if (live.planPeakHint != null) {
         peak =
           peak == null
@@ -195,7 +214,7 @@ export async function GET(req: Request) {
       const allTimePeak = withLivePeak(peak, live.liveOnline);
       return Response.json({
         labels,
-        values,
+        values: aligned,
         synthetic: false,
         source: "plan",
         historySource: "plan" as const,
@@ -221,7 +240,10 @@ export async function GET(req: Request) {
           allTimePeak?: unknown;
         };
         if (Array.isArray(data.labels) && Array.isArray(data.values)) {
-          const values = data.values.map((v) => Number(v) || 0);
+          const values = alignSeriesTailWithLive(
+            data.values.map((v) => Number(v) || 0),
+            live.liveOnline,
+          );
           const upstreamPeak =
             typeof data.allTimePeak === "number" && data.allTimePeak >= 0
               ? data.allTimePeak
@@ -248,15 +270,15 @@ export async function GET(req: Request) {
       const full = await fetchOumOnlineHistory(oumPage);
       if (full && full.labels.length > 0) {
         const allTimePeak = withLivePeak(calcPeak(full.values), live.liveOnline);
-        const { labels, values } = sliceOumSeriesForPeriod(
+        const sliced = sliceOumSeriesForPeriod(
           full.labels,
           full.values,
           period,
         );
-        if (labels.length > 0) {
+        if (sliced.labels.length > 0) {
           return Response.json({
-            labels,
-            values,
+            labels: sliced.labels,
+            values: alignSeriesTailWithLive(sliced.values, live.liveOnline),
             synthetic: false,
             source: "minecraft-org-ua",
             historySource: "minecraft-org-ua" as const,
@@ -273,11 +295,12 @@ export async function GET(req: Request) {
 
   const online = live.liveOnline ?? 0;
   const { labels, values } = syntheticSeries(period, online);
-  const allTimePeak = withLivePeak(calcPeak(values), live.liveOnline);
+  const aligned = alignSeriesTailWithLive(values, live.liveOnline);
+  const allTimePeak = withLivePeak(calcPeak(aligned), live.liveOnline);
 
   return Response.json({
     labels,
-    values,
+    values: aligned,
     synthetic: true,
     historySource: "synthetic" as const,
     allTimePeak,

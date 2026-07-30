@@ -1,0 +1,13 @@
+---
+description: Keep localhost preview fresh after UI changes
+alwaysApply: true
+---
+
+# Local preview — show changes immediately
+
+After any visual/UI change (components, CSS, `public/` assets, layout):
+
+1. Ensure a single `next dev` is running on http://localhost:3000 (kill duplicates if needed).
+2. If Hot Reload may be stale (layout/CSS/`public` assets, or user still sees old UI): restart with cache clear — `rm -rf .next/dev/cache` then `npm run dev`, or `npm run dev:fresh` when deeply stuck.
+3. Do **not** wait for the user to ask «онови локалку» — refresh/restart proactively after the edit, then confirm the page responds.
+4. Prefer one clean server over stacked `next` processes fighting for port 3000.

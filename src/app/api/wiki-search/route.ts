@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server";
-import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { getSql } from "@/lib/db";
 import { fandomFullPageUrlForTitle, getFandomWikiBase } from "@/lib/fandom";
 
@@ -87,11 +86,6 @@ async function trackQuery(query: string) {
 }
 
 export async function GET(request: Request) {
-  const userId = await getSessionUserIdFromCookies();
-  if (!userId) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const { searchParams } = new URL(request.url);
   const query = searchParams.get("q")?.trim() ?? "";
 

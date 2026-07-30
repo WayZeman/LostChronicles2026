@@ -37,12 +37,6 @@ export function ProposalsListClient() {
   const load = useCallback(async () => {
     try {
       const res = await fetch("/api/proposals", { credentials: "include" });
-      if (res.status === 401) {
-        window.location.assign(
-          `/auth-required?next=${encodeURIComponent("/proposals")}`,
-        );
-        return;
-      }
       if (!res.ok) {
         setFailed(true);
         setList([]);

@@ -73,7 +73,7 @@
     rgba(0, 0, 0, 0.82),
     transparent 58%
   );
-  --mc-backdrop-vignette-opacity: 0.65;
+  --mc-backdrop-vignette-opacity: 0.78;
   --mc-grass: #55ff55;
   --mc-grass-bright: #7fff7f;
   --mc-dirt: #8b6914;
@@ -116,7 +116,7 @@
   --mc-footer-text: rgba(198, 198, 198, 0.55);
   --mc-bg-image-overlay: linear-gradient(
     180deg,
-    rgba(0, 0, 0, 0.55) 0%,
+    rgba(0, 0, 0, 0.58) 0%,
     rgba(0, 0, 0, 0.72) 42%,
     rgba(0, 0, 0, 0.88) 100%
   );
@@ -206,6 +206,84 @@
   }
 }
 
+/* Кастомний курсор (DOM) — маленький, плавно зеленіє на кнопках */
+@media (hover: hover) and (pointer: fine) {
+  html.lc-cursor-on,
+  html.lc-cursor-on body,
+  html.lc-cursor-on a,
+  html.lc-cursor-on button,
+  html.lc-cursor-on [role="button"],
+  html.lc-cursor-on [role="link"],
+  html.lc-cursor-on [role="tab"],
+  html.lc-cursor-on summary,
+  html.lc-cursor-on label[for],
+  html.lc-cursor-on select,
+  html.lc-cursor-on .lc-focus-ring,
+  html.lc-cursor-on .lc-btn-accent,
+  html.lc-cursor-on .mc-btn-primary,
+  html.lc-cursor-on .mc-btn-secondary {
+    cursor: none !important;
+  }
+
+  html.lc-cursor-on input[type="text"],
+  html.lc-cursor-on input[type="search"],
+  html.lc-cursor-on input[type="email"],
+  html.lc-cursor-on input[type="password"],
+  html.lc-cursor-on input[type="url"],
+  html.lc-cursor-on input[type="tel"],
+  html.lc-cursor-on input[type="number"],
+  html.lc-cursor-on textarea,
+  html.lc-cursor-on [contenteditable="true"] {
+    cursor: text !important;
+  }
+}
+
+.lc-site-cursor {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  pointer-events: none;
+  opacity: 1;
+  will-change: transform;
+  background: linear-gradient(145deg, #ffe056 0%, #f5a428 55%, #e87820 100%);
+  transition:
+    background 0.3s ease,
+    opacity 0.15s ease,
+    width 0.22s ease,
+    height 0.22s ease,
+    filter 0.3s ease;
+  -webkit-mask: url("/cursors/lc-cursor.png") center / contain no-repeat;
+  mask: url("/cursors/lc-cursor.png") center / contain no-repeat;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
+}
+
+.lc-site-cursor--hover {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(145deg, #c8ff7a 0%, #55ff55 48%, #2fbf28 100%);
+  filter: drop-shadow(0 0 6px rgba(85, 255, 85, 0.45));
+}
+
+.lc-site-cursor--down {
+  width: 14px;
+  height: 14px;
+  filter: drop-shadow(0 0 4px rgba(85, 255, 85, 0.35)) brightness(0.92);
+}
+
+.lc-site-cursor--hidden {
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-site-cursor {
+    transition: none;
+  }
+}
+
 .lc-focus-ring:focus-visible {
   outline: none;
   box-shadow:
@@ -265,7 +343,7 @@ body.lc-page-enter {
   }
 }
 
-/* Фон: fon.png + накладка + блоби */
+/* Фон: кам’яна стіна з плющем + накладка + блоби */
 .mc-net-backdrop {
   position: fixed;
   left: 0;
@@ -282,23 +360,22 @@ body.lc-page-enter {
   min-height: calc(100vh + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
   min-height: calc(100dvh + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
   min-height: calc(-webkit-fill-available + 192px + env(safe-area-inset-top, 0px) + env(safe-area-inset-bottom, 0px));
-  background-color: var(--mc-net-page);
+  background-color: #0a0a0a;
   background-image:
     var(--mc-bg-image-overlay),
-    repeating-linear-gradient(
-      45deg,
-      rgba(80, 60, 30, 0.18) 0 8px,
-      rgba(40, 30, 16, 0.22) 8px 16px
-    ),
-    linear-gradient(
-      180deg,
-      #2a2218 0%,
-      #141210 45%,
-      #0a0a0a 100%
-    );
-  background-size: cover, 48px 48px, cover;
-  background-position: center, center, center;
-  background-repeat: no-repeat, repeat, no-repeat;
+    url("/bg-ivy-stone.jpg");
+  background-size: cover, cover;
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+}
+
+/* Мобільний портрет: окремий вертикальний кадр фону */
+@media (orientation: portrait) and (max-width: 900px) {
+  .mc-net-backdrop {
+    background-image:
+      var(--mc-bg-image-overlay),
+      url("/bg-ivy-stone-portrait.jpg");
+  }
 }
 
 .mc-net-backdrop::before {
@@ -444,6 +521,28 @@ nav[aria-label="Головна навігація"] a {
     inset 3px 3px 0 var(--mc-frame-hi),
     inset -3px -3px 0 var(--mc-frame-lo),
     0 0 0 1px #000;
+}
+
+/* Нижня навігація — по центру внизу екрана */
+.lc-bottom-nav {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 100;
+  width: min(calc(100vw - 1rem), 64rem);
+  overflow: hidden;
+  background: var(--mc-nav-bg);
+  padding-top: 0.35rem;
+  padding-bottom: max(0.35rem, calc(env(safe-area-inset-bottom, 0px) * 0.35));
+  transform: translateX(-50%) translateZ(0);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+@media (min-width: 640px) {
+  .lc-bottom-nav {
+    width: min(calc(100vw - 1.5rem), 64rem);
+  }
 }
 
 /* Вдавлений слот */
@@ -823,6 +922,52 @@ textarea.mc-input:focus {
     0 18px 46px rgba(0, 0, 0, 0.32),
     0 0 0 1px rgba(84, 197, 48, 0.08);
 }
+
+/* Java / Bedrock — в тому ж MC-слоті, лише бейдж і тонка смужка */
+.lc-edition-slot {
+  position: relative;
+}
+
+.lc-edition-slot::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  pointer-events: none;
+  background: var(--lc-edition-bar, var(--mc-net-green));
+  box-shadow: 0 1px 0 #000;
+}
+
+.lc-edition-slot--java {
+  --lc-edition-bar: var(--mc-menu-yellow);
+}
+
+.lc-edition-slot--bedrock {
+  --lc-edition-bar: var(--mc-net-green);
+}
+
+.lc-edition-badge--java {
+  background: linear-gradient(
+    180deg,
+    #c4a000 0%,
+    #aa8800 48%,
+    #8a6e00 100%
+  ) !important;
+  color: #ffffa0 !important;
+}
+
+.lc-edition-badge--bedrock {
+  background: linear-gradient(
+    180deg,
+    #6dde42 0%,
+    #54c530 48%,
+    #3a9e1c 100%
+  ) !important;
+  color: var(--mc-green-ink) !important;
+}
+
 
 /* Вбудований графік онлайну — легкий підйом і обводка без циклу «дихання» */
 .lc-interactive-panel-embed {

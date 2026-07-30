@@ -5,7 +5,7 @@ import { ExternalLink } from "lucide-react";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPanel";
-import { HeroSocialLinks } from "@/components/site/HeroSocialLinks";
+import { HeroSocialPanel } from "@/components/site/HeroSocialPanel";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { cn } from "@/lib/utils";
@@ -80,7 +80,7 @@ export default function Home() {
         </section>
 
         <div
-          className="am-reveal am-delay-1 mt-10 flex w-full flex-col gap-6 md:mt-12 md:gap-8"
+          className="am-reveal am-delay-1 mt-12 flex w-full flex-col gap-6 sm:mt-10 md:mt-12 md:gap-8"
           aria-label="Онлайн та підключення до сервера"
         >
           <Suspense
@@ -114,10 +114,23 @@ export default function Home() {
                 port={settings.bedrockPort}
               />
             </div>
-            <div className="mt-5 border-t border-[var(--mc-border-card)] pt-5 md:mt-6 md:pt-6">
-              <HeroSocialLinks embedded />
-            </div>
           </div>
+
+          <Suspense
+            fallback={
+              <div
+                className={cn(
+                  lcGlassPanelClass,
+                  "lc-interactive-panel-static px-4 py-16 text-center text-sm text-[var(--mc-text-muted)]",
+                  "lc-skeleton-breathe",
+                )}
+              >
+                Завантаження соцмереж…
+              </div>
+            }
+          >
+            <HeroSocialPanel />
+          </Suspense>
         </div>
 
         <SupportMonobankSection />

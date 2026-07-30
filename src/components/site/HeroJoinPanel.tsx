@@ -1,5 +1,6 @@
 "use client";
 
+import { Monitor } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CopyableMcSlot } from "@/components/site/CopyableMcSlot";
 import {
@@ -18,24 +19,46 @@ type Props = {
 export function HeroJoinPanel({ ip, version, className, embedded }: Props) {
   const shell = embedded ? heroPanelEmbeddedClass : heroPanelShellClass;
   return (
-    <div className={cn(shell, className)}>
-      <span className="mc-badge px-3 py-1 text-[11px]">
+    <div
+      className={cn(shell, "lc-edition-slot lc-edition-slot--java", className)}
+      aria-label="Java Edition"
+    >
+      <span className="mc-badge lc-edition-badge lc-edition-badge--java px-3 py-1 text-[11px]">
         <span className="relative flex h-1.5 w-1.5">
-          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--mc-green-ink)] opacity-40 motion-reduce:animate-none" />
-          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--mc-green-ink)]" />
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--mc-on-gold)] opacity-40 motion-reduce:animate-none" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-[var(--mc-on-gold)]" />
         </span>
         Java
       </span>
+      <p
+        className="mt-2 flex items-center justify-center gap-1.5 text-[var(--mc-ink-subtle)]"
+        title="PC Edition"
+      >
+        <Monitor className="size-4" aria-hidden />
+        <span className="sr-only">PC Edition</span>
+      </p>
 
-      <p className="mt-6 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">Адреса сервера</p>
-      <CopyableMcSlot copyText={ip} className="mt-2" copiedLabel="IP скопійовано">
+      <p className="mt-6 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">
+        Адреса сервера
+      </p>
+      <CopyableMcSlot
+        copyText={ip}
+        className="mt-2"
+        copiedLabel="IP скопійовано"
+      >
         <p className="break-all text-center font-mono text-base font-semibold leading-snug md:text-lg">
           {ip}
         </p>
       </CopyableMcSlot>
 
-      <p className="mt-5 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">Версія</p>
-      <CopyableMcSlot copyText={version} className="mt-2" copiedLabel="Версію скопійовано">
+      <p className="mt-5 w-full text-xs font-semibold text-[var(--mc-ink-subtle)]">
+        Версія
+      </p>
+      <CopyableMcSlot
+        copyText={version}
+        className="mt-2"
+        copiedLabel="Версію скопійовано"
+      >
         <p className="text-center font-mono text-base font-bold leading-snug md:text-lg">
           {version}
         </p>

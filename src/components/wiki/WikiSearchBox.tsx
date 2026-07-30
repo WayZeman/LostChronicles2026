@@ -33,8 +33,8 @@ export function WikiSearchBox({
   className,
   embedded = false,
   title = "Пошук по вікі та новинах",
-  description = "Введи запит, і сайт покаже сторінки та новини, де є згадки про нього.",
-  placeholder = "Наприклад: Артолія, валюта, плагіни, держава...",
+  description = "Знайди сторінки та новини за назвою чи згадкою.",
+  placeholder = "Артолія, валюта, плагіни…",
 }: Props) {
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
@@ -154,31 +154,44 @@ export function WikiSearchBox({
 
   const showEmpty = touched && query.trim().length >= 2 && !loading && results.length === 0;
   const suggestionQueries = recentQueries.length > 0 ? recentQueries : popularQueries;
-  const suggestionLabel = recentQueries.length > 0 ? "Останні запити" : "Популярні запити";
+  const suggestionLabel = recentQueries.length > 0 ? "Останні" : "Популярні";
 
   return (
     <section
       className={cn(
+        "hidden sm:block",
         embedded
-          ? "mc-slot px-4 py-4 md:px-5"
-          : lcGlassPanelClass,
-        !embedded && "mb-6 p-4 md:mb-8 md:p-5",
+          ? "border-b border-[var(--mc-border-card)] pb-6 md:pb-7"
+          : cn(lcGlassPanelClass, "mb-6 p-4 md:mb-8 md:p-5"),
         className,
       )}
+      aria-label={title}
     >
-      <div className="flex flex-col items-center gap-3 text-center">
-        <div className="mc-slot flex size-10 shrink-0 items-center justify-center text-[var(--mc-net-green)]">
-          <Search className="size-4" aria-hidden />
+      <div className="flex items-start gap-3">
+        <div
+          className="mc-slot mt-0.5 flex size-9 shrink-0 items-center justify-center text-[var(--mc-grass-bright)]"
+          aria-hidden
+        >
+          <Search className="size-4" strokeWidth={2.25} />
         </div>
-        <div className="min-w-0 max-w-2xl">
-          <h2 className="text-base font-semibold text-[var(--mc-text)] md:text-lg">{title}</h2>
+        <div className="min-w-0 flex-1">
+          <h2 className="lc-section-title text-left text-base uppercase md:text-lg">
+            {title}
+          </h2>
+          <p className="mt-1 text-left text-sm text-[var(--mc-ink-subtle)]">
+            {description}
+          </p>
         </div>
       </div>
 
-      <div className="mt-4 flex justify-center">
+      <div className="relative mt-4">
         <label htmlFor="wiki-search" className="sr-only">
           Пошук по вікі
         </label>
+        <Search
+          className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-[var(--mc-ink-subtle)]"
+          aria-hidden
+        />
         <input
           id="wiki-search"
           type="search"
@@ -188,21 +201,22 @@ export function WikiSearchBox({
             setTouched(true);
           }}
           placeholder={placeholder}
-          className="mc-input w-full max-w-2xl px-4 py-3 text-center text-sm"
+          className="mc-input w-full py-3 pl-10 pr-4 text-left text-sm"
+          autoComplete="off"
         />
       </div>
 
       {suggestionQueries.length > 0 ? (
-        <>
-          <div className="mt-4 flex items-center justify-center gap-2 text-xs font-medium uppercase tracking-wide text-[var(--mc-text-subtle)]">
+        <div className="mt-3">
+          <p className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
             {recentQueries.length > 0 ? (
-              <Clock3 className="size-3.5" aria-hidden />
+              <Clock3 className="size-3" aria-hidden />
             ) : (
-              <TrendingUp className="size-3.5" aria-hidden />
+              <TrendingUp className="size-3" aria-hidden />
             )}
-            <span>{suggestionLabel}</span>
-          </div>
-          <div className="mt-2 flex flex-wrap justify-center gap-2">
+            {suggestionLabel}
+          </p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {suggestionQueries.map((suggestionQuery) => (
               <button
                 key={suggestionQuery}
@@ -212,45 +226,53 @@ export function WikiSearchBox({
                   setTouched(true);
                   void trackConfirmedQuery(suggestionQuery);
                 }}
-                className="lc-focus-ring mc-btn-secondary px-3 py-1.5 text-xs"
+                className={cn(
+                  "lc-focus-ring mc-slot px-2.5 py-1 text-xs text-[var(--mc-text)]",
+                  "transition-[background-color,color] duration-150",
+                  "hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]",
+                )}
               >
                 {suggestionQuery}
               </button>
             ))}
           </div>
-        </>
-      ) : null}
-
-      {loading ? (
-        <p className="mt-4 text-center text-sm text-[var(--mc-text-muted)]">
-          Шукаю збіги у вікі та новинах…
-        </p>
-      ) : null}
-
-      {results.length > 0 ? (
-        <div className="mx-auto mt-4 grid max-w-2xl gap-3 text-left">
-          {results.map((result) => (
-            <Link
-              key={result.href}
-              href={`${result.href}?q=${encodeURIComponent(query.trim())}`}
-              onClick={() => {
-                void trackConfirmedQuery(query);
-              }}
-              className="lc-focus-ring mc-slot block px-4 py-3 transition-[filter] hover:brightness-110"
-            >
-              <div className="text-sm font-semibold text-[var(--mc-text)]">{result.title}</div>
-              {result.snippet ? (
-                <p className="mt-1 text-sm leading-relaxed text-[var(--mc-text-muted)]">
-                  {result.snippet}
-                </p>
-              ) : null}
-            </Link>
-          ))}
         </div>
       ) : null}
 
+      {loading ? (
+        <p className="mt-4 text-sm text-[var(--mc-text-muted)]">Шукаю…</p>
+      ) : null}
+
+      {results.length > 0 ? (
+        <ul className="mt-4 divide-y divide-[var(--mc-border-card)] border border-[var(--mc-border-card)]">
+          {results.map((result) => (
+            <li key={result.href}>
+              <Link
+                href={`${result.href}?q=${encodeURIComponent(query.trim())}`}
+                onClick={() => {
+                  void trackConfirmedQuery(query);
+                }}
+                className={cn(
+                  "lc-focus-ring block px-3 py-3 transition-colors",
+                  "hover:bg-[color-mix(in_srgb,#fff_4%,transparent)]",
+                )}
+              >
+                <div className="text-sm font-semibold text-[var(--mc-text)]">
+                  {result.title}
+                </div>
+                {result.snippet ? (
+                  <p className="mt-1 line-clamp-2 text-sm leading-relaxed text-[var(--mc-text-muted)]">
+                    {result.snippet}
+                  </p>
+                ) : null}
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+
       {showEmpty ? (
-        <p className="mt-4 text-center text-sm text-[var(--mc-text-muted)]">
+        <p className="mt-4 text-sm text-[var(--mc-text-muted)]">
           Нічого не знайдено. Спробуй коротший або точніший запит.
         </p>
       ) : null}

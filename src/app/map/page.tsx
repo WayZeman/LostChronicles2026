@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { ExternalLink, Map as MapIcon } from "lucide-react";
 
 import { lcPageContainerClass, lcPageMainMapClass } from "@/components/site/lc-page-shell";
@@ -10,7 +11,7 @@ const DEFAULT_MAP_URL =
 
 export const metadata: Metadata = {
   title: "Мапа — Lost Chronicles",
-  description: "Інтерактивна мапа світу сервера (BlueMap).",
+  description: "Мапа світу сервера Lost Chronicles (BlueMap).",
 };
 
 export default function MapPage() {
@@ -24,10 +25,20 @@ export default function MapPage() {
             <h2 className="lc-section-title text-xl uppercase md:text-2xl">
               Перейти до карти
             </h2>
-            <p className="mt-3 w-full max-w-lg text-sm leading-relaxed text-[var(--mc-text-muted)] md:text-base">
-              Відкрийте інтерактивну мапу світу сервера.
-            </p>
-            <div className="mt-8 md:mt-10">
+
+            <div className="relative mt-5 w-full max-w-2xl overflow-hidden md:mt-6">
+              <Image
+                src="/map-hero.png?v=1"
+                alt=""
+                width={1024}
+                height={576}
+                className="h-auto w-full select-none"
+                priority
+                unoptimized
+              />
+            </div>
+
+            <div className="mt-6 md:mt-8">
               <a
                 href={mapUrl}
                 target="_blank"

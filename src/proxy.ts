@@ -2,26 +2,36 @@ import { NextRequest, NextResponse } from "next/server";
 import { authRequiredPath, buildOAuthNextFromPath } from "@/lib/auth-paths";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth-session";
 
+/** Створення пропозиції — лише для авторизованих. Перегляд вікі/пропозицій — публічний. */
 function isAuthRequiredPath(pathname: string): boolean {
-  return (
-    pathname === "/proposals" ||
-    pathname.startsWith("/proposals/") ||
-    pathname === "/wiki" ||
-    pathname.startsWith("/wiki/")
-  );
+  return pathname === "/proposals/new";
+}
+
+/** У local — без кешу, щоб UI-правки видно одразу після refresh. */
+function withDevNoStore(response: NextResponse): NextResponse {
+  if (process.env.NODE_ENV !== "production") {
+    response.headers.set(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, max-age=0",
+    );
+    response.headers.set("Pragma", "no-cache");
+    response.headers.set("Expires", "0");
+  }
+  return response;
 }
 
 export default async function proxy(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
+
   if (!isAuthRequiredPath(pathname)) {
-    return NextResponse.next();
+    return withDevNoStore(NextResponse.next());
   }
 
   const token = req.cookies.get(SESSION_COOKIE)?.value;
   if (token) {
     const session = await verifySessionToken(token);
     if (session) {
-      return NextResponse.next();
+      return withDevNoStore(NextResponse.next());
     }
   }
 
@@ -30,5 +40,7 @@ export default async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/proposals", "/proposals/:path*", "/wiki", "/wiki/:path*"],
+  matcher: [
+    "/((?!_next/static|_next/webpack-hmr|_next/image|favicon.ico).*)",
+  ],
 };

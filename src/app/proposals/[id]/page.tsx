@@ -130,12 +130,6 @@ export default function ProposalDetailPage() {
       const res = await fetch(`/api/proposals/${id}`, {
         credentials: "include",
       });
-      if (res.status === 401) {
-        window.location.assign(
-          `/auth-required?next=${encodeURIComponent(`/proposals/${id}`)}`,
-        );
-        return;
-      }
       if (res.status === 404) {
         setNotFound(true);
         setProposal(null);
@@ -512,7 +506,13 @@ export default function ProposalDetailPage() {
 
               {!me && open ? (
                 <p className="text-center text-xs text-[var(--mc-text-muted)]">
-                  Потрібен Discord, щоб проголосувати
+                  Щоб проголосувати,{" "}
+                  <a
+                    href={`/auth-required?next=${encodeURIComponent(`/proposals/${id}`)}`}
+                    className="font-bold text-[var(--mc-net-green)] underline-offset-2 hover:underline"
+                  >
+                    увійди
+                  </a>
                 </p>
               ) : null}
             </section>

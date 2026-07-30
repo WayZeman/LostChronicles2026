@@ -28,3 +28,7 @@ export function buildYoutubeEmbedSrc(
 export function buildYoutubeWatchUrl(videoId: string): string {
   return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
 }
+
+export function buildYoutubeShortsUrl(videoId: string): string {
+  return `https://www.youtube.com/shorts/${encodeURIComponent(videoId)}`;
+}

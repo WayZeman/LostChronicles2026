@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { ExternalLink, HeartHandshake } from "lucide-react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
@@ -8,21 +9,23 @@ const DEFAULT_JAR_URL = "https://send.monobank.ua/jar/8f7nV8DopG";
 const CATALOG_VOTE_LINKS = [
   {
     href: "https://minecraft.org.ua/minecraft-servers/Lost-Chronicles/3210",
-    label: "Minecraft.org.ua (ОУМ)",
+    label: "Minecraft.org.ua",
+    shortLabel: "ОУМ",
   },
   {
     href: "https://monicore.com.ua/server/281/lostchronicles",
     label: "MoniCore",
+    shortLabel: "MoniCore",
   },
   {
     href: "https://allmc.in.ua/play-lost-chronicles-site",
     label: "AllMC.in.ua",
+    shortLabel: "AllMC",
   },
 ] as const;
 
 /**
- * Блок підтримки через monobank (без прогрес-бару).
- * Посилання: NEXT_PUBLIC_MONO_JAR_URL або банка за замовчуванням.
+ * Підтримка сервера: ілюстрація + голоси + monobank.
  */
 export function SupportMonobankSection() {
   const jarUrl = process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() || DEFAULT_JAR_URL;
@@ -31,68 +34,76 @@ export function SupportMonobankSection() {
     <section
       className={cn(
         lcGlassPanelClass,
-        "lc-interactive-panel-static am-reveal am-delay-3 mt-10 flex flex-col items-center text-center md:mt-14",
+        "lc-interactive-panel-static am-reveal am-delay-3 mt-10 md:mt-14",
       )}
       aria-labelledby="support-mono-heading"
     >
-      <div
-        className="mc-badge flex size-12 cursor-default items-center justify-center md:size-14"
-        aria-hidden
-      >
-        <HeartHandshake className="size-6 md:size-7" strokeWidth={2.25} />
+      <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] sm:gap-5 md:gap-6">
+        {/* Мобільний: зверху; desktop: справа */}
+        <div className="relative mx-auto flex w-full max-w-[16rem] items-center justify-center order-1 sm:order-2 sm:mx-0 sm:max-w-none sm:self-center">
+          <Image
+            src="/support-gold-pile.png?v=1"
+            alt=""
+            width={989}
+            height={598}
+            className="h-auto w-full select-none drop-shadow-[0_10px_20px_rgba(0,0,0,0.45)]"
+            priority={false}
+            unoptimized
+          />
+        </div>
+
+        <div className="order-2 flex flex-col sm:order-1">
+          <h2
+            id="support-mono-heading"
+            className="lc-section-title text-center text-lg uppercase sm:text-left md:text-xl"
+          >
+            Підтримка сервера
+          </h2>
+          <p className="mt-2 text-center text-sm text-[var(--mc-ink-subtle)] sm:text-left">
+            Голос у каталогах або донат — обидва варіанти допомагають.
+          </p>
+
+          <p className="mt-4 text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)] sm:mt-5 sm:text-left">
+            Голосування
+          </p>
+          <ul className="mt-2 grid grid-cols-3 gap-1.5 sm:mt-2.5 sm:grid-cols-1 sm:gap-2">
+            {CATALOG_VOTE_LINKS.map(({ href, label, shortLabel }) => (
+              <li key={href} className="min-w-0">
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={label}
+                  className={cn(
+                    "lc-focus-ring mc-slot flex items-center justify-center gap-1",
+                    "min-h-9 px-1.5 py-1.5 text-[11px] leading-tight sm:min-h-11 sm:justify-between sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm",
+                    "text-[var(--mc-text)] transition-[background-color,color] duration-150",
+                    "hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]",
+                  )}
+                >
+                  <span className="truncate sm:hidden">{shortLabel}</span>
+                  <span className="hidden truncate sm:inline">{label}</span>
+                  <ExternalLink
+                    className="hidden size-3 shrink-0 opacity-40 sm:block"
+                    aria-hidden
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
+
+          <a
+            href={jarUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lc-focus-ring lc-btn-accent mt-4 w-full min-h-11 px-6 py-2.5 text-sm sm:mt-5"
+          >
+            <HeartHandshake className="size-4 shrink-0" aria-hidden />
+            Підтримати в monobank
+            <ExternalLink className="size-3.5 shrink-0 opacity-70" aria-hidden />
+          </a>
+        </div>
       </div>
-
-      <p className="mt-4 text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mc-grass-bright)]">
-        Підтримка
-      </p>
-
-      <h2
-        id="support-mono-heading"
-        className="lc-section-title mt-2 max-w-md text-xl leading-snug md:text-2xl"
-      >
-        Тримаємо онлайн разом
-      </h2>
-
-      <div
-        className="mt-6 w-full max-w-md text-left"
-        aria-labelledby="support-catalog-vote-heading"
-      >
-        <p
-          id="support-catalog-vote-heading"
-          className="text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-text-subtle)]"
-        >
-          Голосування
-        </p>
-        <ul className="mt-2 divide-y divide-[var(--mc-border-card)] border-y border-[var(--mc-border-card)]">
-          {CATALOG_VOTE_LINKS.map(({ href, label }) => (
-            <li key={href}>
-              <a
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className={cn(
-                  "lc-focus-ring flex items-center justify-between gap-2 py-2.5",
-                  "text-sm text-[var(--mc-text)] transition-colors hover:text-[var(--mc-grass-bright)]",
-                )}
-              >
-                <span className="min-w-0">{label}</span>
-                <ExternalLink className="size-3.5 shrink-0 opacity-40" aria-hidden />
-              </a>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <a
-        href={jarUrl}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="lc-focus-ring lc-btn-accent mt-7 w-full max-w-md min-h-[3rem] px-8 py-3 text-base"
-      >
-        <HeartHandshake className="size-5 shrink-0" aria-hidden />
-        Підтримати в monobank
-        <ExternalLink className="size-4 shrink-0 opacity-70" aria-hidden />
-      </a>
     </section>
   );
 }

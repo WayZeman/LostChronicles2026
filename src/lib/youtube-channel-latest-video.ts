@@ -63,7 +63,17 @@ export type YoutubeFeedEntry = {
   title: string;
   description: string;
   publishedMs: number;
+  /** У RSS для Shorts alternate link вказує на /shorts/{id}. */
+  isShort: boolean;
 };
+
+function entryLooksLikeShort(block: string, title: string, description: string): boolean {
+  if (/href=["']https?:\/\/(?:www\.)?youtube\.com\/shorts\//i.test(block)) {
+    return true;
+  }
+  const hay = `${title}\n${description}`.toLowerCase();
+  return hay.includes("#shorts") || /\bshorts\b/.test(hay);
+}
 
 function parseFeedEntries(xml: string, maxEntries: number): YoutubeFeedEntry[] {
   const out: YoutubeFeedEntry[] = [];
@@ -86,6 +96,7 @@ function parseFeedEntries(xml: string, maxEntries: number): YoutubeFeedEntry[] {
       title,
       description,
       publishedMs: Number.isFinite(publishedMs) ? publishedMs : 0,
+      isShort: entryLooksLikeShort(block, title, description),
     });
   }
   return out;
@@ -146,4 +157,12 @@ export async function getLatestHeroYoutubeVideoId(): Promise<string> {
   if (entries.length === 0) return fallback;
   const primary = pickHeroVideoIdFromEntries(entries);
   return primary ?? fallback;
+}
+
+/**
+ * Останній YouTube Short з RSS каналу (link на /shorts/… або #shorts у тексті).
+ */
+export async function getLatestYoutubeShort(): Promise<YoutubeFeedEntry | null> {
+  const entries = await getYoutubeChannelFeedEntries(25);
+  return entries.find((e) => e.isShort && isLikelyYoutubeVideoId(e.id)) ?? null;
 }

@@ -10,7 +10,7 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
     return (
       <div
         className={cn(
-          "w-full overflow-hidden mc-slot",
+          "hidden w-full overflow-hidden mc-slot sm:block",
           "h-[220px] md:h-[300px] lg:h-[360px]",
         )}
       >
@@ -28,7 +28,7 @@ function ChartLoading({ embedded }: { embedded: boolean }) {
       <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
         Моніторинг онлайну сервера
       </h3>
-      <div className="relative mt-4 h-[220px] w-full overflow-hidden md:h-[300px] lg:h-[360px]">
+      <div className="relative mt-4 hidden h-[220px] w-full overflow-hidden sm:block md:h-[300px] lg:h-[360px]">
         <OnlineChartSkeleton className="h-full min-h-0" />
       </div>
     </div>
