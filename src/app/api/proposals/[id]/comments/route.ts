@@ -18,12 +18,14 @@ function mapCommentToJson(row: {
   created_at: Date;
   author_username: string;
   author_avatar: string | null;
+  author_custom_avatar: string | null;
   author_discord_id: string | null;
 }) {
   const avatarUrl = resolveUserAvatarUrl({
     username: row.author_username,
     avatar: row.author_avatar,
     discord_id: row.author_discord_id,
+    custom_avatar: row.author_custom_avatar,
   });
   return {
     id: row.id,

@@ -4,7 +4,9 @@ import {
   createProposalRecord,
   getUserPublicById,
   listProposalsForUser,
+  userHasGameNickname,
 } from "@/lib/proposals-queries";
+import { userDisplayName } from "@/lib/game-nickname";
 import {
   notifyProposalVotingOpenedDiscord,
   notifyProposalVotingOpenedTelegram,
@@ -73,6 +75,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!(await userHasGameNickname(userId))) {
+      return NextResponse.json(
+        {
+          error: "Спочатку вкажи ігровий нікнейм у профілі.",
+          code: "needs_nickname",
+        },
+        { status: 403 },
+      );
+    }
+
     const endsAt = new Date();
     endsAt.setUTCDate(endsAt.getUTCDate() + durationDays);
 
@@ -84,7 +96,9 @@ export async function POST(req: Request) {
     });
 
     const author = await getUserPublicById(userId);
-    const authorUsername = author?.username ?? "Unknown";
+    const authorUsername = author
+      ? userDisplayName(author)
+      : "Unknown";
 
     await Promise.all([
       notifyProposalVotingOpenedDiscord({

@@ -3,10 +3,42 @@ import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import {
   getProposalForUser,
   isProposalVotingOpen,
+  listProposalVoters,
   setUserVote,
+  userHasGameNickname,
 } from "@/lib/proposals-queries";
+import { resolveUserAvatarUrl } from "@/lib/user-avatar";
 
 export const dynamic = "force-dynamic";
+
+async function votersPayload(proposalId: number) {
+  const rows = await listProposalVoters(proposalId);
+  const yes_voters: {
+    id: number;
+    displayName: string;
+    avatarUrl: string;
+  }[] = [];
+  const no_voters: {
+    id: number;
+    displayName: string;
+    avatarUrl: string;
+  }[] = [];
+  for (const r of rows) {
+    const voter = {
+      id: r.user_id,
+      displayName: r.display_name,
+      avatarUrl: resolveUserAvatarUrl({
+        username: r.display_name,
+        avatar: r.avatar,
+        discord_id: r.discord_id,
+        custom_avatar: r.custom_avatar,
+      }),
+    };
+    if (r.vote === 1) yes_voters.push(voter);
+    else no_voters.push(voter);
+  }
+  return { yes_voters, no_voters };
+}
 
 export async function POST(
   req: Request,
@@ -38,6 +70,16 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    if (!(await userHasGameNickname(userId))) {
+      return NextResponse.json(
+        {
+          error: "Спочатку вкажи ігровий нікнейм у профілі.",
+          code: "needs_nickname",
+        },
+        { status: 403 },
+      );
+    }
+
     const p = await getProposalForUser(id, userId);
     if (!p) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
@@ -55,10 +97,13 @@ export async function POST(
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
 
+    const voters = await votersPayload(id);
+
     return NextResponse.json({
       yes_votes: updated.yes_votes,
       no_votes: updated.no_votes,
       user_vote: updated.user_vote,
+      ...voters,
     });
   } catch {
     return NextResponse.json(

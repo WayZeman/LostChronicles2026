@@ -1,12 +1,13 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
 import { ProposalVoteBar } from "@/components/proposals/ProposalVoteBar";
 import { ProposalVoteButtons } from "@/components/proposals/ProposalVoteButtons";
+import { ProposalVoters } from "@/components/proposals/ProposalVoters";
+import type { ProposalVoter } from "@/components/proposals/ProposalVoters";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -30,9 +31,15 @@ type ProposalDetail = {
   user_vote: number | null;
   voting_open: boolean;
   is_author?: boolean;
+  yes_voters?: ProposalVoter[];
+  no_voters?: ProposalVoter[];
 };
 
-type Me = { id: number } | null;
+type Me = {
+  id: number;
+  needsNickname?: boolean;
+  gameNickname?: string | null;
+} | null;
 
 type ProposalComment = {
   id: number;
@@ -161,6 +168,8 @@ export default function ProposalDetailPage() {
         user_vote: number | null;
         voting_open: boolean;
         ends_at: string;
+        yes_voters?: ProposalVoter[];
+        no_voters?: ProposalVoter[];
       };
       setProposal((prev) =>
         prev
@@ -172,6 +181,8 @@ export default function ProposalDetailPage() {
               user_vote: s.user_vote,
               voting_open: s.voting_open,
               ends_at: s.ends_at,
+              yes_voters: s.yes_voters ?? prev.yes_voters,
+              no_voters: s.no_voters ?? prev.no_voters,
             }
           : prev,
       );
@@ -192,7 +203,13 @@ export default function ProposalDetailPage() {
       void (async () => {
         try {
           const res = await fetch("/api/auth/me", { credentials: "include" });
-          const data = (await res.json()) as { user: { id: number } | null };
+          const data = (await res.json()) as {
+            user: {
+              id: number;
+              needsNickname?: boolean;
+              gameNickname?: string | null;
+            } | null;
+          };
           setMe(data.user);
         } catch {
           setMe(null);
@@ -253,6 +270,12 @@ export default function ProposalDetailPage() {
       );
       return;
     }
+    if (me.needsNickname) {
+      window.location.assign(
+        `/profile/setup?next=${encodeURIComponent(`/proposals/${id}`)}`,
+      );
+      return;
+    }
     setVoteBusy(true);
     setError(null);
     try {
@@ -266,9 +289,18 @@ export default function ProposalDetailPage() {
         yes_votes?: number;
         no_votes?: number;
         user_vote?: number | null;
+        yes_voters?: ProposalVoter[];
+        no_voters?: ProposalVoter[];
         error?: string;
+        code?: string;
       };
       if (!res.ok) {
+        if (data.code === "needs_nickname") {
+          window.location.assign(
+            `/profile/setup?next=${encodeURIComponent(`/proposals/${id}`)}`,
+          );
+          return;
+        }
         setError(data.error || "Не вдалося проголосувати");
         setVoteBusy(false);
         return;
@@ -281,6 +313,8 @@ export default function ProposalDetailPage() {
               no_votes: data.no_votes ?? prev.no_votes,
               user_vote:
                 data.user_vote !== undefined ? data.user_vote : prev.user_vote,
+              yes_voters: data.yes_voters ?? prev.yes_voters,
+              no_voters: data.no_voters ?? prev.no_voters,
             }
           : prev,
       );
@@ -515,6 +549,23 @@ export default function ProposalDetailPage() {
                   </a>
                 </p>
               ) : null}
+
+              {me?.needsNickname && open ? (
+                <p className="text-center text-xs text-[var(--mc-text-muted)]">
+                  Щоб голос був публічним,{" "}
+                  <a
+                    href={`/profile/setup?next=${encodeURIComponent(`/proposals/${id}`)}`}
+                    className="font-bold text-[var(--mc-net-green)] underline-offset-2 hover:underline"
+                  >
+                    вкажи ігровий нік
+                  </a>
+                </p>
+              ) : null}
+
+              <ProposalVoters
+                yesVoters={proposal.yes_voters ?? []}
+                noVoters={proposal.no_voters ?? []}
+              />
             </section>
 
             {proposal.is_author ? (
@@ -652,13 +703,13 @@ export default function ProposalDetailPage() {
                   key={c.id}
                   className="flex gap-2.5 rounded-lg border border-white/[0.06] bg-black/20 p-2.5 sm:gap-3 sm:p-4"
                 >
-                  <Image
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
                     src={c.avatarUrl}
                     alt=""
                     width={40}
                     height={40}
-                    className="size-9 shrink-0 rounded-full border border-[var(--mc-border)] sm:size-10"
-                    unoptimized={c.avatarUrl.endsWith(".gif")}
+                    className="size-9 shrink-0 rounded-full border border-[var(--mc-border)] object-cover sm:size-10"
                   />
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">

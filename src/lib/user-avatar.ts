@@ -1,11 +1,21 @@
 import { discordCdnAvatarUrl } from "@/lib/discord-oauth";
 
-/** Єдиний URL аватара для Discord / Google / fallback. */
+/** Єдиний URL аватара: custom → OAuth URL/Discord CDN → fallback. */
 export function resolveUserAvatarUrl(u: {
   username: string;
   avatar: string | null;
   discord_id: string | null;
+  custom_avatar?: string | null;
 }): string {
+  const custom = u.custom_avatar?.trim() ?? "";
+  if (
+    custom.startsWith("https://") ||
+    custom.startsWith("http://") ||
+    custom.startsWith("data:image/")
+  ) {
+    return custom;
+  }
+
   const raw = u.avatar?.trim() ?? "";
   if (raw.startsWith("https://") || raw.startsWith("http://")) {
     return raw;

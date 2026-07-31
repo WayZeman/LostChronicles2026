@@ -4,9 +4,40 @@ import {
   deleteProposalByAuthor,
   getProposalForUser,
   isProposalVotingOpen,
+  listProposalVoters,
 } from "@/lib/proposals-queries";
+import { resolveUserAvatarUrl } from "@/lib/user-avatar";
 
 export const dynamic = "force-dynamic";
+
+async function votersPayload(proposalId: number) {
+  const rows = await listProposalVoters(proposalId);
+  const yes_voters: {
+    id: number;
+    displayName: string;
+    avatarUrl: string;
+  }[] = [];
+  const no_voters: {
+    id: number;
+    displayName: string;
+    avatarUrl: string;
+  }[] = [];
+  for (const r of rows) {
+    const voter = {
+      id: r.user_id,
+      displayName: r.display_name,
+      avatarUrl: resolveUserAvatarUrl({
+        username: r.display_name,
+        avatar: r.avatar,
+        discord_id: r.discord_id,
+        custom_avatar: r.custom_avatar,
+      }),
+    };
+    if (r.vote === 1) yes_voters.push(voter);
+    else no_voters.push(voter);
+  }
+  return { yes_voters, no_voters };
+}
 
 export async function GET(
   _req: Request,
@@ -24,6 +55,7 @@ export async function GET(
     if (!p) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    const voters = await votersPayload(id);
     return NextResponse.json({
       proposal: {
         id: p.id,
@@ -38,6 +70,7 @@ export async function GET(
         user_vote: p.user_vote,
         voting_open: isProposalVotingOpen(p),
         is_author: userId != null && userId === p.user_id,
+        ...voters,
       },
     });
   } catch {

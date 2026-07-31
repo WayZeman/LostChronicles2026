@@ -23,9 +23,11 @@ function ukDaysLabel(n: number): string {
 
 export default function NewProposalPage() {
   const router = useRouter();
-  const [user, setUser] = useState<{ id: number } | null | undefined>(
-    undefined,
-  );
+  const [user, setUser] = useState<
+    | { id: number; needsNickname?: boolean }
+    | null
+    | undefined
+  >(undefined);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [duration, setDuration] = useState<(typeof DURATIONS)[number]>(7);
@@ -35,12 +37,19 @@ export default function NewProposalPage() {
   const checkUser = useCallback(async () => {
     try {
       const res = await fetch("/api/auth/me", { credentials: "include" });
-      const data = (await res.json()) as { user: { id: number } | null };
+      const data = (await res.json()) as {
+        user: { id: number; needsNickname?: boolean } | null;
+      };
       setUser(data.user);
+      if (data.user?.needsNickname) {
+        router.replace(
+          `/profile/setup?next=${encodeURIComponent("/proposals/new")}`,
+        );
+      }
     } catch {
       setUser(null);
     }
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -64,8 +73,18 @@ export default function NewProposalPage() {
           durationDays: duration,
         }),
       });
-      const data = (await res.json()) as { id?: number; error?: string };
+      const data = (await res.json()) as {
+        id?: number;
+        error?: string;
+        code?: string;
+      };
       if (!res.ok) {
+        if (data.code === "needs_nickname") {
+          router.replace(
+            `/profile/setup?next=${encodeURIComponent("/proposals/new")}`,
+          );
+          return;
+        }
         setError(data.error || "Помилка збереження");
         setSubmitting(false);
         return;

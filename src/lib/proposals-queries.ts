@@ -23,6 +23,13 @@ async function ensureAuthProviderColumns(): Promise<void> {
     CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_uidx
     ON users (google_id)
   `;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS game_nickname VARCHAR(16)`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_avatar TEXT`;
+  await sql`
+    CREATE UNIQUE INDEX IF NOT EXISTS users_game_nickname_uidx
+    ON users (game_nickname)
+    WHERE game_nickname IS NOT NULL
+  `;
   authProviderColumnsEnsured = true;
 }
 
@@ -125,6 +132,7 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
 export async function listProposalsForUser(
   currentUserId: number | null,
 ): Promise<ProposalRow[]> {
+  await ensureAuthProviderColumns();
   await expireActiveProposals();
   const sql = getSql();
   const uid = currentUserId ?? 0;
@@ -137,7 +145,7 @@ export async function listProposalsForUser(
       p.status,
       p.created_at,
       p.ends_at,
-      u.username AS author_username,
+      COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
       COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
       COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes,
       (SELECT v2.vote FROM votes v2
@@ -146,7 +154,7 @@ export async function listProposalsForUser(
     FROM proposals p
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
-    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username
+    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
     ORDER BY p.created_at DESC
   `);
   return rows.map((r) => mapProposalRow(r));
@@ -156,6 +164,7 @@ export async function getProposalForUser(
   id: number,
   currentUserId: number | null,
 ): Promise<ProposalRow | null> {
+  await ensureAuthProviderColumns();
   await expireActiveProposals();
   const sql = getSql();
   const uid = currentUserId ?? 0;
@@ -168,7 +177,7 @@ export async function getProposalForUser(
       p.status,
       p.created_at,
       p.ends_at,
-      u.username AS author_username,
+      COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
       COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
       COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes,
       (SELECT v2.vote FROM votes v2
@@ -178,7 +187,7 @@ export async function getProposalForUser(
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
     WHERE p.id = ${id}
-    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username
+    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
     LIMIT 1
   `);
   if (!rows.length) return null;
@@ -236,7 +245,11 @@ export async function upsertDiscordUser(params: {
     VALUES (${params.discordId}, ${params.username}, ${params.avatar})
     ON CONFLICT (discord_id) DO UPDATE SET
       username = EXCLUDED.username,
-      avatar = EXCLUDED.avatar
+      avatar = CASE
+        WHEN users.custom_avatar IS NULL OR TRIM(users.custom_avatar) = ''
+        THEN EXCLUDED.avatar
+        ELSE users.avatar
+      END
     RETURNING id
   `);
   const id = rows[0]?.id;
@@ -255,7 +268,11 @@ export async function upsertGoogleUser(params: {
     VALUES (${params.googleId}, ${params.username}, ${params.avatarUrl})
     ON CONFLICT (google_id) DO UPDATE SET
       username = EXCLUDED.username,
-      avatar = EXCLUDED.avatar
+      avatar = CASE
+        WHEN users.custom_avatar IS NULL OR TRIM(users.custom_avatar) = ''
+        THEN EXCLUDED.avatar
+        ELSE users.avatar
+      END
     RETURNING id
   `);
   const id = rows[0]?.id;
@@ -268,11 +285,13 @@ export async function getUserPublicById(id: number): Promise<{
   avatar: string | null;
   discord_id: string | null;
   google_id: string | null;
+  game_nickname: string | null;
+  custom_avatar: string | null;
 } | null> {
   await ensureAuthProviderColumns();
   const sql = getSql();
   const rows = rowsOf(await sql`
-    SELECT id, username, avatar, discord_id, google_id
+    SELECT id, username, avatar, discord_id, google_id, game_nickname, custom_avatar
     FROM users
     WHERE id = ${id}
     LIMIT 1
@@ -291,7 +310,108 @@ export async function getUserPublicById(id: number): Promise<{
       r.google_id === null || r.google_id === undefined
         ? null
         : String(r.google_id),
+    game_nickname:
+      r.game_nickname === null || r.game_nickname === undefined
+        ? null
+        : String(r.game_nickname),
+    custom_avatar:
+      r.custom_avatar === null || r.custom_avatar === undefined
+        ? null
+        : String(r.custom_avatar),
   };
+}
+
+export async function userHasGameNickname(userId: number): Promise<boolean> {
+  const u = await getUserPublicById(userId);
+  return Boolean(u?.game_nickname?.trim());
+}
+
+/** Оновлює нік і/або кастомний аватар. null для customAvatar = не чіпати; "" = скинути. */
+export async function updateUserProfile(params: {
+  userId: number;
+  gameNickname?: string;
+  customAvatar?: string | null;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  await ensureAuthProviderColumns();
+  const sql = getSql();
+
+  if (params.gameNickname !== undefined) {
+    const nick = params.gameNickname.trim();
+    try {
+      await sql`
+        UPDATE users
+        SET game_nickname = ${nick}
+        WHERE id = ${params.userId}
+      `;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (/unique|duplicate/i.test(msg)) {
+        return { ok: false, error: "Цей нікнейм уже зайнятий." };
+      }
+      throw err;
+    }
+  }
+
+  if (params.customAvatar !== undefined) {
+    const av =
+      params.customAvatar === null || params.customAvatar === ""
+        ? null
+        : params.customAvatar;
+    await sql`
+      UPDATE users
+      SET custom_avatar = ${av}
+      WHERE id = ${params.userId}
+    `;
+  }
+
+  return { ok: true };
+}
+
+export type ProposalVoterRow = {
+  user_id: number;
+  display_name: string;
+  avatar: string | null;
+  custom_avatar: string | null;
+  discord_id: string | null;
+  vote: 0 | 1;
+};
+
+export async function listProposalVoters(
+  proposalId: number,
+): Promise<ProposalVoterRow[]> {
+  await ensureAuthProviderColumns();
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT
+      v.user_id,
+      v.vote,
+      COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS display_name,
+      u.avatar,
+      u.custom_avatar,
+      u.discord_id
+    FROM votes v
+    INNER JOIN users u ON u.id = v.user_id
+    WHERE v.proposal_id = ${proposalId}
+    ORDER BY v.created_at ASC
+  `);
+  return rows.map((r) => {
+    const voteNum = num(r.vote);
+    return {
+      user_id: num(r.user_id),
+      display_name: String(r.display_name ?? ""),
+      avatar:
+        r.avatar === null || r.avatar === undefined ? null : String(r.avatar),
+      custom_avatar:
+        r.custom_avatar === null || r.custom_avatar === undefined
+          ? null
+          : String(r.custom_avatar),
+      discord_id:
+        r.discord_id === null || r.discord_id === undefined
+          ? null
+          : String(r.discord_id),
+      vote: (voteNum === 1 ? 1 : 0) as 0 | 1,
+    };
+  });
 }
 
 export async function createProposalRecord(params: {
@@ -336,6 +456,7 @@ export type ProposalCommentRow = {
   created_at: Date;
   author_username: string;
   author_avatar: string | null;
+  author_custom_avatar: string | null;
   author_discord_id: string | null;
 };
 
@@ -350,6 +471,10 @@ function mapCommentRow(r: Record<string, unknown>): ProposalCommentRow {
       r.author_avatar === null || r.author_avatar === undefined
         ? null
         : String(r.author_avatar),
+    author_custom_avatar:
+      r.author_custom_avatar === null || r.author_custom_avatar === undefined
+        ? null
+        : String(r.author_custom_avatar),
     author_discord_id:
       r.author_discord_id === null || r.author_discord_id === undefined
         ? null
@@ -360,6 +485,7 @@ function mapCommentRow(r: Record<string, unknown>): ProposalCommentRow {
 export async function listProposalComments(
   proposalId: number,
 ): Promise<ProposalCommentRow[]> {
+  await ensureAuthProviderColumns();
   const sql = getSql();
   const rows = rowsOf(await sql`
     SELECT
@@ -367,8 +493,9 @@ export async function listProposalComments(
       c.user_id,
       c.body,
       c.created_at,
-      u.username AS author_username,
+      COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
       u.avatar AS author_avatar,
+      u.custom_avatar AS author_custom_avatar,
       u.discord_id AS author_discord_id
     FROM proposal_comments c
     INNER JOIN users u ON u.id = c.user_id
@@ -384,6 +511,7 @@ export async function addProposalComment(params: {
   userId: number;
   body: string;
 }): Promise<ProposalCommentRow | null> {
+  await ensureAuthProviderColumns();
   const sql = getSql();
   const inserted = rowsOf(await sql`
     INSERT INTO proposal_comments (proposal_id, user_id, body)
@@ -395,7 +523,11 @@ export async function addProposalComment(params: {
   if (!ins) return null;
   const uid = num(ins.user_id);
   const urows = rowsOf(await sql`
-    SELECT username, avatar, discord_id
+    SELECT
+      COALESCE(NULLIF(TRIM(game_nickname), ''), username) AS author_username,
+      avatar,
+      custom_avatar,
+      discord_id
     FROM users
     WHERE id = ${uid}
     LIMIT 1
@@ -404,8 +536,9 @@ export async function addProposalComment(params: {
   if (!u) return null;
   return mapCommentRow({
     ...ins,
-    author_username: u.username,
+    author_username: u.author_username,
     author_avatar: u.avatar,
+    author_custom_avatar: u.custom_avatar,
     author_discord_id: u.discord_id,
   });
 }

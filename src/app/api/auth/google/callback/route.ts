@@ -15,7 +15,8 @@ import {
   fetchGoogleMe,
   googleDisplayName,
 } from "@/lib/google-oauth";
-import { upsertGoogleUser } from "@/lib/proposals-queries";
+import { upsertGoogleUser, userHasGameNickname } from "@/lib/proposals-queries";
+import { profileSetupPath } from "@/lib/profile-setup-path";
 import { getRequestOrigin } from "@/lib/site-base-url";
 
 export const dynamic = "force-dynamic";
@@ -73,7 +74,9 @@ export async function GET(req: Request) {
     const session = await signSessionToken(userId);
     const nextStored = jar.get(OAUTH_NEXT_COOKIE)?.value;
     const nextPath = sanitizeOAuthNextPath(nextStored) ?? "/proposals";
-    const res = NextResponse.redirect(`${base}${nextPath}`);
+    const needsNick = !(await userHasGameNickname(userId));
+    const dest = needsNick ? profileSetupPath(nextPath) : nextPath;
+    const res = NextResponse.redirect(`${base}${dest}`);
     clearOAuthStateCookie(res);
     clearOAuthNextCookie(res);
     res.cookies.set(SESSION_COOKIE, session, sessionCookieOptions());

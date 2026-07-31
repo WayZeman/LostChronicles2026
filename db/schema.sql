@@ -10,8 +10,16 @@ CREATE TABLE IF NOT EXISTS users (
     google_id VARCHAR(64) UNIQUE,
     username VARCHAR(100) NOT NULL,
     avatar VARCHAR(512) NULL,
+    -- Ігровий нік (Minecraft); показується в голосах / профілі
+    game_nickname VARCHAR(16),
+    -- Кастомний аватар (data URL або https); має пріоритет над OAuth avatar
+    custom_avatar TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX IF NOT EXISTS users_game_nickname_uidx
+    ON users (game_nickname)
+    WHERE game_nickname IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS proposals (
     id SERIAL PRIMARY KEY,
