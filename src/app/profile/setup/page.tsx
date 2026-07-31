@@ -5,7 +5,7 @@ import { Suspense, useEffect, useState } from "react";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
-import { notifyAuthMeChanged } from "@/components/site/UserProfileMenu";
+import { notifyAuthMeChanged } from "@/lib/auth-me-events";
 import { gameNicknameError } from "@/lib/game-nickname";
 import { sanitizeOAuthNextPath } from "@/lib/auth-paths";
 import { cn } from "@/lib/utils";

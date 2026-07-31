@@ -333,12 +333,14 @@
   }
 }
 
-body.lc-page-enter {
+body.lc-page-enter,
+.lc-page-enter {
   animation: lc-page-fade-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  body.lc-page-enter {
+  body.lc-page-enter,
+  .lc-page-enter {
     animation: none;
   }
 }

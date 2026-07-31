@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
+import { HeroAuthGreeting } from "@/components/site/HeroAuthGreeting";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPanel";
@@ -63,6 +64,8 @@ export default function Home() {
               </a>
             </div>
           </div>
+
+          <HeroAuthGreeting />
 
           {voteUrl ? (
             <div className="relative z-10 mt-5 flex flex-wrap justify-center gap-3">
