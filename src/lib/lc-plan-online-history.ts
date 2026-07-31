@@ -189,9 +189,7 @@ export function slicePlanGraphSeriesForPeriod(
     }
     if (period === "week") {
       return d.toLocaleDateString("uk-UA", {
-        weekday: "short",
         day: "numeric",
-        month: "short",
       });
     }
     if (period === "month") {

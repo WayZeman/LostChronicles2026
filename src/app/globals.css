@@ -361,6 +361,388 @@ body.lc-page-enter,
   }
 }
 
+/* ——— Інтро-шторка при запуску ——— */
+html.lc-intro-pending {
+  overflow: hidden;
+}
+
+.lc-intro-curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 250;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transform: translate3d(0, 0, 0);
+  transition: transform 0.95s cubic-bezier(0.55, 0.05, 0.25, 1);
+  will-change: transform;
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.lc-intro-curtain--lift {
+  transform: translate3d(0, -105%, 0);
+  pointer-events: none;
+}
+
+.lc-intro-curtain__bg {
+  position: absolute;
+  inset: 0;
+  background-color: #0a0a0a;
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(0, 0, 0, 0.62) 0%,
+      rgba(0, 0, 0, 0.78) 45%,
+      rgba(0, 0, 0, 0.92) 100%
+    ),
+    url("/bg-ivy-stone.jpg");
+  background-size: cover, cover;
+  background-position: center, center;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  .lc-intro-curtain__bg {
+    background-image:
+      linear-gradient(
+        180deg,
+        rgba(0, 0, 0, 0.62) 0%,
+        rgba(0, 0, 0, 0.78) 45%,
+        rgba(0, 0, 0, 0.92) 100%
+      ),
+      url("/bg-ivy-stone-portrait.jpg");
+  }
+}
+
+.lc-intro-curtain__vignette {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 42%, transparent 0%, rgba(0, 0, 0, 0.45) 100%),
+    linear-gradient(180deg, rgba(0, 0, 0, 0.2), transparent 28%, transparent 72%, rgba(0, 0, 0, 0.55));
+  pointer-events: none;
+}
+
+.lc-intro-curtain__content {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  width: min(100%, 28rem);
+  flex-direction: column;
+  align-items: center;
+  padding: 1.25rem;
+  text-align: center;
+}
+
+.lc-intro-curtain__logo-wrap {
+  width: min(100%, 22rem);
+}
+
+.lc-intro-curtain__logo {
+  height: auto;
+  width: 100%;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.65));
+  user-select: none;
+}
+
+.lc-intro-curtain__hint {
+  margin-top: 1.25rem;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--mc-text-muted);
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.7);
+  animation: lc-intro-hint-pulse 1.8s ease-in-out infinite;
+}
+
+.lc-intro-curtain__bar {
+  position: relative;
+  margin-top: 0.9rem;
+  width: min(14rem, 70vw);
+  height: 1.15rem;
+  overflow: hidden;
+  background: #1a1a1a !important;
+}
+
+.lc-intro-curtain__bar-fill {
+  position: absolute;
+  inset: 3px auto 3px 3px;
+  width: 38%;
+  background: linear-gradient(180deg, #7fff7f 0%, #55ff55 45%, #3ccf3c 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  animation: lc-intro-bar 1.35s cubic-bezier(0.45, 0, 0.2, 1) infinite;
+}
+
+.lc-intro-curtain__hem {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  height: 1.35rem;
+  border-top: 3px solid #000;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #3a2a12 0 10px,
+      #2e220e 10px 20px
+    ),
+    linear-gradient(180deg, #5a4018 0%, #2a1c0a 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.12),
+    0 -8px 24px rgba(0, 0, 0, 0.45);
+}
+
+@keyframes lc-intro-hint-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes lc-intro-bar {
+  0% {
+    transform: translateX(-10%);
+    width: 28%;
+  }
+  50% {
+    transform: translateX(95%);
+    width: 42%;
+  }
+  100% {
+    transform: translateX(210%);
+    width: 28%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-intro-curtain {
+    transition: opacity 0.25s ease;
+  }
+
+  .lc-intro-curtain--lift {
+    transform: none;
+    opacity: 0;
+  }
+
+  .lc-intro-curtain__hint,
+  .lc-intro-curtain__bar-fill {
+    animation: none !important;
+  }
+
+  .lc-intro-curtain__hint {
+    opacity: 0.8;
+  }
+}
+
+/* ——— Річниця сервера: святкова атмосфера ——— */
+html.lc-anniversary .mc-net-backdrop {
+  background-image:
+    radial-gradient(
+      ellipse 90% 55% at 50% -5%,
+      rgba(255, 214, 64, 0.28),
+      transparent 58%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(55, 38, 10, 0.48) 0%,
+      rgba(20, 14, 4, 0.35) 38%,
+      rgba(0, 0, 0, 0.82) 100%
+    ),
+    var(--mc-bg-image-overlay),
+    url("/bg-ivy-stone.jpg");
+  background-size: cover, cover, cover, cover;
+  background-position: center, center, center, center;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  html.lc-anniversary .mc-net-backdrop {
+    background-image:
+      radial-gradient(
+        ellipse 90% 55% at 50% -5%,
+        rgba(255, 214, 64, 0.28),
+        transparent 58%
+      ),
+      linear-gradient(
+        180deg,
+        rgba(55, 38, 10, 0.48) 0%,
+        rgba(20, 14, 4, 0.35) 38%,
+        rgba(0, 0, 0, 0.82) 100%
+      ),
+      var(--mc-bg-image-overlay),
+      url("/bg-ivy-stone-portrait.jpg");
+  }
+}
+
+html.lc-anniversary .lc-atmosphere-particles {
+  opacity: 0.95;
+}
+
+html.lc-anniversary .lc-bottom-nav {
+  box-shadow:
+    0 0 0 2px rgba(255, 215, 64, 0.35),
+    0 -10px 36px rgba(236, 175, 45, 0.28),
+    inset 0 1px 0 rgba(255, 248, 200, 0.12);
+}
+
+html.lc-anniversary .lc-interactive-panel-static,
+html.lc-anniversary .am-glass {
+  box-shadow:
+    0 0 0 1px rgba(255, 215, 64, 0.22),
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 248, 200, 0.06);
+}
+
+.lc-anniversary-fx {
+  pointer-events: none;
+  position: fixed;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+}
+
+.lc-anniversary-fx__wash {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(
+      ellipse 70% 45% at 50% 18%,
+      rgba(255, 214, 64, 0.14),
+      transparent 65%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 15% 70%,
+      rgba(85, 255, 85, 0.06),
+      transparent 70%
+    ),
+    radial-gradient(
+      ellipse 50% 40% at 85% 65%,
+      rgba(255, 170, 0, 0.08),
+      transparent 70%
+    );
+  animation: lc-anniversary-breathe 5.5s ease-in-out infinite;
+}
+
+.lc-anniversary-fx__glow {
+  position: absolute;
+  left: 50%;
+  width: min(48rem, 120vw);
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.lc-anniversary-fx__glow--top {
+  top: -8%;
+  height: 38%;
+  background: radial-gradient(
+    ellipse 60% 80% at 50% 20%,
+    rgba(255, 230, 120, 0.32),
+    rgba(236, 175, 45, 0.12) 42%,
+    transparent 72%
+  );
+  filter: blur(2px);
+}
+
+.lc-anniversary-fx__glow--mid {
+  top: 28%;
+  height: 40%;
+  opacity: 0.55;
+  background: radial-gradient(
+    ellipse 55% 55% at 50% 40%,
+    rgba(255, 214, 64, 0.1),
+    transparent 70%
+  );
+}
+
+.lc-anniversary-fx__confetti {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  mix-blend-mode: screen;
+  opacity: 0.9;
+}
+
+@keyframes lc-anniversary-breathe {
+  0%,
+  100% {
+    opacity: 0.7;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+
+.lc-anniversary-note {
+  text-shadow: 0 0 18px rgba(255, 214, 64, 0.25);
+}
+
+.lc-anniversary-note__years {
+  text-shadow:
+    1px 1px 0 rgba(0, 0, 0, 0.7),
+    0 0 14px rgba(255, 214, 64, 0.45);
+}
+
+.lc-intro-curtain--anniversary .lc-intro-curtain__vignette {
+  background:
+    radial-gradient(
+      ellipse 75% 60% at 50% 36%,
+      rgba(255, 214, 64, 0.28) 0%,
+      rgba(255, 170, 0, 0.1) 35%,
+      transparent 62%
+    ),
+    radial-gradient(ellipse 70% 55% at 50% 42%, transparent 0%, rgba(0, 0, 0, 0.5) 100%),
+    linear-gradient(180deg, rgba(40, 24, 4, 0.35), transparent 30%, transparent 70%, rgba(0, 0, 0, 0.6));
+}
+
+.lc-intro-curtain--anniversary .lc-intro-curtain__hint {
+  color: var(--mc-menu-yellow);
+  letter-spacing: 0.1em;
+  text-shadow:
+    1px 1px 0 rgba(0, 0, 0, 0.75),
+    0 0 16px rgba(255, 214, 64, 0.45);
+}
+
+.lc-intro-curtain--anniversary .lc-intro-curtain__bar-fill {
+  background: linear-gradient(180deg, #fff3a0 0%, #ffff55 40%, #ecaf2d 100%);
+  box-shadow: 0 0 10px rgba(255, 214, 64, 0.55);
+}
+
+.lc-intro-curtain--anniversary .lc-intro-curtain__hem {
+  background:
+    repeating-linear-gradient(
+      90deg,
+      #6b4e14 0 10px,
+      #4a3510 10px 20px
+    ),
+    linear-gradient(180deg, #c9a227 0%, #5a4010 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 200, 0.28),
+    0 -10px 28px rgba(236, 175, 45, 0.35);
+}
+
+.lc-intro-curtain--anniversary .lc-intro-curtain__logo {
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.65))
+    drop-shadow(0 0 22px rgba(255, 214, 64, 0.35));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-anniversary-fx__wash {
+    animation: none !important;
+    opacity: 0.85;
+  }
+
+  .lc-anniversary-fx__confetti {
+    display: none !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   body.lc-page-enter,
   .lc-page-enter {

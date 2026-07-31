@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { readClientNetworkHints } from "@/lib/client-network";
+import { getServerAgeParts, isServerAnniversary } from "@/lib/lc-server-age";
 
 type Particle = {
   x: number;
@@ -25,12 +26,27 @@ function fadeFromBottom(y: number, screenH: number): number {
   return t * t * (3 - 2 * t);
 }
 
-function initParticles(count: number, w: number, h: number): Particle[] {
+function initParticles(
+  count: number,
+  w: number,
+  h: number,
+  festive: boolean,
+): Particle[] {
   const out: Particle[] = [];
   for (let i = 0; i < count; i++) {
-    const yellow = Math.random() < 0.2;
+    const yellow = festive ? Math.random() < 0.72 : Math.random() < 0.2;
     const roll = Math.random();
-    const glowTier: 0 | 1 | 2 = roll < 0.55 ? 0 : roll < 0.82 ? 1 : 2;
+    const glowTier: 0 | 1 | 2 = festive
+      ? roll < 0.35
+        ? 0
+        : roll < 0.72
+          ? 1
+          : 2
+      : roll < 0.55
+        ? 0
+        : roll < 0.82
+          ? 1
+          : 2;
     const baseA =
       glowTier === 2
         ? 0.38 + Math.random() * 0.42
@@ -47,10 +63,12 @@ function initParticles(count: number, w: number, h: number): Particle[] {
       x: Math.random() * w,
       // Старт у нижній половині / під екраном — рух лише вгору
       y: h * (0.48 + Math.random() * 0.62),
-      vx: (Math.random() - 0.5) * 0.22,
-      vy: -0.14 - Math.random() * 0.52,
-      r,
-      baseA,
+      vx: (Math.random() - 0.5) * (festive ? 0.32 : 0.22),
+      vy: festive
+        ? -0.2 - Math.random() * 0.62
+        : -0.14 - Math.random() * 0.52,
+      r: festive ? r * 1.15 : r,
+      baseA: festive ? Math.min(1, baseA * 1.25) : baseA,
       phase: Math.random() * Math.PI * 2,
       yellow,
       glowTier,
@@ -75,6 +93,9 @@ export function AtmosphereParticles() {
     ) {
       return;
     }
+
+    const festive =
+      isServerAnniversary() && getServerAgeParts().years >= 1;
 
     const el = ref.current;
     if (!el) return;
@@ -102,11 +123,14 @@ export function AtmosphereParticles() {
       c.style.height = `${h}px`;
       draw.setTransform(dprCap, 0, 0, dprCap, 0, 0);
 
-      const base = Math.min(200, Math.max(72, Math.floor((w * h) / 12500)));
+      const base = Math.min(
+        festive ? 320 : 200,
+        Math.max(festive ? 120 : 72, Math.floor((w * h) / (festive ? 8200 : 12500))),
+      );
       const light =
         isConstrained || narrow || effectiveType === "3g" ? 0.42 : 1;
-      const count = Math.max(36, Math.floor(base * light));
-      particles = initParticles(count, w, h);
+      const count = Math.max(festive ? 64 : 36, Math.floor(base * light));
+      particles = initParticles(count, w, h, festive);
     }
 
     function tick(t: number) {

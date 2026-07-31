@@ -90,9 +90,7 @@ function syntheticSeries(period: Period, currentOnline: number): {
     for (let i = 6; i >= 0; i--) {
       const d = new Date(now);
       d.setDate(d.getDate() - i);
-      labels.push(
-        d.toLocaleDateString("uk-UA", { weekday: "short", day: "numeric" }),
-      );
+      labels.push(d.toLocaleDateString("uk-UA", { day: "numeric" }));
       values.push(base);
     }
   } else if (period === "month") {

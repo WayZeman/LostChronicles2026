@@ -22,6 +22,7 @@ import {
 import { Line } from "react-chartjs-2";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { OnlineChartSkeleton } from "@/components/site/OnlineChartSkeleton";
+import { ServerAgeCounter } from "@/components/site/ServerAgeCounter";
 import { cn } from "@/lib/utils";
 
 ChartJS.register(
@@ -604,42 +605,15 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
         </h3>
       ) : null}
 
-      {payload != null && payload.liveOnline != null ? (
-        payload.liveProbe === "api-offline" ? (
-          <p
-            className={cn(
-              "text-center text-sm font-semibold text-[var(--mc-text-muted)] md:text-base",
-              embedded ? "mt-0" : "mt-2",
-            )}
-          >
-            Сервер зараз офлайн.
-          </p>
-        ) : payload.liveOnline === 0 ? (
-          <p
-            className={cn(
-              "text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base",
-              embedded ? "mt-0" : "mt-2",
-            )}
-          >
-            Зараз нікого немає онлайн.
-          </p>
-        ) : (
-          <>
-            <p
-              className={cn(
-                "text-center text-sm font-semibold text-[var(--mc-net-green)] md:text-base",
-                embedded ? "mt-0" : "mt-2",
-              )}
-            >
-              Зараз онлайн:{" "}
-              <span className="tabular-nums">{payload.liveOnline}</span>{" "}
-              {ukPlayersWord(payload.liveOnline)}
-            </p>
-            {payload.livePlayerNames && payload.livePlayerNames.length > 0 ? (
-              <PlayerNamesStrip names={payload.livePlayerNames} />
-            ) : null}
-          </>
-        )
+      <ServerAgeCounter className={embedded ? "mt-0" : "mt-2"} />
+
+      {payload != null &&
+      payload.liveOnline != null &&
+      payload.liveProbe !== "api-offline" &&
+      payload.liveOnline > 0 &&
+      payload.livePlayerNames &&
+      payload.livePlayerNames.length > 0 ? (
+        <PlayerNamesStrip names={payload.livePlayerNames} />
       ) : null}
 
       <div className="relative mt-4 hidden h-[220px] w-full overflow-hidden sm:block md:h-[300px] lg:h-[360px]">

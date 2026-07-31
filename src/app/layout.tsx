@@ -4,8 +4,10 @@ import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
+import { AnniversaryAtmosphere } from "@/components/site/AnniversaryAtmosphere";
 import { RouteEnter } from "@/components/site/RouteEnter";
 import { SiteCursor } from "@/components/site/SiteCursor";
+import { SiteIntroCurtain } from "@/components/site/SiteIntroCurtain";
 import { SiteJsonLd } from "@/components/site/SiteJsonLd";
 import {
   LC_SEO_DESCRIPTION_SHORT,
@@ -105,6 +107,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://mc-heads.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://ely.by" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
+        <link rel="preload" as="image" href="/lc-logo-hero-v2.png" />
+        <link rel="preload" as="image" href="/bg-ivy-stone.jpg" />
         <link
           rel="preload"
           as="image"
@@ -115,12 +119,19 @@ export default function RootLayout({
           as="image"
           href="/server-status-offline.png?v=8"
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `document.documentElement.classList.add('lc-intro-pending');`,
+          }}
+        />
       </head>
       <body
         className={`${notoSans.variable} am-bg relative flex min-h-screen flex-col antialiased`}
       >
         <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />
+        <SiteIntroCurtain />
+        <AnniversaryAtmosphere />
         <div className="mc-net-backdrop" aria-hidden>
           <div className="mc-bg-blob-layer">
             <span className="mc-bg-blob mc-bg-blob-1" />
