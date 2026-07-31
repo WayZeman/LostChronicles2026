@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
+import { FaqRichEditor } from "@/components/admin/FaqRichEditor";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -9,7 +11,7 @@ import { cn } from "@/lib/utils";
 
 type Tab = "faq" | "connect" | "support" | "admins";
 
-type FaqDraft = { question: string; answer_html: string };
+type FaqDraft = { key: string; question: string; answer_html: string };
 
 type ConnectDraft = {
   javaIp: string;
@@ -32,6 +34,10 @@ type AdminUser = {
   game_nickname: string | null;
   role: "user" | "admin";
 };
+
+function newFaqKey(): string {
+  return `faq-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
 
 export function AdminPanelClient() {
   const [tab, setTab] = useState<Tab>("faq");
@@ -78,6 +84,7 @@ export function AdminPanelClient() {
         };
         setFaq(
           (d.items ?? []).map((i) => ({
+            key: newFaqKey(),
             question: i.question,
             answer_html: i.answer_html,
           })),
@@ -112,19 +119,34 @@ export function AdminPanelClient() {
     setErr(null);
     setMsg(null);
     try {
+      const payload = faq.map(({ question, answer_html }) => ({
+        question,
+        answer_html,
+      }));
       const res = await fetch("/api/admin/faq", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: faq }),
+        body: JSON.stringify({ items: payload }),
       });
-      const d = (await res.json()) as { error?: string; items?: FaqDraft[] };
+      const d = (await res.json()) as {
+        error?: string;
+        items?: { question: string; answer_html: string }[];
+      };
       if (!res.ok) {
         setErr(d.error || "Помилка збереження FAQ");
         setBusy(false);
         return;
       }
-      if (d.items) setFaq(d.items);
+      if (d.items) {
+        setFaq(
+          d.items.map((i, idx) => ({
+            key: faq[idx]?.key ?? newFaqKey(),
+            question: i.question,
+            answer_html: i.answer_html,
+          })),
+        );
+      }
       setMsg("FAQ збережено.");
     } catch {
       setErr("Мережа недоступна");
@@ -286,25 +308,71 @@ export function AdminPanelClient() {
           <div className={cn(lcGlassPanelClass, "!p-4 sm:!p-6")}>
             {tab === "faq" ? (
               <div className="space-y-4">
+                <p className="text-xs text-[var(--mc-text-muted)]">
+                  Виділи текст і натисни кнопки зверху редактора: жирний, курсив,
+                  посилання. Стрілки змінюють порядок питань.
+                </p>
                 {faq.map((item, idx) => (
                   <div
-                    key={idx}
+                    key={item.key}
                     className="space-y-2 rounded-lg border border-white/10 p-3"
                   >
-                    <div className="flex items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
                       <span className="text-xs font-bold text-[var(--mc-text-muted)]">
                         #{idx + 1}
                       </span>
-                      <button
-                        type="button"
-                        disabled={busy || faq.length <= 1}
-                        onClick={() =>
-                          setFaq((prev) => prev.filter((_, i) => i !== idx))
-                        }
-                        className="text-xs font-bold text-rose-300 hover:underline disabled:opacity-40"
-                      >
-                        Видалити
-                      </button>
+                      <div className="flex flex-wrap items-center gap-1">
+                        <button
+                          type="button"
+                          title="Вище"
+                          aria-label="Перемістити вище"
+                          disabled={busy || idx === 0}
+                          onClick={() =>
+                            setFaq((prev) => {
+                              if (idx === 0) return prev;
+                              const next = [...prev];
+                              const tmp = next[idx - 1]!;
+                              next[idx - 1] = next[idx]!;
+                              next[idx] = tmp;
+                              return next;
+                            })
+                          }
+                          className="lc-focus-ring inline-flex size-8 items-center justify-center rounded-md border border-white/12 text-[var(--mc-text)] hover:bg-white/[0.06] disabled:opacity-35"
+                        >
+                          <ArrowUp className="size-3.5" aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          title="Нижче"
+                          aria-label="Перемістити нижче"
+                          disabled={busy || idx >= faq.length - 1}
+                          onClick={() =>
+                            setFaq((prev) => {
+                              if (idx >= prev.length - 1) return prev;
+                              const next = [...prev];
+                              const tmp = next[idx + 1]!;
+                              next[idx + 1] = next[idx]!;
+                              next[idx] = tmp;
+                              return next;
+                            })
+                          }
+                          className="lc-focus-ring inline-flex size-8 items-center justify-center rounded-md border border-white/12 text-[var(--mc-text)] hover:bg-white/[0.06] disabled:opacity-35"
+                        >
+                          <ArrowDown className="size-3.5" aria-hidden />
+                        </button>
+                        <button
+                          type="button"
+                          title="Видалити"
+                          aria-label="Видалити питання"
+                          disabled={busy || faq.length <= 1}
+                          onClick={() =>
+                            setFaq((prev) => prev.filter((_, i) => i !== idx))
+                          }
+                          className="lc-focus-ring inline-flex size-8 items-center justify-center rounded-md border border-rose-500/30 text-rose-200 hover:bg-rose-500/15 disabled:opacity-35"
+                        >
+                          <Trash2 className="size-3.5" aria-hidden />
+                        </button>
+                      </div>
                     </div>
                     <input
                       value={item.question}
@@ -317,23 +385,19 @@ export function AdminPanelClient() {
                           ),
                         )
                       }
-                      className="lc-focus-ring mc-input w-full px-2.5 py-2 text-sm"
+                      className="lc-focus-ring mc-input w-full px-2.5 py-2 text-sm font-semibold"
                       placeholder="Питання"
                     />
-                    <textarea
+                    <FaqRichEditor
                       value={item.answer_html}
-                      onChange={(e) =>
+                      disabled={busy}
+                      onChange={(html) =>
                         setFaq((prev) =>
                           prev.map((p, i) =>
-                            i === idx
-                              ? { ...p, answer_html: e.target.value }
-                              : p,
+                            i === idx ? { ...p, answer_html: html } : p,
                           ),
                         )
                       }
-                      rows={5}
-                      className="lc-focus-ring mc-input w-full resize-y px-2.5 py-2 font-mono text-xs"
-                      placeholder="Відповідь (HTML)"
                     />
                   </div>
                 ))}
@@ -344,12 +408,17 @@ export function AdminPanelClient() {
                     onClick={() =>
                       setFaq((prev) => [
                         ...prev,
-                        { question: "", answer_html: "<p></p>" },
+                        {
+                          key: newFaqKey(),
+                          question: "Нове питання",
+                          answer_html: "<p></p>",
+                        },
                       ])
                     }
-                    className="lc-focus-ring rounded-lg border border-white/15 px-3 py-2 text-xs font-bold"
+                    className="lc-focus-ring inline-flex items-center gap-1.5 rounded-lg border border-white/15 px-3 py-2 text-xs font-bold hover:bg-white/[0.05]"
                   >
-                    + Пункт FAQ
+                    <Plus className="size-3.5" aria-hidden />
+                    Додати питання
                   </button>
                   <button
                     type="button"
