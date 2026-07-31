@@ -14,12 +14,15 @@ CREATE TABLE IF NOT EXISTS users (
     game_nickname VARCHAR(16),
     -- Кастомний аватар (data URL або https); має пріоритет над OAuth avatar
     custom_avatar TEXT,
+    role VARCHAR(20) NOT NULL DEFAULT 'user',
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE UNIQUE INDEX IF NOT EXISTS users_game_nickname_uidx
     ON users (game_nickname)
     WHERE game_nickname IS NOT NULL;
+
+CREATE INDEX IF NOT EXISTS users_role_idx ON users (role);
 
 CREATE TABLE IF NOT EXISTS proposals (
     id SERIAL PRIMARY KEY,
@@ -58,3 +61,19 @@ CREATE INDEX IF NOT EXISTS idx_proposal_comments_proposal_created
 
 CREATE INDEX IF NOT EXISTS idx_proposal_comments_parent
     ON proposal_comments (parent_id);
+
+CREATE TABLE IF NOT EXISTS faq_items (
+    id SERIAL PRIMARY KEY,
+    sort_order INT NOT NULL DEFAULT 0,
+    question VARCHAR(500) NOT NULL,
+    answer_html TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS faq_items_sort_idx ON faq_items (sort_order, id);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+    key VARCHAR(64) PRIMARY KEY,
+    value TEXT NOT NULL,
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);

@@ -7,15 +7,32 @@ import {
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
+import { listFaqItems } from "@/lib/site-content";
 import { cn } from "@/lib/utils";
 
-export default function FAQPage() {
-  const faqs = LOST_CHRONICLES_FAQ.map((item) => ({
+export const dynamic = "force-dynamic";
+
+export default async function FAQPage() {
+  let faqs = LOST_CHRONICLES_FAQ.map((item) => ({
     id: `lc-faq-${item.order}`,
     question: item.question,
     answer: item.answer,
     order: item.order,
   }));
+
+  try {
+    const dbItems = await listFaqItems();
+    if (dbItems.length > 0) {
+      faqs = dbItems.map((item) => ({
+        id: `lc-faq-${item.id}`,
+        question: item.question,
+        answer: item.answer_html,
+        order: item.sort_order,
+      }));
+    }
+  } catch {
+    /* fallback to static FAQ */
+  }
 
   return (
     <div className={lcPageMainClass} role="main">

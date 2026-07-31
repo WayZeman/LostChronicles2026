@@ -22,6 +22,8 @@ type AuthUser = {
   gameNickname: string | null;
   needsNickname: boolean;
   avatarUrl: string;
+  isAdmin?: boolean;
+  role?: string;
 };
 
 export function HeroAuthGreeting() {
@@ -201,6 +203,16 @@ export function HeroAuthGreeting() {
               {busy ? "…" : "Зберегти нік"}
             </button>
           </form>
+
+          {user.isAdmin ? (
+            <Link
+              href="/admin"
+              onClick={() => setOpen(false)}
+              className="lc-focus-ring mt-3 flex w-full items-center justify-center rounded-lg border border-[var(--mc-net-green)]/35 bg-[var(--mc-net-green)]/10 px-2 py-2 text-xs font-bold text-[var(--mc-net-green)] hover:bg-[var(--mc-net-green)]/20"
+            >
+              Керування сайтом
+            </Link>
+          ) : null}
 
           <button
             type="button"

@@ -2,11 +2,11 @@ import Image from "next/image";
 import { ExternalLink, HeartHandshake } from "lucide-react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
+import type { CatalogVoteLink } from "@/lib/site-content";
 
 const DEFAULT_JAR_URL = "https://send.monobank.ua/jar/8f7nV8DopG";
 
-/** Каталоги та моніторинги, де сервер рекламується — голосування піднімає позиції в рейтингах. */
-const CATALOG_VOTE_LINKS = [
+const DEFAULT_CATALOG_VOTE_LINKS: CatalogVoteLink[] = [
   {
     href: "https://minecraft.org.ua/minecraft-servers/Lost-Chronicles/3210",
     label: "Minecraft.org.ua",
@@ -22,13 +22,33 @@ const CATALOG_VOTE_LINKS = [
     label: "AllMC.in.ua",
     shortLabel: "AllMC",
   },
-] as const;
+];
+
+type Props = {
+  jarUrl?: string;
+  blurb?: string;
+  catalogLinks?: CatalogVoteLink[];
+};
 
 /**
  * Підтримка сервера: ілюстрація + голоси + monobank.
  */
-export function SupportMonobankSection() {
-  const jarUrl = process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() || DEFAULT_JAR_URL;
+export function SupportMonobankSection({
+  jarUrl,
+  blurb,
+  catalogLinks,
+}: Props = {}) {
+  const resolvedJar =
+    jarUrl?.trim() ||
+    process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
+    DEFAULT_JAR_URL;
+  const resolvedBlurb =
+    blurb?.trim() ||
+    "Голос у каталогах або донат — обидва варіанти допомагають.";
+  const links =
+    catalogLinks && catalogLinks.length > 0
+      ? catalogLinks
+      : DEFAULT_CATALOG_VOTE_LINKS;
 
   return (
     <section
@@ -39,7 +59,6 @@ export function SupportMonobankSection() {
       aria-labelledby="support-mono-heading"
     >
       <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] sm:gap-5 md:gap-6">
-        {/* Мобільний: зверху; desktop: справа */}
         <div className="relative mx-auto flex w-full max-w-[16rem] items-center justify-center order-1 sm:order-2 sm:mx-0 sm:max-w-none sm:self-center">
           <Image
             src="/support-gold-pile.png?v=1"
@@ -60,14 +79,14 @@ export function SupportMonobankSection() {
             Підтримка сервера
           </h2>
           <p className="mt-2 text-center text-sm text-[var(--mc-ink-subtle)] sm:text-left">
-            Голос у каталогах або донат — обидва варіанти допомагають.
+            {resolvedBlurb}
           </p>
 
           <p className="mt-4 text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)] sm:mt-5 sm:text-left">
             Голосування
           </p>
           <ul className="mt-2 grid grid-cols-3 gap-1.5 sm:mt-2.5 sm:grid-cols-1 sm:gap-2">
-            {CATALOG_VOTE_LINKS.map(({ href, label, shortLabel }) => (
+            {links.map(({ href, label, shortLabel }) => (
               <li key={href} className="min-w-0">
                 <a
                   href={href}
@@ -93,7 +112,7 @@ export function SupportMonobankSection() {
           </ul>
 
           <a
-            href={jarUrl}
+            href={resolvedJar}
             target="_blank"
             rel="noopener noreferrer"
             className="lc-focus-ring lc-btn-accent mt-4 w-full min-h-11 px-6 py-2.5 text-sm sm:mt-5"

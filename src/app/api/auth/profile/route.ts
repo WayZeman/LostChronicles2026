@@ -116,6 +116,8 @@ export async function PATCH(req: Request) {
           custom_avatar: u.custom_avatar,
         }),
         hasCustomAvatar: Boolean(u.custom_avatar?.trim()),
+        role: u.role,
+        isAdmin: u.role === "admin",
       },
     });
   } catch {

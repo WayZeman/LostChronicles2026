@@ -13,6 +13,10 @@ import { cn } from "@/lib/utils";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_FORM_URL } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
+import {
+  getConnectSettings,
+  getSupportSettings,
+} from "@/lib/site-content";
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 
 export const metadata: Metadata = {
@@ -24,14 +28,43 @@ export const metadata: Metadata = {
 /** Інакше NEXT_PUBLIC_* «запікається» в статичний HTML під час build і не оновиться без перезбірки. */
 export const dynamic = "force-dynamic";
 
-export default function Home() {
-  const settings = {
+export default async function Home() {
+  let settings = {
     ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST,
     version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.11",
     bedrockAddress:
       process.env.NEXT_PUBLIC_BEDROCK_ADDRESS?.trim() || "play.lost-chronicles.site",
     bedrockPort: process.env.NEXT_PUBLIC_BEDROCK_PORT?.trim() || "19132",
   };
+  let support: {
+    jarUrl?: string;
+    blurb?: string;
+    catalogLinks?: {
+      href: string;
+      label: string;
+      shortLabel: string;
+    }[];
+  } = {};
+
+  try {
+    const [connect, supportDb] = await Promise.all([
+      getConnectSettings(),
+      getSupportSettings(),
+    ]);
+    settings = {
+      ip: connect.javaIp,
+      version: connect.javaVersion,
+      bedrockAddress: connect.bedrockAddress,
+      bedrockPort: connect.bedrockPort,
+    };
+    support = {
+      jarUrl: supportDb.monoJarUrl,
+      blurb: supportDb.blurb,
+      catalogLinks: supportDb.catalogLinks,
+    };
+  } catch {
+    /* env / hardcoded fallbacks */
+  }
 
   const voteUrl = process.env.NEXT_PUBLIC_VOTE_URL;
 
@@ -136,7 +169,11 @@ export default function Home() {
           </Suspense>
         </div>
 
-        <SupportMonobankSection />
+        <SupportMonobankSection
+          jarUrl={support.jarUrl}
+          blurb={support.blurb}
+          catalogLinks={support.catalogLinks}
+        />
       </div>
     </main>
   );

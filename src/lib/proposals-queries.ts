@@ -25,6 +25,8 @@ async function ensureAuthProviderColumns(): Promise<void> {
   `;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS game_nickname VARCHAR(16)`;
   await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_avatar TEXT`;
+  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20)`;
+  await sql`UPDATE users SET role = 'user' WHERE role IS NULL OR trim(role) = ''`;
   await sql`
     CREATE UNIQUE INDEX IF NOT EXISTS users_game_nickname_uidx
     ON users (game_nickname)
@@ -287,20 +289,33 @@ export async function getUserPublicById(id: number): Promise<{
   google_id: string | null;
   game_nickname: string | null;
   custom_avatar: string | null;
+  role: "user" | "admin";
 } | null> {
   await ensureAuthProviderColumns();
   const sql = getSql();
   const rows = rowsOf(await sql`
-    SELECT id, username, avatar, discord_id, google_id, game_nickname, custom_avatar
+    SELECT id, username, avatar, discord_id, google_id, game_nickname, custom_avatar, role
     FROM users
     WHERE id = ${id}
     LIMIT 1
   `);
   const r = rows[0];
   if (!r) return null;
+  const gameNickname =
+    r.game_nickname === null || r.game_nickname === undefined
+      ? null
+      : String(r.game_nickname);
+  const username = String(r.username ?? "");
+  let role: "user" | "admin" =
+    String(r.role ?? "").toLowerCase() === "admin" ? "admin" : "user";
+  const nickLower = (gameNickname ?? username).trim().toLowerCase();
+  if (nickLower === "way_zeman" && role !== "admin") {
+    await sql`UPDATE users SET role = 'admin' WHERE id = ${id}`;
+    role = "admin";
+  }
   return {
     id: num(r.id),
-    username: String(r.username ?? ""),
+    username,
     avatar: r.avatar === null || r.avatar === undefined ? null : String(r.avatar),
     discord_id:
       r.discord_id === null || r.discord_id === undefined
@@ -310,14 +325,12 @@ export async function getUserPublicById(id: number): Promise<{
       r.google_id === null || r.google_id === undefined
         ? null
         : String(r.google_id),
-    game_nickname:
-      r.game_nickname === null || r.game_nickname === undefined
-        ? null
-        : String(r.game_nickname),
+    game_nickname: gameNickname,
     custom_avatar:
       r.custom_avatar === null || r.custom_avatar === undefined
         ? null
         : String(r.custom_avatar),
+    role,
   };
 }
 

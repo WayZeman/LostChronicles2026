@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
+import { isAdminRole } from "@/lib/admin-role";
 import { userDisplayName } from "@/lib/game-nickname";
 import { getUserPublicById } from "@/lib/proposals-queries";
+import { promoteSuperAdmins } from "@/lib/site-content";
 import { resolveUserAvatarUrl } from "@/lib/user-avatar";
 
 export const dynamic = "force-dynamic";
@@ -12,6 +14,7 @@ export async function GET() {
     if (!userId) {
       return NextResponse.json({ user: null });
     }
+    void promoteSuperAdmins().catch(() => {});
     const u = await getUserPublicById(userId);
     if (!u) {
       return NextResponse.json({ user: null });
@@ -32,6 +35,8 @@ export async function GET() {
         needsNickname: !gameNickname,
         avatarUrl,
         hasCustomAvatar: Boolean(u.custom_avatar?.trim()),
+        role: u.role,
+        isAdmin: isAdminRole(u.role),
       },
     });
   } catch {

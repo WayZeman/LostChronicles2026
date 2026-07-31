@@ -2,9 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { authRequiredPath, buildOAuthNextFromPath } from "@/lib/auth-paths";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth-session";
 
-/** Створення пропозиції — лише для авторизованих. Перегляд вікі/пропозицій — публічний. */
+/** Створення пропозиції / адмінка — лише для авторизованих. */
 function isAuthRequiredPath(pathname: string): boolean {
-  return pathname === "/proposals/new";
+  return pathname === "/proposals/new" || pathname === "/admin" || pathname.startsWith("/admin/");
 }
 
 /** У local — без кешу, щоб UI-правки видно одразу після refresh. */
