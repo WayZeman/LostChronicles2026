@@ -78,10 +78,11 @@ export function AnniversaryAtmosphere() {
       return;
     }
 
-    const el = canvasRef.current;
-    if (!el) return;
-    const ctx = el.getContext("2d", { alpha: true });
-    if (!ctx) return;
+    const canvasEl = canvasRef.current;
+    if (!canvasEl) return;
+    const maybeCtx = canvasEl.getContext("2d", { alpha: true });
+    if (!maybeCtx) return;
+    const drawCtx: CanvasRenderingContext2D = maybeCtx;
 
     let raf = 0;
     let w = 0;
@@ -90,20 +91,22 @@ export function AnniversaryAtmosphere() {
     const narrow = () => window.innerWidth < 768;
 
     function resize() {
+      const c = canvasRef.current;
+      if (!c) return;
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       w = window.innerWidth;
       h = window.innerHeight;
-      el.width = Math.floor(w * dpr);
-      el.height = Math.floor(h * dpr);
-      el.style.width = `${w}px`;
-      el.style.height = `${h}px`;
-      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      c.width = Math.floor(w * dpr);
+      c.height = Math.floor(h * dpr);
+      c.style.width = `${w}px`;
+      c.style.height = `${h}px`;
+      drawCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
       const count = narrow() ? 42 : 78;
       pieces = makePieces(count, w, h);
     }
 
     function tick() {
-      ctx.clearRect(0, 0, w, h);
+      drawCtx.clearRect(0, 0, w, h);
       for (const p of pieces) {
         p.x += p.vx + Math.sin(p.y * 0.02 + p.rot) * 0.35;
         p.y += p.vy;
@@ -114,14 +117,14 @@ export function AnniversaryAtmosphere() {
           p.x = Math.random() * w;
         }
 
-        ctx.save();
-        ctx.translate(p.x, p.y);
-        ctx.rotate(p.rot);
-        ctx.globalAlpha = p.alpha;
-        ctx.fillStyle = p.color;
+        drawCtx.save();
+        drawCtx.translate(p.x, p.y);
+        drawCtx.rotate(p.rot);
+        drawCtx.globalAlpha = p.alpha;
+        drawCtx.fillStyle = p.color;
         // Піксельні «конфеті» — квадратики під Minecraft GUI
-        ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
-        ctx.restore();
+        drawCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+        drawCtx.restore();
       }
       raf = requestAnimationFrame(tick);
     }
