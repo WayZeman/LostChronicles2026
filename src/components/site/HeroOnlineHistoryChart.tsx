@@ -607,6 +607,26 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
 
       <ServerAgeCounter className={embedded ? "mt-0" : "mt-2"} />
 
+      {payload != null && payload.liveOnline != null ? (
+        <div className="mt-2 sm:hidden">
+          {payload.liveProbe === "api-offline" ? (
+            <p className="text-center text-sm font-semibold text-[var(--mc-text-muted)]">
+              Сервер зараз офлайн.
+            </p>
+          ) : payload.liveOnline === 0 ? (
+            <p className="text-center text-sm font-semibold text-[var(--mc-net-green)]">
+              Зараз нікого немає онлайн.
+            </p>
+          ) : (
+            <p className="text-center text-sm font-semibold text-[var(--mc-net-green)]">
+              Зараз онлайн:{" "}
+              <span className="tabular-nums">{payload.liveOnline}</span>{" "}
+              {ukPlayersWord(payload.liveOnline)}
+            </p>
+          )}
+        </div>
+      ) : null}
+
       {payload != null &&
       payload.liveOnline != null &&
       payload.liveProbe !== "api-offline" &&
