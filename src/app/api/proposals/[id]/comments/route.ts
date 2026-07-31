@@ -14,6 +14,7 @@ const MAX_COMMENT_LEN = 2000;
 function mapCommentToJson(row: {
   id: number;
   user_id: number;
+  parent_id: number | null;
   body: string;
   created_at: Date;
   author_username: string;
@@ -30,6 +31,7 @@ function mapCommentToJson(row: {
   return {
     id: row.id,
     user_id: row.user_id,
+    parent_id: row.parent_id,
     body: row.body,
     created_at: row.created_at.toISOString(),
     author_username: row.author_username,
@@ -76,9 +78,21 @@ export async function POST(
   }
 
   let bodyText: string;
+  let parentId: number | null = null;
   try {
-    const json = (await req.json()) as { body?: unknown };
+    const json = (await req.json()) as {
+      body?: unknown;
+      parentId?: unknown;
+    };
     bodyText = typeof json.body === "string" ? json.body : "";
+    if (typeof json.parentId === "number" && Number.isFinite(json.parentId)) {
+      parentId = Math.trunc(json.parentId);
+    } else if (
+      typeof json.parentId === "string" &&
+      /^\d+$/.test(json.parentId.trim())
+    ) {
+      parentId = Number(json.parentId.trim());
+    }
   } catch {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
   }
@@ -102,9 +116,13 @@ export async function POST(
       proposalId: id,
       userId,
       body: trimmed,
+      parentId,
     });
     if (!row) {
-      return NextResponse.json({ error: "Not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Не знайдено пропозицію або коментар для відповіді." },
+        { status: 404 },
+      );
     }
     return NextResponse.json({ comment: mapCommentToJson(row) });
   } catch (err) {

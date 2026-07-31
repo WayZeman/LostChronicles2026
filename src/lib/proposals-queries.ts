@@ -452,6 +452,7 @@ export async function runExpireProposalsUpdate(): Promise<number> {
 export type ProposalCommentRow = {
   id: number;
   user_id: number;
+  parent_id: number | null;
   body: string;
   created_at: Date;
   author_username: string;
@@ -461,9 +462,16 @@ export type ProposalCommentRow = {
 };
 
 function mapCommentRow(r: Record<string, unknown>): ProposalCommentRow {
+  const parentRaw = r.parent_id;
+  let parentId: number | null = null;
+  if (parentRaw !== null && parentRaw !== undefined) {
+    const n = num(parentRaw);
+    if (n > 0) parentId = n;
+  }
   return {
     id: num(r.id),
     user_id: num(r.user_id),
+    parent_id: parentId,
     body: String(r.body ?? ""),
     created_at: asDate(r.created_at),
     author_username: String(r.author_username ?? ""),
@@ -482,15 +490,33 @@ function mapCommentRow(r: Record<string, unknown>): ProposalCommentRow {
   };
 }
 
+let commentParentColumnEnsured = false;
+
+async function ensureCommentParentColumn(): Promise<void> {
+  if (commentParentColumnEnsured) return;
+  const sql = getSql();
+  await sql`
+    ALTER TABLE proposal_comments
+    ADD COLUMN IF NOT EXISTS parent_id INT
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_proposal_comments_parent
+    ON proposal_comments (parent_id)
+  `;
+  commentParentColumnEnsured = true;
+}
+
 export async function listProposalComments(
   proposalId: number,
 ): Promise<ProposalCommentRow[]> {
   await ensureAuthProviderColumns();
+  await ensureCommentParentColumn();
   const sql = getSql();
   const rows = rowsOf(await sql`
     SELECT
       c.id,
       c.user_id,
+      c.parent_id,
       c.body,
       c.created_at,
       COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
@@ -505,19 +531,44 @@ export async function listProposalComments(
   return rows.map((r) => mapCommentRow(r));
 }
 
-/** Повертає null, якщо пропозиції немає. */
+/** Повертає null, якщо пропозиції немає або parent некоректний. */
 export async function addProposalComment(params: {
   proposalId: number;
   userId: number;
   body: string;
+  parentId?: number | null;
 }): Promise<ProposalCommentRow | null> {
   await ensureAuthProviderColumns();
+  await ensureCommentParentColumn();
   const sql = getSql();
+
+  let parentId: number | null =
+    params.parentId != null && Number.isFinite(params.parentId)
+      ? Number(params.parentId)
+      : null;
+
+  if (parentId != null) {
+    const parents = rowsOf(await sql`
+      SELECT id, parent_id
+      FROM proposal_comments
+      WHERE id = ${parentId} AND proposal_id = ${params.proposalId}
+      LIMIT 1
+    `);
+    const parent = parents[0];
+    if (!parent) return null;
+    // Одна глибина гілки: відповідь на відповідь чіпляємо до кореня
+    const grand = parent.parent_id;
+    if (grand !== null && grand !== undefined) {
+      const g = num(grand);
+      if (g > 0) parentId = g;
+    }
+  }
+
   const inserted = rowsOf(await sql`
-    INSERT INTO proposal_comments (proposal_id, user_id, body)
-    SELECT ${params.proposalId}, ${params.userId}, ${params.body}
+    INSERT INTO proposal_comments (proposal_id, user_id, parent_id, body)
+    SELECT ${params.proposalId}, ${params.userId}, ${parentId}, ${params.body}
     WHERE EXISTS (SELECT 1 FROM proposals WHERE id = ${params.proposalId})
-    RETURNING id, user_id, body, created_at
+    RETURNING id, user_id, parent_id, body, created_at
   `);
   const ins = inserted[0];
   if (!ins) return null;

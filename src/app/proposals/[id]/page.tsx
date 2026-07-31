@@ -44,6 +44,7 @@ type Me = {
 type ProposalComment = {
   id: number;
   user_id: number;
+  parent_id: number | null;
   body: string;
   created_at: string;
   author_username: string;
@@ -130,6 +131,10 @@ export default function ProposalDetailPage() {
   const [commentBody, setCommentBody] = useState("");
   const [commentBusy, setCommentBusy] = useState(false);
   const [commentError, setCommentError] = useState<string | null>(null);
+  const [replyTo, setReplyTo] = useState<{
+    id: number;
+    author: string;
+  } | null>(null);
 
   const loadProposal = useCallback(async () => {
     if (!id) return;
@@ -336,7 +341,10 @@ export default function ProposalDetailPage() {
         method: "POST",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ body: text }),
+        body: JSON.stringify({
+          body: text,
+          ...(replyTo ? { parentId: replyTo.id } : {}),
+        }),
       });
       const data = (await res.json()) as {
         comment?: ProposalComment;
@@ -351,10 +359,72 @@ export default function ProposalDetailPage() {
         setComments((prev) => [...(prev ?? []), data.comment!]);
       }
       setCommentBody("");
+      setReplyTo(null);
     } catch {
       setCommentError("Мережа недоступна");
     }
     setCommentBusy(false);
+  }
+
+  function renderCommentCard(c: ProposalComment, isReply: boolean) {
+    return (
+      <div
+        className={cn(
+          "flex gap-2.5 rounded-lg border border-white/[0.06] bg-black/20 p-2.5 sm:gap-3 sm:p-4",
+          isReply && "border-l-2 border-l-[var(--mc-net-green)]/40",
+        )}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={c.avatarUrl}
+          alt=""
+          width={40}
+          height={40}
+          className={cn(
+            "shrink-0 rounded-full border border-[var(--mc-border)] object-cover",
+            isReply ? "size-8 sm:size-9" : "size-9 sm:size-10",
+          )}
+        />
+        <div className="min-w-0 flex-1">
+          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-bold text-[var(--mc-text)]">
+              {c.author_username}
+            </span>
+            <time
+              dateTime={c.created_at}
+              className="text-xs text-[var(--mc-text-subtle)]"
+            >
+              {new Date(c.created_at).toLocaleString("uk-UA", {
+                day: "numeric",
+                month: "short",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </time>
+          </div>
+          <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--mc-text-muted)]">
+            {c.body}
+          </p>
+          {me ? (
+            <button
+              type="button"
+              onClick={() => {
+                setReplyTo({ id: c.id, author: c.author_username });
+                setCommentError(null);
+                requestAnimationFrame(() => {
+                  document
+                    .getElementById("proposal-comment")
+                    ?.focus();
+                });
+              }}
+              className="lc-focus-ring mt-2 text-xs font-bold text-[var(--mc-net-green)] underline-offset-2 hover:underline"
+            >
+              Відповісти
+            </button>
+          ) : null}
+        </div>
+      </div>
+    );
   }
 
   async function closeVotingEarly() {
@@ -627,6 +697,23 @@ export default function ProposalDetailPage() {
               onSubmit={(e) => void submitComment(e)}
               className="flex flex-col gap-2"
             >
+              {replyTo ? (
+                <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--mc-net-green)]/25 bg-[var(--mc-net-green)]/10 px-3 py-2 text-xs text-[var(--mc-text)]">
+                  <span>
+                    Відповідь для{" "}
+                    <span className="font-bold text-[var(--mc-net-green)]">
+                      {replyTo.author}
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setReplyTo(null)}
+                    className="lc-focus-ring font-bold text-[var(--mc-text-muted)] underline-offset-2 hover:underline"
+                  >
+                    Скасувати
+                  </button>
+                </div>
+              ) : null}
               <label htmlFor="proposal-comment" className="sr-only">
                 Текст коментаря
               </label>
@@ -637,7 +724,11 @@ export default function ProposalDetailPage() {
                 maxLength={2000}
                 value={commentBody}
                 onChange={(e) => setCommentBody(e.target.value)}
-                placeholder="Напиши коментар…"
+                placeholder={
+                  replyTo
+                    ? `Відповідь для ${replyTo.author}…`
+                    : "Напиши коментар…"
+                }
                 className="lc-focus-ring mc-input min-h-[5.5rem] w-full resize-y px-3 py-3 text-base sm:min-h-0 sm:py-2.5 sm:text-sm"
               />
               {commentError ? (
@@ -650,7 +741,11 @@ export default function ProposalDetailPage() {
                 disabled={commentBusy || !commentBody.trim()}
                 className="lc-focus-ring lc-btn-accent min-h-12 w-full touch-manipulation py-2.5 text-sm disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-11 sm:w-auto sm:self-end sm:px-8"
               >
-                {commentBusy ? "Надсилання…" : "Надіслати коментар"}
+                {commentBusy
+                  ? "Надсилання…"
+                  : replyTo
+                    ? "Надіслати відповідь"
+                    : "Надіслати коментар"}
               </button>
             </form>
           ) : (
@@ -660,7 +755,7 @@ export default function ProposalDetailPage() {
                 href={`/auth-required?next=${encodeURIComponent(`/proposals/${id}`)}`}
                 className="inline-flex min-h-11 items-center font-bold text-[var(--mc-net-green)] underline-offset-2 hover:underline"
               >
-                увійди через Discord
+                увійди
               </a>
               .
             </p>
@@ -698,42 +793,25 @@ export default function ProposalDetailPage() {
             </p>
           ) : (
             <ul className="flex flex-col gap-3">
-              {comments.map((c) => (
-                <li
-                  key={c.id}
-                  className="flex gap-2.5 rounded-lg border border-white/[0.06] bg-black/20 p-2.5 sm:gap-3 sm:p-4"
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={c.avatarUrl}
-                    alt=""
-                    width={40}
-                    height={40}
-                    className="size-9 shrink-0 rounded-full border border-[var(--mc-border)] object-cover sm:size-10"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
-                      <span className="font-bold text-[var(--mc-text)]">
-                        {c.author_username}
-                      </span>
-                      <time
-                        dateTime={c.created_at}
-                        className="text-xs text-[var(--mc-text-subtle)]"
-                      >
-                        {new Date(c.created_at).toLocaleString("uk-UA", {
-                          day: "numeric",
-                          month: "short",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        })}
-                      </time>
-                    </div>
-                    <p className="mt-1.5 whitespace-pre-wrap break-words text-sm leading-relaxed text-[var(--mc-text-muted)]">
-                      {c.body}
-                    </p>
-                  </div>
-                </li>
-              ))}
+              {comments
+                .filter((c) => !c.parent_id)
+                .map((root) => {
+                  const replies = comments.filter(
+                    (c) => c.parent_id === root.id,
+                  );
+                  return (
+                    <li key={root.id} className="flex flex-col gap-2">
+                      {renderCommentCard(root, false)}
+                      {replies.length > 0 ? (
+                        <ul className="ml-3 flex flex-col gap-2 border-l border-white/10 pl-3 sm:ml-5 sm:pl-4">
+                          {replies.map((r) => (
+                            <li key={r.id}>{renderCommentCard(r, true)}</li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </li>
+                  );
+                })}
             </ul>
           )}
         </section>

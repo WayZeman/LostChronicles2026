@@ -199,20 +199,17 @@ export function ProposalsListClient() {
               const open = isProposalVotingOpenClient(p.status, p.ends_at);
               return (
                 <li key={p.id}>
-                  <article
+                  <Link
+                    href={`/proposals/${p.id}`}
                     className={cn(
                       lcGlassPanelClass,
-                      "lc-interactive-panel-static lc-proposal-match-card group !rounded-[var(--radius)] !p-4 sm:!p-5",
+                      "lc-interactive-panel-static lc-proposal-match-card group block !rounded-[var(--radius)] !p-4 sm:!p-5",
+                      "lc-focus-ring transition-[border-color,background-color] hover:border-[var(--mc-net-green)]/35",
                     )}
                   >
                     <div className="flex flex-wrap items-start justify-between gap-2 gap-y-2">
-                      <h2 className="min-w-0 flex-1 text-lg font-semibold leading-snug tracking-tight text-[var(--mc-text)] [overflow-wrap:anywhere] sm:text-xl">
-                        <Link
-                          href={`/proposals/${p.id}`}
-                          className="lc-focus-ring rounded-sm transition-colors hover:text-[var(--mc-net-green)]"
-                        >
-                          {p.title}
-                        </Link>
+                      <h2 className="min-w-0 flex-1 text-lg font-semibold leading-snug tracking-tight text-[var(--mc-text)] transition-colors group-hover:text-[var(--mc-net-green)] [overflow-wrap:anywhere] sm:text-xl">
+                        {p.title}
                       </h2>
                       <ProposalStatusBadge status={p.status} votingOpen={open} />
                     </div>
@@ -238,16 +235,7 @@ export function ProposalsListClient() {
                         votingOpen={open}
                       />
                     </div>
-
-                    <div className="mt-3 flex justify-end">
-                      <Link
-                        href={`/proposals/${p.id}`}
-                        className="lc-focus-ring text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
-                      >
-                        {open ? "Голосувати →" : "Результат →"}
-                      </Link>
-                    </div>
-                  </article>
+                  </Link>
                 </li>
               );
             })}

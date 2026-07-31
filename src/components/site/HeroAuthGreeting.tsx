@@ -8,7 +8,7 @@ import {
   useRef,
   useState,
 } from "react";
-import { LogIn, LogOut } from "lucide-react";
+import { LogOut } from "lucide-react";
 import {
   AUTH_ME_CHANGED_EVENT,
   notifyAuthMeChanged,
@@ -131,7 +131,7 @@ export function HeroAuthGreeting() {
   if (user === undefined) {
     return (
       <div
-        className="mx-auto mt-3 h-10 w-28 animate-pulse rounded-lg border border-white/10 bg-black/30"
+        className="mx-auto mt-2.5 h-5 w-16 animate-pulse rounded bg-white/10"
         aria-hidden
       />
     );
@@ -139,13 +139,12 @@ export function HeroAuthGreeting() {
 
   if (!user) {
     return (
-      <div className="relative z-10 mt-3 flex justify-center">
+      <div className="relative z-10 mt-2.5 flex justify-center">
         <Link
           href="/auth-required?next=%2F"
-          className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center gap-1.5 px-6 py-2.5 text-sm"
+          className="lc-focus-ring lc-login-soft-pulse inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-[var(--mc-text-subtle)] underline-offset-2 transition-colors hover:text-[var(--mc-text-muted)] hover:underline"
         >
-          <LogIn className="size-3.5 opacity-80" aria-hidden />
-          Увійти
+          УВІЙТИ
         </Link>
       </div>
     );
@@ -160,10 +159,10 @@ export function HeroAuthGreeting() {
         aria-expanded={open}
         aria-controls={panelId}
         onClick={() => setOpen((v) => !v)}
-        className="lc-focus-ring rounded-lg px-3 py-2 text-sm font-semibold text-[var(--mc-text)] transition-colors hover:text-[var(--mc-net-green)]"
+        className="lc-focus-ring rounded-lg px-3 py-2 text-base font-bold text-[var(--mc-text)] transition-colors hover:text-[var(--mc-net-green)] sm:text-lg"
       >
         Вітаємо,{" "}
-        <span className="font-extrabold text-[var(--mc-menu-yellow)] underline decoration-white/25 underline-offset-4">
+        <span className="font-extrabold text-[var(--mc-menu-yellow)] underline decoration-white/30 underline-offset-[5px]">
           {name}
         </span>
       </button>
