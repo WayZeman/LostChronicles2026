@@ -124,8 +124,8 @@ export default async function Home() {
               <div
                 className={cn(
                   lcGlassPanelClass,
-                  "lc-interactive-panel-static px-4 py-16 text-center text-sm text-[var(--mc-text-muted)]",
-                  "lc-skeleton-breathe",
+                  "lc-interactive-panel-static mt-20 px-4 py-16 text-center text-sm text-[var(--mc-text-muted)] sm:mt-16",
+                  "lc-skeleton-breathe min-h-[16rem]",
                 )}
               >
                 Завантаження онлайну…
@@ -157,11 +157,13 @@ export default async function Home() {
               <div
                 className={cn(
                   lcGlassPanelClass,
-                  "lc-interactive-panel-static px-4 py-16 text-center text-sm text-[var(--mc-text-muted)]",
-                  "lc-skeleton-breathe",
+                  "lc-interactive-panel-static overflow-hidden !p-0",
+                  "lc-skeleton-breathe min-h-[18.5rem] sm:min-h-[22.5rem] md:min-h-[26.5rem]",
                 )}
+                aria-busy
+                aria-label="Завантаження соцмереж"
               >
-                Завантаження соцмереж…
+                <span className="sr-only">Завантаження соцмереж…</span>
               </div>
             }
           >

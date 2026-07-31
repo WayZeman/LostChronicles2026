@@ -4,6 +4,7 @@ import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
 import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
+import { RouteEnter } from "@/components/site/RouteEnter";
 import { SiteCursor } from "@/components/site/SiteCursor";
 import { SiteJsonLd } from "@/components/site/SiteJsonLd";
 import {
@@ -104,6 +105,16 @@ export default function RootLayout({
         <link rel="preconnect" href="https://mc-heads.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://ely.by" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
+        <link
+          rel="preload"
+          as="image"
+          href="/server-status-online.png?v=8"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/server-status-offline.png?v=8"
+        />
       </head>
       <body
         className={`${notoSans.variable} am-bg relative flex min-h-screen flex-col antialiased`}
@@ -123,7 +134,7 @@ export default function RootLayout({
         <SiteCursor />
         <Navbar />
         <div className="lc-page-enter relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] [&>*:only-child]:flex [&>*:only-child]:min-h-0 [&>*:only-child]:w-full [&>*:only-child]:flex-1 [&>*:only-child]:flex-col [&>*:only-child]:pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
-          {children}
+          <RouteEnter>{children}</RouteEnter>
         </div>
         <DeferVercelMetrics />
       </body>

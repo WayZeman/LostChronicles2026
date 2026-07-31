@@ -52,7 +52,7 @@ export function Navbar() {
               key={href}
               href={href}
               className={cn(
-                "lc-focus-ring flex min-h-[3.15rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-1 text-[9px] font-bold leading-tight transition-[background,color,box-shadow] duration-100 min-[380px]:text-[10px] md:min-h-[3.4rem] md:gap-1 md:px-1.5 md:text-xs",
+                "lc-focus-ring flex min-h-[3.15rem] min-w-0 flex-1 flex-col items-center justify-center gap-0.5 px-0.5 py-1 text-[9px] font-bold leading-tight transition-[background,color,box-shadow,opacity,transform] duration-200 ease-out min-[380px]:text-[10px] md:min-h-[3.4rem] md:gap-1 md:px-1.5 md:text-xs",
                 active
                   ? "mc-badge"
                   : "border-2 border-transparent text-[var(--mc-nav-link)] hover:border-black hover:bg-[linear-gradient(180deg,#9a9aff_0%,#7a7aff_48%,#5a5ad4_100%)] hover:text-[var(--mc-on-gold)] hover:shadow-[inset_2px_2px_0_rgba(255,255,255,0.28),inset_-2px_-2px_0_rgba(0,0,0,0.4)]",

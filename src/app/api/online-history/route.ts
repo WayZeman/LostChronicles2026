@@ -143,6 +143,21 @@ function mergeDedupeSortedPlayerNames(a: string[], b: string[]): string[] {
 }
 
 async function getLiveSnapshot(): Promise<LiveSnapshot> {
+  // Локальний прев’ю офлайн-маскота / тексту: NEXT_PUBLIC_FORCE_SERVER_OFFLINE=1
+  if (process.env.NEXT_PUBLIC_FORCE_SERVER_OFFLINE?.trim() === "1") {
+    const envMax = Number.parseInt(
+      process.env.NEXT_PUBLIC_SERVER_SLOTS_MAX?.trim() || "80",
+      10,
+    );
+    return {
+      liveOnline: 0,
+      liveMax: Number.isFinite(envMax) && envMax > 0 ? envMax : 80,
+      livePlayerNames: [],
+      liveProbe: "api-offline",
+      planPeakHint: null,
+    };
+  }
+
   const host =
     process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST;
   const [status, planLive] = await Promise.all([

@@ -141,7 +141,7 @@ export function HeroAuthGreeting() {
 
   if (!user) {
     return (
-      <div className="relative z-10 mt-2.5 flex justify-center">
+      <div className="lc-stream-in relative z-10 mt-2.5 flex justify-center">
         <Link
           href="/auth-required?next=%2F"
           className="lc-focus-ring lc-login-soft-pulse inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-[var(--mc-text-subtle)] underline-offset-2 transition-colors hover:text-[var(--mc-text-muted)] hover:underline"
@@ -155,7 +155,7 @@ export function HeroAuthGreeting() {
   const name = user.gameNickname?.trim() || user.displayName;
 
   return (
-    <div ref={rootRef} className="relative z-20 mt-3 flex justify-center">
+    <div ref={rootRef} className="lc-stream-in relative z-20 mt-3 flex justify-center">
       <button
         type="button"
         aria-expanded={open}

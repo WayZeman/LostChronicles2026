@@ -49,16 +49,13 @@ export function ServerStatusMascot({ className }: { className?: string }) {
     };
   }, []);
 
-  if (status === "unknown") return null;
-
+  const ready = status !== "unknown";
   const src =
-    status === "online"
-      ? "/server-status-online.png?v=8"
-      : "/server-status-offline.png?v=8";
+    status === "offline"
+      ? "/server-status-offline.png?v=8"
+      : "/server-status-online.png?v=8";
   const alt =
-    status === "online"
-      ? "Сервер онлайн"
-      : "Сервер офлайн";
+    status === "offline" ? "Сервер офлайн" : "Сервер онлайн";
 
   return (
     <div
@@ -67,17 +64,27 @@ export function ServerStatusMascot({ className }: { className?: string }) {
         "w-[6.25rem] sm:left-1 sm:w-[7.5rem] md:w-[8.5rem]",
         className,
       )}
-      aria-hidden
+      aria-hidden={!ready}
     >
-      <Image
-        src={src}
-        alt={alt}
-        width={512}
-        height={748}
-        className="h-auto w-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
-        priority={false}
-        unoptimized
-      />
+      {/* Резервуємо місце, щоб панель не стрибала після відповіді API */}
+      <div className="relative aspect-[512/748] w-full">
+        {ready ? (
+          <Image
+            src={src}
+            alt={alt}
+            width={512}
+            height={748}
+            className="lc-stream-in h-auto w-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
+            priority
+            unoptimized
+          />
+        ) : (
+          <div
+            className="lc-skeleton-breathe absolute inset-0 rounded-md bg-white/[0.06]"
+            aria-hidden
+          />
+        )}
+      </div>
     </div>
   );
 }

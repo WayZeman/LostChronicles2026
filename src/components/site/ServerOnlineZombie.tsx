@@ -21,8 +21,8 @@ export function ServerOnlineZombie({ className }: { className?: string }) {
         alt=""
         width={585}
         height={879}
-        className="h-auto w-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
-        priority={false}
+        className="lc-stream-in h-auto w-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
+        priority
         unoptimized
       />
     </div>

@@ -54,7 +54,7 @@ export function SupportMonobankSection({
     <section
       className={cn(
         lcGlassPanelClass,
-        "lc-interactive-panel-static am-reveal am-delay-3 mt-10 md:mt-14",
+        "lc-interactive-panel-static am-reveal am-delay-1 mt-10 md:mt-14",
       )}
       aria-labelledby="support-mono-heading"
     >

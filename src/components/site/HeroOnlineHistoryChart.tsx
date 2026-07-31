@@ -22,7 +22,6 @@ import {
 import { Line } from "react-chartjs-2";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { OnlineChartSkeleton } from "@/components/site/OnlineChartSkeleton";
-import { SoftAppear } from "@/components/site/SoftAppear";
 import { cn } from "@/lib/utils";
 
 ChartJS.register(
@@ -588,17 +587,17 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
       : null;
 
   return (
-    <SoftAppear slow>
-      <div
-        className={cn(
-          !embedded && lcGlassPanelClass,
-          !embedded && "lc-interactive-panel-static",
-          !embedded &&
-            "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
-          embedded &&
-            "lc-interactive-panel-embed rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-deep)] p-4 md:p-5",
-        )}
-      >
+    <div
+      className={cn(
+        "lc-stream-in",
+        !embedded && lcGlassPanelClass,
+        !embedded && "lc-interactive-panel-static",
+        !embedded &&
+          "bg-[color-mix(in_srgb,#000_18%,transparent)] shadow-[0_12px_44px_rgba(0,0,0,0.26)]",
+        embedded &&
+          "lc-interactive-panel-embed rounded-[var(--radius)] border-2 border-[var(--mc-border-card)] bg-[var(--mc-deep)] p-4 md:p-5",
+      )}
+    >
       {!embedded ? (
         <h3 className="text-center text-base font-bold text-[var(--mc-text)] md:text-lg">
           Моніторинг онлайну сервера
@@ -671,7 +670,6 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
           {ukPlayersWord(peakOnline)}
         </p>
       ) : null}
-      </div>
-    </SoftAppear>
+    </div>
   );
 }
