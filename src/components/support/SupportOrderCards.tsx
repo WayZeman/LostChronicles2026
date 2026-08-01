@@ -15,7 +15,6 @@ export type SupportCardView = {
 
 type Props = {
   cards: SupportCardView[];
-  jarUrl: string;
 };
 
 type Phase =
@@ -48,7 +47,7 @@ function formatTotalLabel(unitLabel: string, qty: number): string {
   return `${unit} ₴ × ${qty} = ${unit * qty} ₴`;
 }
 
-export function SupportOrderCards({ cards, jarUrl }: Props) {
+export function SupportOrderCards({ cards }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [nickname, setNickname] = useState("");
   const [note, setNote] = useState("");
@@ -179,17 +178,6 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
           ))}
         </ul>
       )}
-
-      <div className="mt-8 flex justify-center sm:mt-10">
-        <a
-          href={jarUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-sm font-semibold text-[var(--mc-text-muted)] underline-offset-2 hover:text-[var(--mc-net-green)] hover:underline"
-        >
-          Або відкрити банку Monobank без вибору картки
-        </a>
-      </div>
 
       {phase.kind !== "idle" ? (
         <div

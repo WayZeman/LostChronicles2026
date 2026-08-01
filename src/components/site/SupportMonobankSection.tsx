@@ -42,9 +42,7 @@ export function SupportMonobankSection({
     jarUrl?.trim() ||
     process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
     DEFAULT_JAR_URL;
-  const resolvedBlurb =
-    blurb?.trim() ||
-    "Голос у каталогах або донат — обидва варіанти допомагають.";
+  const resolvedBlurb = blurb?.trim() || "";
   const links =
     catalogLinks && catalogLinks.length > 0
       ? catalogLinks
@@ -78,9 +76,11 @@ export function SupportMonobankSection({
           >
             Підтримка сервера
           </h2>
-          <p className="mt-2 text-center text-sm text-[var(--mc-ink-subtle)] sm:text-left">
-            {resolvedBlurb}
-          </p>
+          {resolvedBlurb ? (
+            <p className="mt-2 text-center text-sm text-[var(--mc-ink-subtle)] sm:text-left">
+              {resolvedBlurb}
+            </p>
+          ) : null}
 
           <p className="mt-4 text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)] sm:mt-5 sm:text-left">
             Голосування

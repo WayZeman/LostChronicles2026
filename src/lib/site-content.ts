@@ -151,7 +151,10 @@ async function ensureCmsTables(): Promise<void> {
         UPDATE faq_items
         SET answer_html = ${donationFaq.answer}, updated_at = NOW()
         WHERE lower(trim(question)) = 'пожертви'
-          AND answer_html NOT LIKE '%href="/support"%'
+          AND (
+            answer_html NOT LIKE '%href="/support"%'
+            OR answer_html LIKE '%Від 20 грн%'
+          )
       `;
     }
   }
@@ -233,7 +236,7 @@ async function ensureCmsTables(): Promise<void> {
     mono_jar_url:
       process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
       "https://send.monobank.ua/jar/8f7nV8DopG",
-    support_blurb: "Голос у каталогах або донат — обидва варіанти допомагають.",
+    support_blurb: "",
     catalog_vote_links: JSON.stringify(DEFAULT_CATALOG_LINKS),
   };
   for (const [key, value] of Object.entries(defaults)) {
@@ -243,6 +246,14 @@ async function ensureCmsTables(): Promise<void> {
       ON CONFLICT (key) DO NOTHING
     `;
   }
+
+  // Прибрати старий дефолтний blurb підтримки
+  await sql`
+    UPDATE site_settings
+    SET value = '', updated_at = NOW()
+    WHERE key = 'support_blurb'
+      AND value = ${"Голос у каталогах або донат — обидва варіанти допомагають."}
+  `;
 
   // Власник
   await sql`
@@ -408,9 +419,7 @@ export async function getSupportSettings(): Promise<SiteSupportSettings> {
       (await getSetting("mono_jar_url")) ||
       process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
       "https://send.monobank.ua/jar/8f7nV8DopG",
-    blurb:
-      (await getSetting("support_blurb")) ||
-      "Голос у каталогах або донат — обидва варіанти допомагають.",
+    blurb: (await getSetting("support_blurb")) || "",
     catalogLinks: parseCatalogLinks(await getSetting("catalog_vote_links")),
   };
 }

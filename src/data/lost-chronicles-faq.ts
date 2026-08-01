@@ -234,19 +234,7 @@ const FAQ_ADMIN = `<p><strong>Адміністрація серверу</strong>
 const FAQ_DONATIONS = `<div class="not-prose mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
 <p class="mb-0 min-w-0 flex-1 text-left text-[0.9375rem] leading-[1.65] text-[var(--mc-text)] sm:text-base sm:leading-relaxed">На сервері є пожертви з бонусами, що серйозно не ламають баланс гри. Для бонусу зв’яжіться з адміністрацією з доказом оплати.</p>
 <a href="/support" class="${FAQ_CTA_BTN}">Підтримати</a>
-</div>
-<p><strong>Від 20 грн (на вибір):</strong></p>
-<ul>
-<li>Доступ до команд <code>/hat</code> (вдягнути те, що в руці, на голову), <code>/pay</code> (переказ електронних діамантів)</li>
-<li>Префікси, емоджі в ніках, градієнт, змінений нік (одноразово)</li>
-<li>Неванільний декоративний предмет без шкоди для гри (на кшталт командного блоку «на голову», скам’янілої плити тощо)</li>
-</ul>
-<p><strong>Від 50 грн (на вибір):</strong></p>
-<ul>
-<li>Власна моделька (одна чи кілька)</li>
-<li>Зміна біому (потрібен мінімальний контроль території; більша територія — більша сума; деталі — у адміністрації)</li>
-<li>Перенесення споруди</li>
-</ul>`;
+</div>`;
 
 export const LOST_CHRONICLES_FAQ: LostChroniclesFaqItem[] = [
   { order: 1, question: "Як потрапити на сервер?", answer: FAQ_JOIN },

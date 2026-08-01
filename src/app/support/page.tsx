@@ -17,11 +17,8 @@ export const metadata: Metadata = {
   description: "Підтримай сервер Lost Chronicles: бонуси за донат.",
 };
 
-const FALLBACK_JAR = "https://send.monobank.ua/jar/8f7nV8DopG";
-
 export default async function SupportPage() {
   let cards: Awaited<ReturnType<typeof listSupportCards>> = [];
-  let jarUrl = FALLBACK_JAR;
   let blurb =
     "Обери пропозицію, вкажи нік і натисни оплатити — адміни одразу отримають замовлення в Telegram.";
 
@@ -31,8 +28,12 @@ export default async function SupportPage() {
       getSupportSettings(),
     ]);
     cards = list;
-    jarUrl = support.monoJarUrl.trim() || FALLBACK_JAR;
-    if (support.blurb.trim()) {
+    // Не показуємо старий маркетинговий blurb з головної
+    if (
+      support.blurb.trim() &&
+      support.blurb.trim() !==
+        "Голос у каталогах або донат — обидва варіанти допомагають."
+    ) {
       blurb = support.blurb.trim();
     }
   } catch {
@@ -53,9 +54,11 @@ export default async function SupportPage() {
             <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
               Підтримка
             </h1>
-            <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--mc-text-muted)] sm:text-[0.9375rem]">
-              {blurb}
-            </p>
+            {blurb ? (
+              <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--mc-text-muted)] sm:text-[0.9375rem]">
+                {blurb}
+              </p>
+            ) : null}
             <Link
               href="/faq"
               className="mt-3 inline-block text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
@@ -73,7 +76,6 @@ export default async function SupportPage() {
             image_url: c.image_url,
             price_label: c.price_label,
           }))}
-          jarUrl={jarUrl}
         />
       </div>
     </main>
