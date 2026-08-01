@@ -74,7 +74,7 @@ export async function PUT(req: Request) {
     if (b.support) {
       const s = b.support;
       let catalogLinks = support.catalogLinks;
-      if (Array.isArray(s.catalogLinks)) {
+        if (Array.isArray(s.catalogLinks)) {
         const parsed: CatalogVoteLink[] = [];
         for (const item of s.catalogLinks) {
           if (!item || typeof item !== "object") continue;
@@ -85,7 +85,7 @@ export async function PUT(req: Request) {
             typeof o.shortLabel === "string" ? o.shortLabel.trim() : label;
           if (href && label) parsed.push({ href, label, shortLabel: shortLabel || label });
         }
-        if (parsed.length > 0) catalogLinks = parsed;
+        catalogLinks = parsed;
       }
       support = await saveSupportSettings({
         monoJarUrl:

@@ -75,6 +75,7 @@ export default async function SupportPage() {
             description: c.description,
             image_url: c.image_url,
             price_label: c.price_label,
+            quantity_enabled: c.quantity_enabled,
           }))}
         />
       </div>

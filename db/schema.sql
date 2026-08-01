@@ -96,6 +96,7 @@ CREATE TABLE IF NOT EXISTS support_cards (
     image_url TEXT NOT NULL,
     price_label VARCHAR(64) NOT NULL,
     button_url TEXT NOT NULL DEFAULT '',
+    quantity_enabled BOOLEAN NOT NULL DEFAULT TRUE,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
@@ -122,6 +123,20 @@ CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
 
 CREATE INDEX IF NOT EXISTS support_orders_created_idx
     ON support_orders (created_at DESC);
+
+CREATE TABLE IF NOT EXISTS support_order_items (
+    id SERIAL PRIMARY KEY,
+    order_id INT NOT NULL REFERENCES support_orders(id) ON DELETE CASCADE,
+    card_id INT REFERENCES support_cards(id) ON DELETE SET NULL,
+    card_title VARCHAR(200) NOT NULL,
+    price_label VARCHAR(64) NOT NULL,
+    unit_kopecks INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
+    line_kopecks INT NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS support_order_items_order_idx
+    ON support_order_items (order_id);
 
 CREATE TABLE IF NOT EXISTS site_settings (
     key VARCHAR(64) PRIMARY KEY,

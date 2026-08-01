@@ -1,7 +1,6 @@
 /**
- * Сповіщення про оплачені замовлення підтримки в Telegram-групу (@serveranketbot).
+ * Сповіщення про замовлення підтримки в Telegram (@serveranketbot).
  * Env: TELEGRAM_ORDERS_BOT_TOKEN + TELEGRAM_ORDERS_CHAT_ID
- * (окремо від бота пропозицій).
  */
 
 function escapeTelegramHtml(s: string): string {
@@ -63,6 +62,13 @@ async function sendOrdersTelegramHtml(html: string): Promise<boolean> {
   }
 }
 
+type OrderNotifyItem = {
+  card_title: string;
+  price_label: string;
+  quantity: number;
+  line_kopecks: number;
+};
+
 type OrderNotifyPayload = {
   id: number;
   card_title: string;
@@ -71,35 +77,47 @@ type OrderNotifyPayload = {
   quantity?: number;
   nickname: string;
   note: string;
+  items?: OrderNotifyItem[];
 };
 
 function orderLines(order: OrderNotifyPayload): string {
-  const title = escapeTelegramHtml(order.card_title);
   const nick = escapeTelegramHtml(order.nickname);
-  const qty = Math.max(1, order.quantity ?? 1);
-  const unit = order.price_label.trim();
-  const total = `${formatUahFromKopecks(order.amount_kopecks)} ₴`;
-  const price =
-    qty > 1
-      ? escapeTelegramHtml(
-          unit ? `${unit} × ${qty} = ${total}` : `${total} (×${qty})`,
-        )
-      : escapeTelegramHtml(unit || total);
-  const qtyLine = qty > 1 ? `\n🔢 Кількість: <b>${qty}</b>` : "";
+  const items =
+    order.items && order.items.length > 0
+      ? order.items
+      : [
+          {
+            card_title: order.card_title,
+            price_label: order.price_label,
+            quantity: Math.max(1, order.quantity ?? 1),
+            line_kopecks: order.amount_kopecks,
+          },
+        ];
+
+  const itemLines = items
+    .map((it) => {
+      const title = escapeTelegramHtml(it.card_title);
+      const qty = Math.max(1, it.quantity);
+      const line = formatUahFromKopecks(it.line_kopecks);
+      const qtyPart = qty > 1 ? ` × ${qty}` : "";
+      return `• ${title}${qtyPart} — ${escapeTelegramHtml(line)} ₴`;
+    })
+    .join("\n");
+
+  const total = escapeTelegramHtml(formatUahFromKopecks(order.amount_kopecks));
   const note = order.note.trim()
     ? `\n📝 ${escapeTelegramHtml(order.note.trim())}`
     : "";
 
   return (
-    `📦 ${title}${qtyLine}\n` +
+    `${itemLines}\n\n` +
+    `💵 Разом: <b>${total} ₴</b>\n` +
     `👤 Нік: <b>${nick}</b>\n` +
-    `💵 ${price}\n` +
     `🆔 #${order.id}` +
     note
   );
 }
 
-/** Одразу коли гравець натиснув «Оплатити» (ще до надходження на банку). */
 export async function notifySupportOrderCreatedTelegram(
   order: OrderNotifyPayload,
 ): Promise<boolean> {
@@ -114,13 +132,10 @@ export async function notifySupportOrderCreatedTelegram(
 export async function notifySupportOrderPaidTelegram(
   order: OrderNotifyPayload,
 ): Promise<boolean> {
-  const html =
-    `<b>Оплату підтверджено</b>\n\n` + orderLines(order);
-
+  const html = `<b>Оплату підтверджено</b>\n\n` + orderLines(order);
   return sendOrdersTelegramHtml(html);
 }
 
-/** Донат у банку без зіставленого замовлення. */
 export async function notifyUnmatchedDonationTelegram(
   amountKopecks: number,
 ): Promise<boolean> {

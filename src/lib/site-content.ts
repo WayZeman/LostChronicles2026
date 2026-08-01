@@ -100,8 +100,13 @@ async function ensureCmsTables(): Promise<void> {
       image_url TEXT NOT NULL,
       price_label VARCHAR(64) NOT NULL,
       button_url TEXT NOT NULL DEFAULT '',
+      quantity_enabled BOOLEAN NOT NULL DEFAULT TRUE,
       updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `;
+  await sql`
+    ALTER TABLE support_cards
+    ADD COLUMN IF NOT EXISTS quantity_enabled BOOLEAN NOT NULL DEFAULT TRUE
   `;
   await sql`
     CREATE INDEX IF NOT EXISTS support_cards_sort_idx
@@ -130,6 +135,22 @@ async function ensureCmsTables(): Promise<void> {
   await sql`
     CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
     ON support_orders (status, amount_kopecks, created_at)
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS support_order_items (
+      id SERIAL PRIMARY KEY,
+      order_id INT NOT NULL REFERENCES support_orders(id) ON DELETE CASCADE,
+      card_id INT REFERENCES support_cards(id) ON DELETE SET NULL,
+      card_title VARCHAR(200) NOT NULL,
+      price_label VARCHAR(64) NOT NULL,
+      unit_kopecks INT NOT NULL,
+      quantity INT NOT NULL DEFAULT 1,
+      line_kopecks INT NOT NULL
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS support_order_items_order_idx
+    ON support_order_items (order_id)
   `;
 
   // Seed FAQ з коду, якщо таблиця порожня
@@ -204,7 +225,8 @@ async function ensureCmsTables(): Promise<void> {
     for (const s of seeds) {
       await sql`
         INSERT INTO support_cards (
-          sort_order, title, description, image_url, price_label, button_url
+          sort_order, title, description, image_url, price_label, button_url,
+          quantity_enabled
         )
         VALUES (
           ${s.order},
@@ -212,7 +234,8 @@ async function ensureCmsTables(): Promise<void> {
           ${s.description},
           ${s.image},
           ${s.price},
-          ${""}
+          ${""},
+          ${true}
         )
       `;
     }
@@ -451,6 +474,7 @@ export type SupportCardRecord = {
   image_url: string;
   price_label: string;
   button_url: string;
+  quantity_enabled: boolean;
 };
 
 export type SupportCardInput = {
@@ -460,13 +484,16 @@ export type SupportCardInput = {
   image_url: string;
   price_label: string;
   button_url: string;
+  quantity_enabled: boolean;
 };
 
 export async function listSupportCards(): Promise<SupportCardRecord[]> {
   await ensureCmsTables();
   const sql = getSql();
   const rows = rowsOf(await sql`
-    SELECT id, sort_order, title, description, image_url, price_label, button_url
+    SELECT
+      id, sort_order, title, description, image_url, price_label, button_url,
+      quantity_enabled
     FROM support_cards
     ORDER BY sort_order ASC, id ASC
   `);
@@ -478,6 +505,7 @@ export async function listSupportCards(): Promise<SupportCardRecord[]> {
     image_url: String(r.image_url ?? ""),
     price_label: String(r.price_label ?? ""),
     button_url: String(r.button_url ?? ""),
+    quantity_enabled: r.quantity_enabled !== false && r.quantity_enabled !== "f",
   }));
 }
 
@@ -490,7 +518,8 @@ export async function replaceSupportCards(
   for (const item of items) {
     await sql`
       INSERT INTO support_cards (
-        sort_order, title, description, image_url, price_label, button_url
+        sort_order, title, description, image_url, price_label, button_url,
+        quantity_enabled
       )
       VALUES (
         ${item.sort_order},
@@ -498,7 +527,8 @@ export async function replaceSupportCards(
         ${item.description},
         ${item.image_url},
         ${item.price_label},
-        ${item.button_url}
+        ${item.button_url},
+        ${item.quantity_enabled}
       )
     `;
   }

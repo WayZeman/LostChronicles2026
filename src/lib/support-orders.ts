@@ -35,8 +35,24 @@ export async function ensureSupportOrdersTable(): Promise<void> {
     ADD COLUMN IF NOT EXISTS quantity INT NOT NULL DEFAULT 1
   `;
   await sql`
+    CREATE TABLE IF NOT EXISTS support_order_items (
+      id SERIAL PRIMARY KEY,
+      order_id INT NOT NULL REFERENCES support_orders(id) ON DELETE CASCADE,
+      card_id INT REFERENCES support_cards(id) ON DELETE SET NULL,
+      card_title VARCHAR(200) NOT NULL,
+      price_label VARCHAR(64) NOT NULL,
+      unit_kopecks INT NOT NULL,
+      quantity INT NOT NULL DEFAULT 1,
+      line_kopecks INT NOT NULL
+    )
+  `;
+  await sql`
     CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
     ON support_orders (status, amount_kopecks, created_at)
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS support_order_items_order_idx
+    ON support_order_items (order_id)
   `;
   ensured = true;
 }
@@ -71,6 +87,15 @@ export function buildMonoJarPayUrl(jarUrl: string, amountKopecks: number): strin
   }
 }
 
+export type SupportOrderItemRecord = {
+  card_id: number | null;
+  card_title: string;
+  price_label: string;
+  unit_kopecks: number;
+  quantity: number;
+  line_kopecks: number;
+};
+
 export type SupportOrderRecord = {
   id: number;
   card_id: number | null;
@@ -82,9 +107,13 @@ export type SupportOrderRecord = {
   note: string;
   status: string;
   created_at: string;
+  items: SupportOrderItemRecord[];
 };
 
-function mapOrderRow(row: Record<string, unknown>): SupportOrderRecord {
+function mapOrderRow(
+  row: Record<string, unknown>,
+  items: SupportOrderItemRecord[] = [],
+): SupportOrderRecord {
   return {
     id: num(row.id),
     card_id: row.card_id == null ? null : num(row.card_id),
@@ -96,7 +125,31 @@ function mapOrderRow(row: Record<string, unknown>): SupportOrderRecord {
     note: String(row.note ?? ""),
     status: String(row.status ?? "pending"),
     created_at: String(row.created_at ?? ""),
+    items,
   };
+}
+
+async function loadOrderItems(
+  orderId: number,
+): Promise<SupportOrderItemRecord[]> {
+  const sql = getSql();
+  const rows = rowsOf(
+    await sql`
+      SELECT
+        card_id, card_title, price_label, unit_kopecks, quantity, line_kopecks
+      FROM support_order_items
+      WHERE order_id = ${orderId}
+      ORDER BY id ASC
+    `,
+  );
+  return rows.map((r) => ({
+    card_id: r.card_id == null ? null : num(r.card_id),
+    card_title: String(r.card_title ?? ""),
+    price_label: String(r.price_label ?? ""),
+    unit_kopecks: num(r.unit_kopecks),
+    quantity: Math.max(1, num(r.quantity) || 1),
+    line_kopecks: num(r.line_kopecks),
+  }));
 }
 
 export async function getSupportOrderById(
@@ -116,14 +169,22 @@ export async function getSupportOrderById(
   );
   const row = rows[0];
   if (!row) return null;
-  return mapOrderRow(row);
+  const items = await loadOrderItems(id);
+  return mapOrderRow(row, items);
 }
 
-export async function createSupportOrder(input: {
+export type CheckoutItemInput = {
   cardId: number;
+  quantity?: number;
+};
+
+/**
+ * Створити замовлення з однієї або кількох позицій (кошик).
+ */
+export async function createSupportCheckout(input: {
   nickname: string;
   note?: string;
-  quantity?: number;
+  items: CheckoutItemInput[];
 }): Promise<SupportOrderRecord> {
   await ensureSupportOrdersTable();
   const sql = getSql();
@@ -132,26 +193,73 @@ export async function createSupportOrder(input: {
     throw new Error("Вкажи нікнейм (мінімум 2 символи).");
   }
   const note = (input.note ?? "").trim().slice(0, 500);
-  const quantity = clampOrderQuantity(input.quantity);
-
-  const cards = rowsOf(
-    await sql`
-      SELECT id, title, price_label
-      FROM support_cards
-      WHERE id = ${input.cardId}
-      LIMIT 1
-    `,
-  );
-  const card = cards[0];
-  if (!card) throw new Error("Картку не знайдено.");
-
-  const title = String(card.title ?? "");
-  const priceLabel = String(card.price_label ?? "");
-  const unitAmount = parsePriceLabelToKopecks(priceLabel);
-  if (unitAmount == null) {
-    throw new Error("Не вдалося розпізнати ціну картки.");
+  if (!Array.isArray(input.items) || input.items.length === 0) {
+    throw new Error("Кошик порожній.");
   }
-  const amount = unitAmount * quantity;
+  if (input.items.length > 30) {
+    throw new Error("Занадто багато позицій у кошику.");
+  }
+
+  const merged = new Map<number, number>();
+  for (const raw of input.items) {
+    const cardId = Number(raw.cardId);
+    if (!Number.isInteger(cardId) || cardId < 1) {
+      throw new Error("Некоректна картка в кошику.");
+    }
+    merged.set(cardId, (merged.get(cardId) ?? 0) + clampOrderQuantity(raw.quantity));
+  }
+
+  type Line = {
+    cardId: number;
+    title: string;
+    priceLabel: string;
+    unitKopecks: number;
+    quantity: number;
+    lineKopecks: number;
+    quantityEnabled: boolean;
+  };
+  const lines: Line[] = [];
+
+  for (const [cardId, qtyRaw] of merged) {
+    const cards = rowsOf(
+      await sql`
+        SELECT id, title, price_label, quantity_enabled
+        FROM support_cards
+        WHERE id = ${cardId}
+        LIMIT 1
+      `,
+    );
+    const card = cards[0];
+    if (!card) throw new Error(`Картку #${cardId} не знайдено.`);
+
+    const quantityEnabled =
+      card.quantity_enabled !== false && card.quantity_enabled !== "f";
+    const quantity = quantityEnabled ? clampOrderQuantity(qtyRaw) : 1;
+    const title = String(card.title ?? "");
+    const priceLabel = String(card.price_label ?? "");
+    const unitKopecks = parsePriceLabelToKopecks(priceLabel);
+    if (unitKopecks == null) {
+      throw new Error(`Не вдалося розпізнати ціну: ${title}`);
+    }
+    lines.push({
+      cardId: num(card.id),
+      title,
+      priceLabel,
+      unitKopecks,
+      quantity,
+      lineKopecks: unitKopecks * quantity,
+      quantityEnabled,
+    });
+  }
+
+  const totalKopecks = lines.reduce((s, l) => s + l.lineKopecks, 0);
+  const totalQty = lines.reduce((s, l) => s + l.quantity, 0);
+  const summaryTitle =
+    lines.length === 1 ? lines[0].title : `Кошик (${lines.length} поз.)`;
+  const summaryPrice =
+    lines.length === 1
+      ? lines[0].priceLabel
+      : `${(totalKopecks / 100).toLocaleString("uk-UA")} ₴`;
 
   const inserted = rowsOf(
     await sql`
@@ -160,11 +268,11 @@ export async function createSupportOrder(input: {
         nickname, note, status
       )
       VALUES (
-        ${num(card.id)},
-        ${title},
-        ${priceLabel},
-        ${amount},
-        ${quantity},
+        ${lines.length === 1 ? lines[0].cardId : null},
+        ${summaryTitle},
+        ${summaryPrice},
+        ${totalKopecks},
+        ${totalQty},
         ${nick},
         ${note},
         ${"pending"}
@@ -176,11 +284,52 @@ export async function createSupportOrder(input: {
   );
   const row = inserted[0];
   if (!row) throw new Error("Не вдалося створити замовлення.");
+  const orderId = num(row.id);
 
-  return mapOrderRow(row);
+  const items: SupportOrderItemRecord[] = [];
+  for (const line of lines) {
+    await sql`
+      INSERT INTO support_order_items (
+        order_id, card_id, card_title, price_label,
+        unit_kopecks, quantity, line_kopecks
+      )
+      VALUES (
+        ${orderId},
+        ${line.cardId},
+        ${line.title},
+        ${line.priceLabel},
+        ${line.unitKopecks},
+        ${line.quantity},
+        ${line.lineKopecks}
+      )
+    `;
+    items.push({
+      card_id: line.cardId,
+      card_title: line.title,
+      price_label: line.priceLabel,
+      unit_kopecks: line.unitKopecks,
+      quantity: line.quantity,
+      line_kopecks: line.lineKopecks,
+    });
+  }
+
+  return mapOrderRow(row, items);
 }
 
-/** Протермінувати старі pending (немаatch після 36 год). */
+/** @deprecated use createSupportCheckout */
+export async function createSupportOrder(input: {
+  cardId: number;
+  nickname: string;
+  note?: string;
+  quantity?: number;
+}): Promise<SupportOrderRecord> {
+  return createSupportCheckout({
+    nickname: input.nickname,
+    note: input.note,
+    items: [{ cardId: input.cardId, quantity: input.quantity }],
+  });
+}
+
 export async function expireStaleSupportOrders(): Promise<number> {
   await ensureSupportOrdersTable();
   const sql = getSql();
@@ -233,10 +382,6 @@ function pickOrdersForAmount(
   return [];
 }
 
-/**
- * Зіставити приріст банку з pending-замовленнями.
- * Повертає замовлення, які щойно стали paid (ще без notified).
- */
 export async function matchPendingOrdersByPayment(
   differenceKopecks: number,
 ): Promise<SupportOrderRecord[]> {
@@ -255,7 +400,7 @@ export async function matchPendingOrdersByPayment(
       ORDER BY created_at ASC, id ASC
       LIMIT 100
     `,
-  ).map(mapOrderRow);
+  ).map((row) => mapOrderRow(row));
 
   const matched = pickOrdersForAmount(pending, differenceKopecks);
   if (matched.length === 0) return [];
@@ -267,6 +412,7 @@ export async function matchPendingOrdersByPayment(
       WHERE id = ${order.id} AND status = 'pending'
     `;
     order.status = "paid";
+    order.items = await loadOrderItems(order.id);
   }
 
   return matched;

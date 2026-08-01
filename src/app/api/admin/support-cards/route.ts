@@ -63,11 +63,15 @@ export async function PUT(req: Request) {
         typeof it.price_label === "string" ? it.price_label.trim() : "";
       const button_url =
         typeof it.button_url === "string" ? it.button_url.trim() : "";
+      const quantity_enabled =
+        typeof it.quantity_enabled === "boolean"
+          ? it.quantity_enabled
+          : it.quantity_enabled !== false && it.quantity_enabled !== "false";
 
       if (!title || !description || !image_url || !price_label) {
         return NextResponse.json(
           {
-            error: `Картка ${i + 1}: заповни заголовок, опис, фото (URL) і ціну.`,
+            error: `Картка ${i + 1}: заповни заголовок, опис, фото і ціну.`,
           },
           { status: 400 },
         );
@@ -84,6 +88,12 @@ export async function PUT(req: Request) {
           { status: 400 },
         );
       }
+      if (image_url.length > 900_000) {
+        return NextResponse.json(
+          { error: `Картка ${i + 1}: фото занадто велике.` },
+          { status: 400 },
+        );
+      }
 
       items.push({
         sort_order: i + 1,
@@ -92,6 +102,7 @@ export async function PUT(req: Request) {
         image_url,
         price_label,
         button_url,
+        quantity_enabled: Boolean(quantity_enabled),
       });
     }
 
