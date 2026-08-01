@@ -701,14 +701,12 @@ export default function ProposalDetailPage() {
                 <ProposalChoiceBar
                   options={proposal.options ?? []}
                   showQuorum={open}
-                  votingOpen={open}
                 />
               ) : (
                 <ProposalVoteBar
                   yes={proposal.yes_votes}
                   no={proposal.no_votes}
                   showQuorum={open}
-                  votingOpen={open}
                 />
               )}
 

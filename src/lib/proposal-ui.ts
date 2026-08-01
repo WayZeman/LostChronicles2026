@@ -1,6 +1,9 @@
 /** Мінімум голосів після закінчення терміну, інакше голосування скасовується. */
 export const PROPOSAL_MIN_VOTES_FOR_RESULT = 6;
 
+/** При нічиї (і достатньому кворумі) термін автоматично продовжується. */
+export const PROPOSAL_TIE_EXTENSION_DAYS = 1;
+
 export function isProposalVotingOpenClient(
   status: string,
   endsAtIso: string,

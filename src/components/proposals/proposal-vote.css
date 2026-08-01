@@ -97,16 +97,12 @@
 .lc-proposal-match-card {
   transition:
     border-color 0.15s ease,
-    background-color 0.15s ease,
-    box-shadow 0.15s ease;
+    background-color 0.15s ease;
 }
 
 .lc-proposal-match-card:hover {
-  border-color: rgba(84, 197, 48, 0.65);
-  background: var(--mc-surface-elevated);
-  box-shadow:
-    0 1px 0 rgba(122, 224, 74, 0.14) inset,
-    0 10px 28px rgba(0, 0, 0, 0.4);
+  border-color: rgba(84, 197, 48, 0.45);
+  background: color-mix(in srgb, var(--mc-surface-elevated) 70%, transparent);
 }
 
 .lc-vote-status-live {
@@ -123,8 +119,8 @@
   height: 0.4rem;
   margin-top: -0.2rem;
   border-radius: 999px;
-  background: var(--mc-grass-bright);
-  box-shadow: 0 0 8px rgba(122, 224, 74, 0.7);
+  background: #7dff5a;
+  box-shadow: 0 0 8px rgba(125, 255, 90, 0.85);
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -10,7 +10,10 @@ import {
   type ProposalOptionPublic,
   isProposalKind,
 } from "@/lib/proposal-kinds";
-import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
+import {
+  PROPOSAL_MIN_VOTES_FOR_RESULT,
+  PROPOSAL_TIE_EXTENSION_DAYS,
+} from "@/lib/proposal-ui";
 
 /** Результат `sql` у режимі рядків-об’єктів; тип драйвера занадто широкий для union. */
 function rowsOf(r: unknown): Record<string, unknown>[] {
@@ -184,75 +187,141 @@ async function loadOptionsByProposalIds(
 }
 
 /** Закриває прострочені active-пропозиції; надсилає Discord/Telegram про результати (не блокує відповідь при помилках вебхуків).
- *  Якщо голосів менше PROPOSAL_MIN_VOTES_FOR_RESULT — статус cancelled (скасовано через низьку явку). */
+ *  Якщо голосів менше PROPOSAL_MIN_VOTES_FOR_RESULT — статус cancelled (скасовано через низьку явку).
+ *  Якщо кворум є, але нічия (рівна кількість) — ends_at += 1 доба, голосування триває. */
 async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   const sql = getSql();
   const minVotes = PROPOSAL_MIN_VOTES_FOR_RESULT;
-  const rows = rowsOf(await sql`
-    WITH expired AS (
-      SELECT
-        p.id,
-        p.title,
-        COALESCE(p.kind, 'yes_no') AS kind,
-        COALESCE(COUNT(v.id), 0)::int AS total_votes,
-        COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
-        COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes
-      FROM proposals p
-      LEFT JOIN votes v ON v.proposal_id = p.id
-      WHERE p.status = 'active' AND p.ends_at < NOW()
-      GROUP BY p.id, p.title, p.kind
-    ),
-    upd AS (
-      UPDATE proposals p
-      SET status = CASE
-        WHEN e.total_votes < ${minVotes} THEN 'cancelled'
-        ELSE 'closed'
-      END
-      FROM expired e
-      WHERE p.id = e.id
-      RETURNING p.id, p.title, p.status
-    )
+  const expired = rowsOf(await sql`
     SELECT
-      upd.id,
-      upd.title,
-      upd.status,
-      e.kind,
-      e.yes_votes,
-      e.no_votes,
-      e.total_votes
-    FROM upd
-    INNER JOIN expired e ON e.id = upd.id
+      p.id,
+      p.title,
+      COALESCE(p.kind, 'yes_no') AS kind,
+      COALESCE(COUNT(v.id), 0)::int AS total_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes
+    FROM proposals p
+    LEFT JOIN votes v ON v.proposal_id = p.id
+    WHERE p.status = 'active' AND p.ends_at < NOW()
+    GROUP BY p.id, p.title, p.kind
   `);
-  const closed: ProposalExpiredNotifyRow[] = [];
-  for (const r of rows) {
+  if (expired.length === 0) return [];
+
+  const toCancel: number[] = [];
+  const toClose: {
+    id: number;
+    title: string;
+    kind: ReturnType<typeof mapKind>;
+    yes: number;
+    no: number;
+    total: number;
+  }[] = [];
+  const toExtend: number[] = [];
+
+  for (const r of expired) {
     const id = num(r.id);
     const kind = mapKind(r.kind);
-    let summary: string | undefined;
+    const total = num(r.total_votes);
+    const yes = num(r.yes_votes);
+    const no = num(r.no_votes);
+
+    if (total < minVotes) {
+      toCancel.push(id);
+      continue;
+    }
+
+    let tied = false;
     if (kind === PROPOSAL_KIND_CHOICE) {
       const opts = (await loadOptionsByProposalIds([id])).get(id) ?? [];
       const max = opts.length ? Math.max(0, ...opts.map((o) => o.votes)) : 0;
       const leaders = opts.filter((o) => o.votes === max && max > 0);
-      if (String(r.status) === "cancelled") {
-        summary = undefined;
-      } else if (leaders.length === 0) {
-        summary = "Без голосів";
-      } else if (leaders.length > 1) {
-        summary = `Нічия: ${leaders.map((o) => o.label).join(", ")}`;
-      } else {
-        summary = `Переміг варіант «${leaders[0]!.label}» (${leaders[0]!.votes})`;
-      }
+      tied = leaders.length > 1;
+    } else {
+      tied = yes === no;
     }
+
+    if (tied) {
+      toExtend.push(id);
+    } else {
+      toClose.push({
+        id,
+        title: String(r.title ?? ""),
+        kind,
+        yes,
+        no,
+        total,
+      });
+    }
+  }
+
+  if (toExtend.length > 0) {
+    await sql`
+      UPDATE proposals
+      SET ends_at = ends_at + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
+      WHERE id = ANY(${toExtend})
+        AND status = 'active'
+    `;
+  }
+
+  if (toCancel.length > 0) {
+    await sql`
+      UPDATE proposals
+      SET status = 'cancelled'
+      WHERE id = ANY(${toCancel})
+        AND status = 'active'
+    `;
+  }
+
+  if (toClose.length > 0) {
+    const closeIds = toClose.map((c) => c.id);
+    await sql`
+      UPDATE proposals
+      SET status = 'closed'
+      WHERE id = ANY(${closeIds})
+        AND status = 'active'
+    `;
+  }
+
+  const closed: ProposalExpiredNotifyRow[] = [];
+
+  for (const id of toCancel) {
+    const row = expired.find((e) => num(e.id) === id);
+    if (!row) continue;
     closed.push({
       id,
-      title: String(r.title ?? ""),
-      yes_votes: num(r.yes_votes),
-      no_votes: num(r.no_votes),
-      status: String(r.status ?? "closed"),
-      kind,
-      total_votes: num(r.total_votes),
+      title: String(row.title ?? ""),
+      yes_votes: num(row.yes_votes),
+      no_votes: num(row.no_votes),
+      status: "cancelled",
+      kind: mapKind(row.kind),
+      total_votes: num(row.total_votes),
+    });
+  }
+
+  for (const c of toClose) {
+    let summary: string | undefined;
+    if (c.kind === PROPOSAL_KIND_CHOICE) {
+      const opts = (await loadOptionsByProposalIds([c.id])).get(c.id) ?? [];
+      const max = opts.length ? Math.max(0, ...opts.map((o) => o.votes)) : 0;
+      const leaders = opts.filter((o) => o.votes === max && max > 0);
+      if (leaders.length === 0) summary = "Без голосів";
+      else if (leaders.length > 1)
+        summary = `Нічия: ${leaders.map((o) => o.label).join(", ")}`;
+      else
+        summary = `Переміг варіант «${leaders[0]!.label}» (${leaders[0]!.votes})`;
+    }
+    closed.push({
+      id: c.id,
+      title: c.title,
+      yes_votes: c.yes,
+      no_votes: c.no,
+      status: "closed",
+      kind: c.kind,
+      total_votes: c.total,
       summary,
     });
   }
+
   if (closed.length > 0) {
     void notifyProposalResultsBatch(closed).catch(() => {});
   }

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlusCircle } from "lucide-react";
 import { ProposalChoiceBar } from "@/components/proposals/ProposalChoiceBar";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
@@ -38,11 +38,14 @@ type ProposalItem = {
   options: ProposalOptionPublic[];
 };
 
+type TabId = "active" | "done";
+
 export function ProposalsListClient() {
   const searchParams = useSearchParams();
   const err = searchParams.get("error");
   const [list, setList] = useState<ProposalItem[] | null>(null);
   const [failed, setFailed] = useState(false);
+  const [tab, setTab] = useState<TabId>("active");
 
   const load = useCallback(async () => {
     try {
@@ -72,9 +75,18 @@ export function ProposalsListClient() {
     };
   }, [load]);
 
-  const openCount =
-    list?.filter((p) => isProposalVotingOpenClient(p.status, p.ends_at))
-      .length ?? 0;
+  const { active, done } = useMemo(() => {
+    const all = list ?? [];
+    const activeList: ProposalItem[] = [];
+    const doneList: ProposalItem[] = [];
+    for (const p of all) {
+      if (isProposalVotingOpenClient(p.status, p.ends_at)) activeList.push(p);
+      else doneList.push(p);
+    }
+    return { active: activeList, done: doneList };
+  }, [list]);
+
+  const visible = tab === "active" ? active : done;
 
   return (
     <main className={lcPageMainClass}>
@@ -86,7 +98,7 @@ export function ProposalsListClient() {
         )}
       >
         <SoftAppear>
-          <header className="mb-8 border-b border-white/[0.08] pb-6 sm:mb-10 sm:pb-8">
+          <header className="mb-6 border-b border-white/[0.08] pb-5 sm:mb-8 sm:pb-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
               <div className="max-w-xl text-center sm:text-left">
                 <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
@@ -96,11 +108,6 @@ export function ProposalsListClient() {
                   За/проти або вибір варіантів · від{" "}
                   {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів
                 </p>
-                {list && list.length > 0 ? (
-                  <p className="mt-2 text-sm tabular-nums text-[var(--mc-text)]">
-                    {openCount} активних · {list.length} усього
-                  </p>
-                ) : null}
               </div>
               <Link
                 href="/proposals/new"
@@ -109,6 +116,43 @@ export function ProposalsListClient() {
                 <PlusCircle className="size-4 opacity-80" aria-hidden />
                 Створити
               </Link>
+            </div>
+
+            <div
+              className="mt-5 grid grid-cols-2 gap-1 rounded-lg border border-white/10 bg-black/25 p-1"
+              role="tablist"
+              aria-label="Фільтр голосувань"
+            >
+              {(
+                [
+                  { id: "active" as const, label: "Активні", count: active.length },
+                  { id: "done" as const, label: "Завершені", count: done.length },
+                ] as const
+              ).map((t) => {
+                const selected = tab === t.id;
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={selected}
+                    onClick={() => setTab(t.id)}
+                    className={cn(
+                      "lc-focus-ring min-h-10 rounded-md px-3 text-sm font-bold transition-colors",
+                      selected
+                        ? "bg-[var(--mc-net-green)]/20 text-[var(--mc-grass-bright)]"
+                        : "text-[var(--mc-text-muted)] hover:text-[var(--mc-text)]",
+                    )}
+                  >
+                    {t.label}
+                    {list ? (
+                      <span className="ml-1.5 tabular-nums opacity-80">
+                        {t.count}
+                      </span>
+                    ) : null}
+                  </button>
+                );
+              })}
             </div>
           </header>
         </SoftAppear>
@@ -204,9 +248,24 @@ export function ProposalsListClient() {
               </Link>
             </div>
           </SoftAppear>
+        ) : visible.length === 0 ? (
+          <SoftAppear>
+            <div
+              className={cn(
+                lcGlassPanelClass,
+                "lc-interactive-panel-static py-10 text-center",
+              )}
+            >
+              <p className="text-[var(--mc-text-muted)]">
+                {tab === "active"
+                  ? "Немає активних голосувань."
+                  : "Ще немає завершених голосувань."}
+              </p>
+            </div>
+          </SoftAppear>
         ) : (
-          <ul className="lc-stagger grid gap-3 sm:gap-4">
-            {list.map((p) => {
+          <ul className="lc-stagger grid gap-2.5 sm:gap-3">
+            {visible.map((p) => {
               const open = isProposalVotingOpenClient(p.status, p.ends_at);
               const isChoice = p.kind === PROPOSAL_KIND_CHOICE;
               return (
@@ -215,32 +274,30 @@ export function ProposalsListClient() {
                     href={`/proposals/${p.id}`}
                     className={cn(
                       lcGlassPanelClass,
-                      "lc-interactive-panel-static lc-proposal-match-card group block !rounded-[var(--radius)] !p-4 sm:!p-5",
+                      "lc-interactive-panel-static lc-proposal-match-card group block !rounded-[var(--radius)] !p-3.5 sm:!p-4",
                       "lc-focus-ring transition-[border-color,background-color] hover:border-[var(--mc-net-green)]/35",
                     )}
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-2 gap-y-2">
-                      <h2 className="min-w-0 flex-1 text-lg font-semibold leading-snug tracking-tight text-[var(--mc-text)] transition-colors group-hover:text-[var(--mc-net-green)] [overflow-wrap:anywhere] sm:text-xl">
+                    <div className="flex items-start justify-between gap-3">
+                      <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug tracking-tight text-[var(--mc-text)] transition-colors group-hover:text-[var(--mc-net-green)] [overflow-wrap:anywhere] sm:text-lg">
                         {p.title}
                       </h2>
-                      <ProposalStatusBadge status={p.status} votingOpen={open} />
+                      <ProposalStatusBadge
+                        status={p.status}
+                        votingOpen={open}
+                        className="mt-0.5"
+                      />
                     </div>
 
-                    <p className="mt-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
-                      {proposalKindLabelUk(p.kind ?? "yes_no")}
-                    </p>
-
-                    {p.description.trim() ? (
-                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--mc-text-muted)]">
-                        {p.description}
-                      </p>
-                    ) : null}
-
-                    <p className="mt-2.5 text-sm text-[var(--mc-text)]">
-                      {p.author_username}
-                      <span className="mx-1.5 text-[var(--mc-text-muted)]">·</span>
-                      <span className="tabular-nums text-[var(--mc-text-muted)]">
-                        {formatTimeRemainingUk(p.ends_at)}
+                    <p className="mt-1.5 text-xs text-[var(--mc-text-muted)]">
+                      <span>{proposalKindLabelUk(p.kind ?? "yes_no")}</span>
+                      <span className="mx-1.5 opacity-50" aria-hidden>
+                        ·
+                      </span>
+                      <span className="tabular-nums">
+                        {open
+                          ? formatTimeRemainingUk(p.ends_at)
+                          : "завершено"}
                       </span>
                     </p>
 
@@ -249,16 +306,12 @@ export function ProposalsListClient() {
                         <ProposalChoiceBar
                           options={p.options ?? []}
                           compact
-                          showQuorum={open}
-                          votingOpen={open}
                         />
                       ) : (
                         <ProposalVoteBar
                           yes={p.yes_votes}
                           no={p.no_votes}
                           compact
-                          showQuorum={open}
-                          votingOpen={open}
                         />
                       )}
                     </div>

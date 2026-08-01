@@ -17,7 +17,7 @@ export function ProposalStatusBadge({
       className={cn(
         "inline-flex shrink-0 items-center rounded-md px-2 py-0.5 text-xs font-semibold",
         votingOpen &&
-          "lc-vote-status-live bg-[var(--mc-net-green)] text-[var(--mc-green-ink)] ring-1 ring-[#2f8a18]",
+          "lc-vote-status-live bg-[#1a5c12] text-[#e8ffe0] ring-1 ring-[#3d9a28]",
         !votingOpen &&
           status === "cancelled" &&
           "bg-[#ef4444]/25 text-[#fecaca] ring-1 ring-[#ef4444]/50",
