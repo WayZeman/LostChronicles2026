@@ -63,14 +63,16 @@ async function sendOrdersTelegramHtml(html: string): Promise<boolean> {
   }
 }
 
-export async function notifySupportOrderPaidTelegram(order: {
+type OrderNotifyPayload = {
   id: number;
   card_title: string;
   price_label: string;
   amount_kopecks: number;
   nickname: string;
   note: string;
-}): Promise<boolean> {
+};
+
+function orderLines(order: OrderNotifyPayload): string {
   const title = escapeTelegramHtml(order.card_title);
   const nick = escapeTelegramHtml(order.nickname);
   const price = escapeTelegramHtml(
@@ -80,13 +82,32 @@ export async function notifySupportOrderPaidTelegram(order: {
     ? `\n📝 ${escapeTelegramHtml(order.note.trim())}`
     : "";
 
-  const html =
-    `<b>Нове замовлення (оплачено)</b>\n\n` +
+  return (
     `📦 ${title}\n` +
     `👤 Нік: <b>${nick}</b>\n` +
     `💵 ${price}\n` +
     `🆔 #${order.id}` +
-    note;
+    note
+  );
+}
+
+/** Одразу коли гравець натиснув «Оплатити» (ще до надходження на банку). */
+export async function notifySupportOrderCreatedTelegram(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  const html =
+    `<b>Нове замовлення</b>\n` +
+    `<i>Гравець перейшов до оплати</i>\n\n` +
+    orderLines(order);
+
+  return sendOrdersTelegramHtml(html);
+}
+
+export async function notifySupportOrderPaidTelegram(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  const html =
+    `<b>Оплату підтверджено</b>\n\n` + orderLines(order);
 
   return sendOrdersTelegramHtml(html);
 }

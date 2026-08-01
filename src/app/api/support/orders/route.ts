@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 
+import { notifySupportOrderCreatedTelegram } from "@/lib/notify-support-order";
 import { getSupportSettings } from "@/lib/site-content";
 import {
   buildMonoJarPayUrl,
   createSupportOrder,
+  markOrdersNotified,
 } from "@/lib/support-orders";
 
 export const dynamic = "force-dynamic";
@@ -34,8 +36,14 @@ export async function POST(req: Request) {
       "https://send.monobank.ua/jar/8f7nV8DopG";
     const payUrl = buildMonoJarPayUrl(jar, order.amount_kopecks);
 
+    const notified = await notifySupportOrderCreatedTelegram(order);
+    if (notified) {
+      await markOrdersNotified([order.id]);
+    }
+
     return NextResponse.json({
       ok: true,
+      notified,
       order: {
         id: order.id,
         title: order.card_title,

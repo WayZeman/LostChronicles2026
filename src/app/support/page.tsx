@@ -23,7 +23,7 @@ export default async function SupportPage() {
   let cards: Awaited<ReturnType<typeof listSupportCards>> = [];
   let jarUrl = FALLBACK_JAR;
   let blurb =
-    "Обери пропозицію, вкажи нік і оплати. Після підтвердження оплати замовлення автоматично піде адмінам у Telegram.";
+    "Обери пропозицію, вкажи нік і натисни оплатити — адміни одразу отримають замовлення в Telegram.";
 
   try {
     const [list, support] = await Promise.all([
