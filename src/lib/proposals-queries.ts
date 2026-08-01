@@ -186,6 +186,69 @@ async function loadOptionsByProposalIds(
   return map;
 }
 
+/** Чи є нічия з достатнім кворумом (тоді голосування не фіналізуємо). */
+async function isQuorumTie(params: {
+  id: number;
+  kind: ReturnType<typeof mapKind>;
+  yes: number;
+  no: number;
+  total: number;
+}): Promise<boolean> {
+  if (params.total < PROPOSAL_MIN_VOTES_FOR_RESULT) return false;
+  if (params.kind === PROPOSAL_KIND_CHOICE) {
+    const opts = (await loadOptionsByProposalIds([params.id])).get(params.id) ?? [];
+    const max = opts.length ? Math.max(0, ...opts.map((o) => o.votes)) : 0;
+    const leaders = opts.filter((o) => o.votes === max && max > 0);
+    return leaders.length > 1;
+  }
+  return params.yes === params.no;
+}
+
+/**
+ * Закриті пропозиції з нічиєю (до правила продовження) повертаємо в active
+ * і даємо +1 добу від зараз.
+ */
+async function reopenTiedClosedProposals(): Promise<number> {
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT
+      p.id,
+      COALESCE(p.kind, 'yes_no') AS kind,
+      COALESCE(COUNT(v.id), 0)::int AS total_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes
+    FROM proposals p
+    LEFT JOIN votes v ON v.proposal_id = p.id
+    WHERE p.status = 'closed'
+    GROUP BY p.id, p.kind
+  `);
+  if (rows.length === 0) return 0;
+
+  const toReopen: number[] = [];
+  for (const r of rows) {
+    const id = num(r.id);
+    const tied = await isQuorumTie({
+      id,
+      kind: mapKind(r.kind),
+      yes: num(r.yes_votes),
+      no: num(r.no_votes),
+      total: num(r.total_votes),
+    });
+    if (tied) toReopen.push(id);
+  }
+  if (toReopen.length === 0) return 0;
+
+  await sql`
+    UPDATE proposals
+    SET
+      status = 'active',
+      ends_at = NOW() + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
+    WHERE id = ANY(${toReopen})
+      AND status = 'closed'
+  `;
+  return toReopen.length;
+}
+
 /** Закриває прострочені active-пропозиції; надсилає Discord/Telegram про результати (не блокує відповідь при помилках вебхуків).
  *  Якщо голосів менше PROPOSAL_MIN_VOTES_FOR_RESULT — статус cancelled (скасовано через низьку явку).
  *  Якщо кворум є, але нічия (рівна кількість) — ends_at += 1 доба, голосування триває. */
@@ -230,16 +293,7 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
       continue;
     }
 
-    let tied = false;
-    if (kind === PROPOSAL_KIND_CHOICE) {
-      const opts = (await loadOptionsByProposalIds([id])).get(id) ?? [];
-      const max = opts.length ? Math.max(0, ...opts.map((o) => o.votes)) : 0;
-      const leaders = opts.filter((o) => o.votes === max && max > 0);
-      tied = leaders.length > 1;
-    } else {
-      tied = yes === no;
-    }
-
+    const tied = await isQuorumTie({ id, kind, yes, no, total });
     if (tied) {
       toExtend.push(id);
     } else {
@@ -257,7 +311,7 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   if (toExtend.length > 0) {
     await sql`
       UPDATE proposals
-      SET ends_at = ends_at + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
+      SET ends_at = GREATEST(ends_at, NOW()) + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
       WHERE id = ANY(${toExtend})
         AND status = 'active'
     `;
@@ -328,12 +382,17 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   return closed;
 }
 
+async function syncProposalLifecycle(): Promise<void> {
+  await reopenTiedClosedProposals();
+  await expireActiveProposals();
+}
+
 export async function listProposalsForUser(
   currentUserId: number | null,
 ): Promise<ProposalRow[]> {
   await ensureAuthProviderColumns();
   await ensurePollSchema();
-  await expireActiveProposals();
+  await syncProposalLifecycle();
   const sql = getSql();
   const uid = currentUserId ?? 0;
   const rows = rowsOf(await sql`
@@ -374,7 +433,7 @@ export async function getProposalForUser(
 ): Promise<ProposalRow | null> {
   await ensureAuthProviderColumns();
   await ensurePollSchema();
-  await expireActiveProposals();
+  await syncProposalLifecycle();
   const sql = getSql();
   const uid = currentUserId ?? 0;
   const rows = rowsOf(await sql`
@@ -726,8 +785,9 @@ export async function setUserChoiceVote(params: {
   return true;
 }
 
-/** Для cron: закрити прострочені та надіслати сповіщення (те саме, що й при завантаженні списку). */
+/** Для cron: reopen ties + expire (те саме, що й при завантаженні списку). */
 export async function runExpireProposalsUpdate(): Promise<number> {
+  await reopenTiedClosedProposals();
   const closed = await expireActiveProposals();
   return closed.length;
 }

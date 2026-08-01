@@ -91,6 +91,42 @@ async function ensureCmsTables(): Promise<void> {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS support_cards (
+      id SERIAL PRIMARY KEY,
+      sort_order INT NOT NULL DEFAULT 0,
+      title VARCHAR(200) NOT NULL,
+      description TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      price_label VARCHAR(64) NOT NULL,
+      button_url TEXT NOT NULL DEFAULT '',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS support_cards_sort_idx
+    ON support_cards (sort_order, id)
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS support_orders (
+      id SERIAL PRIMARY KEY,
+      card_id INT REFERENCES support_cards(id) ON DELETE SET NULL,
+      card_title VARCHAR(200) NOT NULL,
+      price_label VARCHAR(64) NOT NULL,
+      amount_kopecks INT NOT NULL,
+      nickname VARCHAR(64) NOT NULL,
+      note TEXT NOT NULL DEFAULT '',
+      status VARCHAR(20) NOT NULL DEFAULT 'pending',
+      paid_at TIMESTAMPTZ,
+      notified_at TIMESTAMPTZ,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
+    ON support_orders (status, amount_kopecks, created_at)
+  `;
+
   // Seed FAQ з коду, якщо таблиця порожня
   const faqCount = rowsOf(await sql`SELECT COUNT(*)::int AS c FROM faq_items`);
   if (num(faqCount[0]?.c) === 0) {
@@ -98,6 +134,67 @@ async function ensureCmsTables(): Promise<void> {
       await sql`
         INSERT INTO faq_items (sort_order, question, answer_html)
         VALUES (${item.order}, ${item.question}, ${item.answer})
+      `;
+    }
+  } else {
+    // Кнопка «Підтримати» → сторінка /support
+    const donationFaq = LOST_CHRONICLES_FAQ.find(
+      (i) => i.question === "Пожертви",
+    );
+    if (donationFaq) {
+      await sql`
+        UPDATE faq_items
+        SET answer_html = ${donationFaq.answer}, updated_at = NOW()
+        WHERE lower(trim(question)) = 'пожертви'
+          AND answer_html NOT LIKE '%href="/support"%'
+      `;
+    }
+  }
+
+  // Seed support cards
+  const cardCount = rowsOf(
+    await sql`SELECT COUNT(*)::int AS c FROM support_cards`,
+  );
+  if (num(cardCount[0]?.c) === 0) {
+    const seeds = [
+      {
+        order: 1,
+        title: "Команди /hat і /pay",
+        description:
+          "Доступ до корисних команд: шапка з предмета в руці та переказ електронних діамантів між гравцями.",
+        image: "/support-gold-pile.png",
+        price: "20 ₴",
+      },
+      {
+        order: 2,
+        title: "Префікс і стиль ніка",
+        description:
+          "Префікси, емоджі в ніку, градієнт або зміна ніка (одноразово). Не ламає баланс гри.",
+        image: "/support-gold-pile.png",
+        price: "20 ₴",
+      },
+      {
+        order: 3,
+        title: "Власна моделька",
+        description:
+          "Одна або кілька кастомних модельок персонажа. Деталі узгоджуються з адміністрацією після донату.",
+        image: "/support-gold-pile.png",
+        price: "50 ₴",
+      },
+    ] as const;
+    for (const s of seeds) {
+      await sql`
+        INSERT INTO support_cards (
+          sort_order, title, description, image_url, price_label, button_url
+        )
+        VALUES (
+          ${s.order},
+          ${s.title},
+          ${s.description},
+          ${s.image},
+          ${s.price},
+          ${""}
+        )
       `;
     }
   }
@@ -313,6 +410,68 @@ export async function saveSupportSettings(
   await setSetting("support_blurb", s.blurb.trim());
   await setSetting("catalog_vote_links", JSON.stringify(s.catalogLinks));
   return getSupportSettings();
+}
+
+export type SupportCardRecord = {
+  id: number;
+  sort_order: number;
+  title: string;
+  description: string;
+  image_url: string;
+  price_label: string;
+  button_url: string;
+};
+
+export type SupportCardInput = {
+  sort_order: number;
+  title: string;
+  description: string;
+  image_url: string;
+  price_label: string;
+  button_url: string;
+};
+
+export async function listSupportCards(): Promise<SupportCardRecord[]> {
+  await ensureCmsTables();
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT id, sort_order, title, description, image_url, price_label, button_url
+    FROM support_cards
+    ORDER BY sort_order ASC, id ASC
+  `);
+  return rows.map((r) => ({
+    id: num(r.id),
+    sort_order: num(r.sort_order),
+    title: String(r.title ?? ""),
+    description: String(r.description ?? ""),
+    image_url: String(r.image_url ?? ""),
+    price_label: String(r.price_label ?? ""),
+    button_url: String(r.button_url ?? ""),
+  }));
+}
+
+export async function replaceSupportCards(
+  items: SupportCardInput[],
+): Promise<SupportCardRecord[]> {
+  await ensureCmsTables();
+  const sql = getSql();
+  await sql`DELETE FROM support_cards`;
+  for (const item of items) {
+    await sql`
+      INSERT INTO support_cards (
+        sort_order, title, description, image_url, price_label, button_url
+      )
+      VALUES (
+        ${item.sort_order},
+        ${item.title},
+        ${item.description},
+        ${item.image_url},
+        ${item.price_label},
+        ${item.button_url}
+      )
+    `;
+  }
+  return listSupportCards();
 }
 
 export type AdminUserRow = {

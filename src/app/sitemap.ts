@@ -10,6 +10,7 @@ const STATIC_PATHS: { path: string; priority: number; changeFrequency: MetadataR
     { path: "/map", priority: 0.85, changeFrequency: "weekly" },
     { path: "/news", priority: 0.8, changeFrequency: "weekly" },
     { path: "/proposals", priority: 0.75, changeFrequency: "weekly" },
+    { path: "/support", priority: 0.7, changeFrequency: "monthly" },
   ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

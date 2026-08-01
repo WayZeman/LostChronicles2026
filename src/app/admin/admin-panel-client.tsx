@@ -28,6 +28,15 @@ type SupportDraft = {
   catalogLinks: CatalogLink[];
 };
 
+type SupportCardDraft = {
+  key: string;
+  title: string;
+  description: string;
+  image_url: string;
+  price_label: string;
+  button_url: string;
+};
+
 type AdminUser = {
   id: number;
   username: string;
@@ -37,6 +46,10 @@ type AdminUser = {
 
 function newFaqKey(): string {
   return `faq-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function newCardKey(): string {
+  return `card-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
 export function AdminPanelClient() {
@@ -58,6 +71,7 @@ export function AdminPanelClient() {
     blurb: "",
     catalogLinks: [],
   });
+  const [supportCards, setSupportCards] = useState<SupportCardDraft[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
 
   const loadAll = useCallback(async () => {
@@ -72,9 +86,10 @@ export function AdminPanelClient() {
       }
       setAllowed(true);
 
-      const [faqRes, settingsRes, usersRes] = await Promise.all([
+      const [faqRes, settingsRes, cardsRes, usersRes] = await Promise.all([
         fetch("/api/admin/faq", { credentials: "include" }),
         fetch("/api/admin/settings", { credentials: "include" }),
+        fetch("/api/admin/support-cards", { credentials: "include" }),
         fetch("/api/admin/users", { credentials: "include" }),
       ]);
 
@@ -97,6 +112,27 @@ export function AdminPanelClient() {
         };
         setConnect(d.connect);
         setSupport(d.support);
+      }
+      if (cardsRes.ok) {
+        const d = (await cardsRes.json()) as {
+          items: {
+            title: string;
+            description: string;
+            image_url: string;
+            price_label: string;
+            button_url: string;
+          }[];
+        };
+        setSupportCards(
+          (d.items ?? []).map((i) => ({
+            key: newCardKey(),
+            title: i.title,
+            description: i.description,
+            image_url: i.image_url,
+            price_label: i.price_label,
+            button_url: i.button_url ?? "",
+          })),
+        );
       }
       if (usersRes.ok) {
         const d = (await usersRes.json()) as { users: AdminUser[] };
@@ -188,6 +224,72 @@ export function AdminPanelClient() {
       setErr("Мережа недоступна");
     }
     setBusy(false);
+  }
+
+  async function saveSupportCards() {
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const payload = supportCards.map(
+        ({ title, description, image_url, price_label, button_url }) => ({
+          title,
+          description,
+          image_url,
+          price_label,
+          button_url,
+        }),
+      );
+      const res = await fetch("/api/admin/support-cards", {
+        method: "PUT",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: payload }),
+      });
+      const d = (await res.json()) as {
+        error?: string;
+        items?: {
+          title: string;
+          description: string;
+          image_url: string;
+          price_label: string;
+          button_url: string;
+        }[];
+      };
+      if (!res.ok) {
+        setErr(d.error || "Помилка збереження карток");
+        setBusy(false);
+        return;
+      }
+      if (d.items) {
+        setSupportCards(
+          d.items.map((i, idx) => ({
+            key: supportCards[idx]?.key ?? newCardKey(),
+            title: i.title,
+            description: i.description,
+            image_url: i.image_url,
+            price_label: i.price_label,
+            button_url: i.button_url ?? "",
+          })),
+        );
+      }
+      setMsg("Картки підтримки збережено.");
+    } catch {
+      setErr("Мережа недоступна");
+    }
+    setBusy(false);
+  }
+
+  function moveCard(index: number, dir: -1 | 1) {
+    setSupportCards((prev) => {
+      const next = [...prev];
+      const j = index + dir;
+      if (j < 0 || j >= next.length) return prev;
+      const tmp = next[index]!;
+      next[index] = next[j]!;
+      next[j] = tmp;
+      return next;
+    });
   }
 
   async function setRole(userId: number, role: "user" | "admin") {
@@ -551,6 +653,177 @@ export function AdminPanelClient() {
                 >
                   Зберегти підтримку
                 </button>
+
+                <div className="mt-6 border-t border-white/10 pt-5">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-bold text-[var(--mc-text)]">
+                        Картки на /support
+                      </p>
+                      <p className="text-xs text-[var(--mc-text-muted)]">
+                        Фото (URL), заголовок, опис, ціна на кнопці. Порожній URL
+                        кнопки → банка Monobank вище.
+                      </p>
+                    </div>
+                    <Link
+                      href="/support"
+                      className="text-xs font-semibold text-[var(--mc-net-green)] hover:underline"
+                    >
+                      Відкрити сторінку ↗
+                    </Link>
+                  </div>
+
+                  <ul className="space-y-3">
+                    {supportCards.map((card, idx) => (
+                      <li
+                        key={card.key}
+                        className="space-y-2 rounded-lg border border-white/10 p-3"
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="text-xs font-bold tabular-nums text-[var(--mc-text-muted)]">
+                            #{idx + 1}
+                          </span>
+                          <button
+                            type="button"
+                            disabled={busy || idx === 0}
+                            onClick={() => moveCard(idx, -1)}
+                            className="lc-focus-ring rounded border border-white/15 p-1.5 disabled:opacity-35"
+                            aria-label="Вище"
+                          >
+                            <ArrowUp className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy || idx === supportCards.length - 1}
+                            onClick={() => moveCard(idx, 1)}
+                            className="lc-focus-ring rounded border border-white/15 p-1.5 disabled:opacity-35"
+                            aria-label="Нижче"
+                          >
+                            <ArrowDown className="size-3.5" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() =>
+                              setSupportCards((prev) =>
+                                prev.filter((_, i) => i !== idx),
+                              )
+                            }
+                            className="lc-focus-ring ml-auto rounded border border-rose-500/40 p-1.5 text-rose-200"
+                            aria-label="Видалити"
+                          >
+                            <Trash2 className="size-3.5" />
+                          </button>
+                        </div>
+                        <input
+                          value={card.title}
+                          onChange={(e) =>
+                            setSupportCards((prev) =>
+                              prev.map((c, i) =>
+                                i === idx
+                                  ? { ...c, title: e.target.value }
+                                  : c,
+                              ),
+                            )
+                          }
+                          placeholder="Заголовок"
+                          className="lc-focus-ring mc-input w-full px-2.5 py-2 text-sm"
+                        />
+                        <textarea
+                          value={card.description}
+                          onChange={(e) =>
+                            setSupportCards((prev) =>
+                              prev.map((c, i) =>
+                                i === idx
+                                  ? { ...c, description: e.target.value }
+                                  : c,
+                              ),
+                            )
+                          }
+                          placeholder="Опис"
+                          rows={3}
+                          className="lc-focus-ring mc-input w-full resize-y px-2.5 py-2 text-sm"
+                        />
+                        <div className="grid gap-2 sm:grid-cols-2">
+                          <input
+                            value={card.image_url}
+                            onChange={(e) =>
+                              setSupportCards((prev) =>
+                                prev.map((c, i) =>
+                                  i === idx
+                                    ? { ...c, image_url: e.target.value }
+                                    : c,
+                                ),
+                              )
+                            }
+                            placeholder="URL фото (/support-gold-pile.png)"
+                            className="lc-focus-ring mc-input px-2.5 py-2 text-sm"
+                          />
+                          <input
+                            value={card.price_label}
+                            onChange={(e) =>
+                              setSupportCards((prev) =>
+                                prev.map((c, i) =>
+                                  i === idx
+                                    ? { ...c, price_label: e.target.value }
+                                    : c,
+                                ),
+                              )
+                            }
+                            placeholder="Ціна на кнопці (20 ₴)"
+                            className="lc-focus-ring mc-input px-2.5 py-2 text-sm"
+                          />
+                        </div>
+                        <input
+                          value={card.button_url}
+                          onChange={(e) =>
+                            setSupportCards((prev) =>
+                              prev.map((c, i) =>
+                                i === idx
+                                  ? { ...c, button_url: e.target.value }
+                                  : c,
+                              ),
+                            )
+                          }
+                          placeholder="URL кнопки (опційно)"
+                          className="lc-focus-ring mc-input w-full px-2.5 py-2 text-sm"
+                        />
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() =>
+                        setSupportCards((prev) => [
+                          ...prev,
+                          {
+                            key: newCardKey(),
+                            title: "",
+                            description: "",
+                            image_url: "/support-gold-pile.png",
+                            price_label: "",
+                            button_url: "",
+                          },
+                        ])
+                      }
+                      className="lc-focus-ring inline-flex min-h-10 items-center gap-1.5 rounded-lg border border-white/15 px-3 text-sm font-bold text-[var(--mc-text)]"
+                    >
+                      <Plus className="size-4" />
+                      Додати картку
+                    </button>
+                    <button
+                      type="button"
+                      disabled={busy}
+                      onClick={() => void saveSupportCards()}
+                      className="lc-focus-ring lc-btn-accent px-4 py-2.5 text-sm disabled:opacity-50"
+                    >
+                      Зберегти картки
+                    </button>
+                  </div>
+                </div>
               </div>
             ) : null}
 

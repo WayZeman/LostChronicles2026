@@ -88,6 +88,40 @@ CREATE TABLE IF NOT EXISTS faq_items (
 
 CREATE INDEX IF NOT EXISTS faq_items_sort_idx ON faq_items (sort_order, id);
 
+CREATE TABLE IF NOT EXISTS support_cards (
+    id SERIAL PRIMARY KEY,
+    sort_order INT NOT NULL DEFAULT 0,
+    title VARCHAR(200) NOT NULL,
+    description TEXT NOT NULL,
+    image_url TEXT NOT NULL,
+    price_label VARCHAR(64) NOT NULL,
+    button_url TEXT NOT NULL DEFAULT '',
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS support_cards_sort_idx
+    ON support_cards (sort_order, id);
+
+CREATE TABLE IF NOT EXISTS support_orders (
+    id SERIAL PRIMARY KEY,
+    card_id INT REFERENCES support_cards(id) ON DELETE SET NULL,
+    card_title VARCHAR(200) NOT NULL,
+    price_label VARCHAR(64) NOT NULL,
+    amount_kopecks INT NOT NULL,
+    nickname VARCHAR(64) NOT NULL,
+    note TEXT NOT NULL DEFAULT '',
+    status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    paid_at TIMESTAMPTZ,
+    notified_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
+    ON support_orders (status, amount_kopecks, created_at);
+
+CREATE INDEX IF NOT EXISTS support_orders_created_idx
+    ON support_orders (created_at DESC);
+
 CREATE TABLE IF NOT EXISTS site_settings (
     key VARCHAR(64) PRIMARY KEY,
     value TEXT NOT NULL,

@@ -13,10 +13,6 @@ export type LostChroniclesFaqItem = {
 export const LC_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLScWada7pzzu4YeWd3cFLQY3Ozr8UBSmaHFn8tFGHLY-towXdw/viewform?usp=header";
 
-const LC_MONO_JAR_URL =
-  (typeof process !== "undefined" && process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim()) ||
-  "https://send.monobank.ua/jar/8f7nV8DopG";
-
 const FAQ_CTA_BTN =
   "lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-5 py-2.5 text-sm sm:min-h-[2.5rem] sm:w-auto sm:shrink-0 sm:self-center sm:px-6";
 
@@ -237,7 +233,7 @@ const FAQ_ADMIN = `<p><strong>Адміністрація серверу</strong>
 
 const FAQ_DONATIONS = `<div class="not-prose mb-4 flex flex-col gap-3 sm:mb-5 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
 <p class="mb-0 min-w-0 flex-1 text-left text-[0.9375rem] leading-[1.65] text-[var(--mc-text)] sm:text-base sm:leading-relaxed">На сервері є пожертви з бонусами, що серйозно не ламають баланс гри. Для бонусу зв’яжіться з адміністрацією з доказом оплати.</p>
-<a href="${LC_MONO_JAR_URL}" target="_blank" rel="noopener noreferrer" class="${FAQ_CTA_BTN}">Підтримати</a>
+<a href="/support" class="${FAQ_CTA_BTN}">Підтримати</a>
 </div>
 <p><strong>Від 20 грн (на вибір):</strong></p>
 <ul>
