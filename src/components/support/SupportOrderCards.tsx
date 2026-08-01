@@ -277,7 +277,6 @@ export function SupportOrderCards({ cards }: Props) {
       ) : (
         <ul className="grid grid-cols-1 gap-4 pb-24 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {cards.map((card) => {
-            const unit = parseUnitUah(card.price_label);
             const q = qtyFor(card.id);
             const added = justAdded === card.id;
             return (
@@ -298,7 +297,7 @@ export function SupportOrderCards({ cards }: Props) {
                       loading="lazy"
                       decoding="async"
                     />
-                    <div className="absolute bottom-2 right-2 border border-black bg-black/75 px-2 py-1 text-sm font-extrabold text-[var(--mc-net-green)]">
+                    <div className="absolute bottom-2 right-2 border-2 border-black bg-black/80 px-2.5 py-1.5 text-xl font-black tabular-nums leading-none text-[var(--mc-net-green)] sm:text-2xl">
                       {card.price_label}
                     </div>
                   </div>
@@ -310,10 +309,7 @@ export function SupportOrderCards({ cards }: Props) {
                       {card.description}
                     </p>
                     {card.quantity_enabled ? (
-                      <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
-                          К-сть
-                        </span>
+                      <div className="flex items-center justify-center gap-3">
                         <button
                           type="button"
                           aria-label="Зменшити"
@@ -323,7 +319,7 @@ export function SupportOrderCards({ cards }: Props) {
                         >
                           −
                         </button>
-                        <span className="min-w-7 text-center text-sm font-extrabold tabular-nums text-[var(--mc-text)]">
+                        <span className="min-w-7 text-center text-base font-extrabold tabular-nums text-[var(--mc-text)]">
                           {q}
                         </span>
                         <button
@@ -335,11 +331,6 @@ export function SupportOrderCards({ cards }: Props) {
                         >
                           +
                         </button>
-                        {unit != null && q > 1 ? (
-                          <span className="text-xs font-semibold text-[var(--mc-text-muted)]">
-                            {formatUah(unit * q)}
-                          </span>
-                        ) : null}
                       </div>
                     ) : null}
                     <button
@@ -413,13 +404,18 @@ export function SupportOrderCards({ cards }: Props) {
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-2 border-b-2 border-black px-4 py-3 sm:px-5">
-              <h3
-                id="support-cart-title"
-                className="text-lg font-extrabold text-[var(--mc-text)]"
-              >
-                Кошик
-              </h3>
+            <div className="flex items-center justify-between gap-2 border-b-2 border-dashed border-black/50 px-4 py-3 sm:px-5">
+              <div>
+                <h3
+                  id="support-cart-title"
+                  className="text-lg font-extrabold text-[var(--mc-text)]"
+                >
+                  Чек
+                </h3>
+                <p className="text-[11px] uppercase tracking-wide text-[var(--mc-text-muted)]">
+                  Lost Chronicles · магазин
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setCartOpen(false)}
@@ -430,77 +426,85 @@ export function SupportOrderCards({ cards }: Props) {
               </button>
             </div>
 
-            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 sm:px-5">
+            <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3 sm:px-5">
               {cartRows.length === 0 ? (
                 <p className="py-8 text-center text-sm text-[var(--mc-text-muted)]">
                   Кошик порожній.
                 </p>
               ) : (
-                <ul className="space-y-3">
-                  {cartRows.map(({ line, card, total }) => (
-                    <li
-                      key={card.id}
-                      className="flex gap-3 border-2 border-black/70 bg-black/25 p-2.5"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={card.image_url}
-                        alt=""
-                        className="size-16 shrink-0 border border-black/50 object-cover sm:size-[4.5rem]"
-                      />
-                      <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-extrabold text-[var(--mc-text)]">
-                          {card.title}
-                        </p>
-                        <p className="text-xs font-semibold text-[var(--mc-net-green)]">
-                          {formatUah(total)}
-                        </p>
-                        {card.quantity_enabled ? (
-                          <div className="mt-2 flex items-center gap-1.5">
-                            <button
-                              type="button"
-                              className="lc-focus-ring h-8 w-8 border-2 border-black font-bold"
-                              onClick={() =>
-                                updateCartQty(card.id, line.quantity - 1)
-                              }
-                            >
-                              −
-                            </button>
-                            <span className="min-w-5 text-center text-sm font-extrabold tabular-nums">
-                              {line.quantity}
+                <div className="border-2 border-dashed border-black/40 bg-[#0d0d0d] px-3 py-3 font-mono sm:px-4">
+                  <ul className="space-y-0 divide-y divide-dashed divide-white/15">
+                    {cartRows.map(({ line, card, unit, total }, idx) => (
+                      <li key={card.id} className="py-3 first:pt-0 last:pb-0">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold leading-snug text-[var(--mc-text)] [overflow-wrap:anywhere]">
+                              {idx + 1}. {card.title}
+                            </p>
+                            <p className="mt-1 text-xs text-[var(--mc-text-muted)]">
+                              {line.quantity} × {formatUah(unit)}
+                            </p>
+                            {card.quantity_enabled ? (
+                              <div className="mt-2 flex items-center justify-center gap-2 sm:justify-start">
+                                <button
+                                  type="button"
+                                  className="lc-focus-ring h-8 w-8 border-2 border-black bg-black/40 font-bold"
+                                  onClick={() =>
+                                    updateCartQty(card.id, line.quantity - 1)
+                                  }
+                                >
+                                  −
+                                </button>
+                                <span className="min-w-5 text-center text-sm font-extrabold tabular-nums">
+                                  {line.quantity}
+                                </span>
+                                <button
+                                  type="button"
+                                  className="lc-focus-ring h-8 w-8 border-2 border-black bg-black/40 font-bold"
+                                  onClick={() =>
+                                    updateCartQty(card.id, line.quantity + 1)
+                                  }
+                                >
+                                  +
+                                </button>
+                              </div>
+                            ) : null}
+                          </div>
+                          <div className="flex shrink-0 flex-col items-end gap-1">
+                            <span className="text-sm font-extrabold tabular-nums text-[var(--mc-net-green)]">
+                              {formatUah(total)}
                             </span>
                             <button
                               type="button"
-                              className="lc-focus-ring h-8 w-8 border-2 border-black font-bold"
-                              onClick={() =>
-                                updateCartQty(card.id, line.quantity + 1)
-                              }
+                              onClick={() => removeFromCart(card.id)}
+                              className="lc-focus-ring p-1 text-rose-200/90"
+                              aria-label="Прибрати"
                             >
-                              +
+                              <Trash2 className="size-3.5" />
                             </button>
                           </div>
-                        ) : null}
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => removeFromCart(card.id)}
-                        className="lc-focus-ring self-start p-1.5 text-rose-200"
-                        aria-label="Прибрати"
-                      >
-                        <Trash2 className="size-4" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                  <div className="mt-3 border-t-2 border-dashed border-white/25 pt-3">
+                    <div className="flex items-center justify-between gap-2 text-sm">
+                      <span className="font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
+                        Разом
+                      </span>
+                      <span className="text-lg font-black tabular-nums text-[var(--mc-text)]">
+                        {formatUah(cartTotal)}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[11px] text-[var(--mc-text-muted)]">
+                      Позицій: {cartCount}
+                    </p>
+                  </div>
+                </div>
               )}
             </div>
 
-            <div className="border-t-2 border-black px-4 py-3 sm:px-5">
-              {cartRows.length > 0 ? (
-                <p className="mb-3 text-center text-sm font-extrabold text-[var(--mc-text)] sm:text-left">
-                  Разом: {formatUah(cartTotal)}
-                </p>
-              ) : null}
+            <div className="border-t-2 border-dashed border-black/50 px-4 py-3 sm:px-5">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <button
                   type="button"
@@ -629,7 +633,7 @@ export function SupportOrderCards({ cards }: Props) {
                     onClick={closeOverlay}
                     className="lc-focus-ring inline-flex min-h-11 items-center justify-center border-2 border-black px-4 text-sm font-bold text-[var(--mc-text-muted)]"
                   >
-                    На головну магазину
+                    Назад у магазин
                   </button>
                 </div>
               </>

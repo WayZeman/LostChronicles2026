@@ -67,6 +67,7 @@ type OrderNotifyItem = {
   price_label: string;
   quantity: number;
   line_kopecks: number;
+  unit_kopecks?: number;
 };
 
 type OrderNotifyPayload = {
@@ -80,7 +81,11 @@ type OrderNotifyPayload = {
   items?: OrderNotifyItem[];
 };
 
-function orderLines(order: OrderNotifyPayload): string {
+function divider(): string {
+  return "———————————————";
+}
+
+function buildReceipt(order: OrderNotifyPayload): string {
   const nick = escapeTelegramHtml(order.nickname);
   const items =
     order.items && order.items.length > 0
@@ -94,26 +99,34 @@ function orderLines(order: OrderNotifyPayload): string {
           },
         ];
 
-  const itemLines = items
-    .map((it) => {
-      const title = escapeTelegramHtml(it.card_title);
-      const qty = Math.max(1, it.quantity);
-      const line = formatUahFromKopecks(it.line_kopecks);
-      const qtyPart = qty > 1 ? ` × ${qty}` : "";
-      return `• ${title}${qtyPart} — ${escapeTelegramHtml(line)} ₴`;
-    })
-    .join("\n");
+  const lines = items.map((it, i) => {
+    const title = escapeTelegramHtml(it.card_title);
+    const qty = Math.max(1, it.quantity);
+    const lineTotal = formatUahFromKopecks(it.line_kopecks);
+    const unit =
+      it.unit_kopecks != null && it.unit_kopecks > 0
+        ? formatUahFromKopecks(it.unit_kopecks)
+        : qty > 0
+          ? formatUahFromKopecks(Math.round(it.line_kopecks / qty))
+          : lineTotal;
+    return (
+      `<b>${i + 1}.</b> ${title}\n` +
+      `   ${qty} × ${escapeTelegramHtml(unit)} ₴  =  <b>${escapeTelegramHtml(lineTotal)} ₴</b>`
+    );
+  });
 
   const total = escapeTelegramHtml(formatUahFromKopecks(order.amount_kopecks));
   const note = order.note.trim()
-    ? `\n📝 ${escapeTelegramHtml(order.note.trim())}`
+    ? `\n${divider()}\n💬 <b>Коментар</b>\n${escapeTelegramHtml(order.note.trim())}`
     : "";
 
   return (
-    `${itemLines}\n\n` +
-    `💵 Разом: <b>${total} ₴</b>\n` +
+    `${divider()}\n` +
+    lines.join("\n\n") +
+    `\n${divider()}\n` +
+    `💵 <b>Разом: ${total} ₴</b>\n` +
     `👤 Нік: <b>${nick}</b>\n` +
-    `🆔 #${order.id}` +
+    `🧾 Чек № <b>${order.id}</b>` +
     note
   );
 }
@@ -122,9 +135,10 @@ export async function notifySupportOrderCreatedTelegram(
   order: OrderNotifyPayload,
 ): Promise<boolean> {
   const html =
-    `<b>Нове замовлення</b>\n` +
-    `<i>Гравець перейшов до оплати</i>\n\n` +
-    orderLines(order);
+    `🛒 <b>НОВЕ ЗАМОВЛЕННЯ</b>\n` +
+    `<i>Lost Chronicles · магазин</i>\n\n` +
+    buildReceipt(order) +
+    `\n\n⏳ <i>Гравець перейшов до оплати</i>`;
 
   return sendOrdersTelegramHtml(html);
 }
@@ -132,7 +146,11 @@ export async function notifySupportOrderCreatedTelegram(
 export async function notifySupportOrderPaidTelegram(
   order: OrderNotifyPayload,
 ): Promise<boolean> {
-  const html = `<b>Оплату підтверджено</b>\n\n` + orderLines(order);
+  const html =
+    `✅ <b>ОПЛАТУ ПІДТВЕРДЖЕНО</b>\n` +
+    `<i>Lost Chronicles · магазин</i>\n\n` +
+    buildReceipt(order);
+
   return sendOrdersTelegramHtml(html);
 }
 
@@ -140,8 +158,11 @@ export async function notifyUnmatchedDonationTelegram(
   amountKopecks: number,
 ): Promise<boolean> {
   const html =
-    `<b>Донат у банку</b>\n\n` +
-    `💵 ${escapeTelegramHtml(formatUahFromKopecks(amountKopecks))} ₴\n` +
+    `💛 <b>ДОНАТ У БАНКУ</b>\n` +
+    `<i>Lost Chronicles</i>\n\n` +
+    `${divider()}\n` +
+    `💵 Сума: <b>${escapeTelegramHtml(formatUahFromKopecks(amountKopecks))} ₴</b>\n` +
+    `${divider()}\n` +
     `<i>Немає pending-замовлення з такою сумою</i>`;
   return sendOrdersTelegramHtml(html);
 }

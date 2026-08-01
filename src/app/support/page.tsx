@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -49,10 +48,7 @@ export default async function SupportPage() {
       >
         <SoftAppear>
           <header className="mb-6 text-center sm:mb-8">
-            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mc-text-muted)]">
-              Lost Chronicles
-            </p>
-            <h1 className="lc-hero-title lc-hero-display mt-1 text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
+            <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
               Магазин
             </h1>
             {blurb ? (
@@ -60,12 +56,6 @@ export default async function SupportPage() {
                 {blurb}
               </p>
             ) : null}
-            <Link
-              href="/"
-              className="mt-3 inline-block text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
-            >
-              ← На головну
-            </Link>
           </header>
         </SoftAppear>
 
