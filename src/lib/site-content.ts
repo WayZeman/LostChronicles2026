@@ -114,6 +114,7 @@ async function ensureCmsTables(): Promise<void> {
       card_title VARCHAR(200) NOT NULL,
       price_label VARCHAR(64) NOT NULL,
       amount_kopecks INT NOT NULL,
+      quantity INT NOT NULL DEFAULT 1,
       nickname VARCHAR(64) NOT NULL,
       note TEXT NOT NULL DEFAULT '',
       status VARCHAR(20) NOT NULL DEFAULT 'pending',
@@ -121,6 +122,10 @@ async function ensureCmsTables(): Promise<void> {
       notified_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `;
+  await sql`
+    ALTER TABLE support_orders
+    ADD COLUMN IF NOT EXISTS quantity INT NOT NULL DEFAULT 1
   `;
   await sql`
     CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
@@ -151,37 +156,48 @@ async function ensureCmsTables(): Promise<void> {
     }
   }
 
-  // Seed support cards
+  // Каталог підтримки (v2): оновлюємо seed, якщо ще стара версія / порожньо
+  const SUPPORT_CARDS_SEED_VERSION = "2";
+  const seedVersionRows = rowsOf(
+    await sql`
+      SELECT value FROM site_settings
+      WHERE key = ${"support_cards_seed_version"}
+      LIMIT 1
+    `,
+  );
+  const currentSeedVersion = String(seedVersionRows[0]?.value ?? "");
   const cardCount = rowsOf(
     await sql`SELECT COUNT(*)::int AS c FROM support_cards`,
   );
-  if (num(cardCount[0]?.c) === 0) {
+  if (
+    num(cardCount[0]?.c) === 0 ||
+    currentSeedVersion !== SUPPORT_CARDS_SEED_VERSION
+  ) {
     const seeds = [
       {
         order: 1,
-        title: "Команди /hat і /pay",
+        title: "Музична платівка",
         description:
-          "Доступ до корисних команд: шапка з предмета в руці та переказ електронних діамантів між гравцями.",
-        image: "/support-gold-pile.png",
-        price: "20 ₴",
+          "На платівку буде накладено будь-яку пісню, яку ви забажаєте.",
+        image: "/support-vinyl.png",
+        price: "25 ₴",
       },
       {
         order: 2,
-        title: "Префікс і стиль ніка",
-        description:
-          "Префікси, емоджі в ніку, градієнт або зміна ніка (одноразово). Не ламає баланс гри.",
-        image: "/support-gold-pile.png",
-        price: "20 ₴",
+        title: "Команда /pay",
+        description: "Плати на відстані діамантами.",
+        image: "/support-pay.png",
+        price: "50 ₴",
       },
       {
         order: 3,
         title: "Власна моделька",
-        description:
-          "Одна або кілька кастомних модельок персонажа. Деталі узгоджуються з адміністрацією після донату.",
-        image: "/support-gold-pile.png",
-        price: "50 ₴",
+        description: "Ви можете завантажити на сервер свою модельку.",
+        image: "/support-model.png",
+        price: "25 ₴",
       },
     ] as const;
+    await sql`DELETE FROM support_cards`;
     for (const s of seeds) {
       await sql`
         INSERT INTO support_cards (
@@ -197,6 +213,12 @@ async function ensureCmsTables(): Promise<void> {
         )
       `;
     }
+    await sql`
+      INSERT INTO site_settings (key, value, updated_at)
+      VALUES (${"support_cards_seed_version"}, ${SUPPORT_CARDS_SEED_VERSION}, NOW())
+      ON CONFLICT (key) DO UPDATE
+      SET value = EXCLUDED.value, updated_at = NOW()
+    `;
   }
 
   // Seed settings defaults

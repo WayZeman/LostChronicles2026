@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
@@ -26,22 +26,46 @@ type Phase =
       orderId: number;
       title: string;
       priceLabel: string;
+      quantity: number;
       nickname: string;
       payUrl: string;
       notified: boolean;
     };
 
+const MAX_QTY = 20;
+
+function parseUnitUah(label: string): number | null {
+  const m = label.replace(",", ".").match(/(\d+(?:\.\d+)?)/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+function formatTotalLabel(unitLabel: string, qty: number): string {
+  const unit = parseUnitUah(unitLabel);
+  if (unit == null) return unitLabel;
+  if (qty <= 1) return `${unit} ₴`;
+  return `${unit} ₴ × ${qty} = ${unit * qty} ₴`;
+}
+
 export function SupportOrderCards({ cards, jarUrl }: Props) {
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [nickname, setNickname] = useState("");
   const [note, setNote] = useState("");
+  const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
+
+  const formTotal = useMemo(() => {
+    if (phase.kind !== "form") return "";
+    return formatTotalLabel(phase.card.price_label, quantity);
+  }, [phase, quantity]);
 
   function openForm(card: SupportCardView) {
     setError(null);
     setNickname("");
     setNote("");
+    setQuantity(1);
     setPhase({ kind: "form", card });
   }
 
@@ -49,6 +73,10 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
     if (pending) return;
     setPhase({ kind: "idle" });
     setError(null);
+  }
+
+  function bumpQty(delta: number) {
+    setQuantity((q) => Math.min(MAX_QTY, Math.max(1, q + delta)));
   }
 
   function submitOrder() {
@@ -64,6 +92,7 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
             cardId: card.id,
             nickname,
             note,
+            quantity,
           }),
         });
         const data = (await res.json()) as {
@@ -74,6 +103,7 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
             id: number;
             title: string;
             priceLabel: string;
+            quantity?: number;
             nickname: string;
           };
         };
@@ -87,6 +117,7 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
           orderId: data.order.id,
           title: data.order.title,
           priceLabel: data.order.priceLabel,
+          quantity: data.order.quantity ?? quantity,
           nickname: data.order.nickname,
           payUrl: data.payUrl,
           notified: Boolean(data.notified),
@@ -184,8 +215,8 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
                   {phase.card.title}
                 </h3>
                 <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
-                  Вкажи ігровий нік — адміни одразу побачать замовлення в
-                  Telegram, далі оплати в Monobank.
+                  Вкажи нік і кількість — адміни одразу побачать замовлення в
+                  Telegram.
                 </p>
                 <label className="mt-4 block text-xs font-semibold uppercase tracking-wide text-[var(--mc-text-muted)]">
                   Нікнейм
@@ -198,13 +229,53 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
                     className="lc-focus-ring mt-1.5 w-full border border-black/40 bg-black/25 px-3 py-2.5 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
                   />
                 </label>
+                <div className="mt-3">
+                  <span className="block text-xs font-semibold uppercase tracking-wide text-[var(--mc-text-muted)]">
+                    Кількість
+                  </span>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <button
+                      type="button"
+                      aria-label="Зменшити"
+                      disabled={quantity <= 1}
+                      onClick={() => bumpQty(-1)}
+                      className="lc-focus-ring inline-flex h-11 w-11 items-center justify-center border border-black/40 text-lg font-bold text-[var(--mc-text)] disabled:opacity-40"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      min={1}
+                      max={MAX_QTY}
+                      value={quantity}
+                      onChange={(e) => {
+                        const n = Math.floor(Number(e.target.value));
+                        if (!Number.isFinite(n)) return;
+                        setQuantity(Math.min(MAX_QTY, Math.max(1, n)));
+                      }}
+                      className="lc-focus-ring h-11 w-16 border border-black/40 bg-black/25 text-center text-sm font-bold text-[var(--mc-text)]"
+                    />
+                    <button
+                      type="button"
+                      aria-label="Збільшити"
+                      disabled={quantity >= MAX_QTY}
+                      onClick={() => bumpQty(1)}
+                      className="lc-focus-ring inline-flex h-11 w-11 items-center justify-center border border-black/40 text-lg font-bold text-[var(--mc-text)] disabled:opacity-40"
+                    >
+                      +
+                    </button>
+                    <span className="ml-1 text-sm font-semibold text-[var(--mc-text)]">
+                      {formTotal}
+                    </span>
+                  </div>
+                </div>
                 <label className="mt-3 block text-xs font-semibold uppercase tracking-wide text-[var(--mc-text-muted)]">
                   Коментар (опційно)
                   <input
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     maxLength={500}
-                    placeholder="Префікс / деталі"
+                    placeholder="Пісня / деталі"
                     className="lc-focus-ring mt-1.5 w-full border border-black/40 bg-black/25 px-3 py-2.5 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
                   />
                 </label>
@@ -220,9 +291,7 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
                     onClick={submitOrder}
                     className="lc-focus-ring lc-btn-accent inline-flex min-h-11 flex-1 items-center justify-center px-4 text-sm font-bold disabled:opacity-50"
                   >
-                    {pending
-                      ? "Створюємо…"
-                      : `Оплатити ${phase.card.price_label}`}
+                    {pending ? "Створюємо…" : `Оплатити ${formTotal}`}
                   </button>
                   <button
                     type="button"
@@ -243,11 +312,15 @@ export function SupportOrderCards({ cards, jarUrl }: Props) {
                   Замовлення надіслано
                 </h3>
                 <p className="mt-2 text-sm leading-relaxed text-[var(--mc-text-muted)]">
-                  #{phase.orderId}: {phase.title} для{" "}
+                  #{phase.orderId}: {phase.title}
+                  {phase.quantity > 1 ? ` × ${phase.quantity}` : ""} для{" "}
                   <b className="text-[var(--mc-text)]">{phase.nickname}</b> (
-                  {phase.priceLabel}).
+                  {formatTotalLabel(phase.priceLabel, phase.quantity)}).
                 </p>
-                <p className="mt-2 text-sm text-[var(--mc-net-green)]" role="status">
+                <p
+                  className="mt-2 text-sm text-[var(--mc-net-green)]"
+                  role="status"
+                >
                   {phase.notified
                     ? "Адмінам уже пішло повідомлення в Telegram. Залишилось оплатити в Monobank."
                     : "Замовлення створено. Відкрий банку Monobank і заверши оплату."}

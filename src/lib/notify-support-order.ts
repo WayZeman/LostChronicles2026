@@ -68,6 +68,7 @@ type OrderNotifyPayload = {
   card_title: string;
   price_label: string;
   amount_kopecks: number;
+  quantity?: number;
   nickname: string;
   note: string;
 };
@@ -75,15 +76,22 @@ type OrderNotifyPayload = {
 function orderLines(order: OrderNotifyPayload): string {
   const title = escapeTelegramHtml(order.card_title);
   const nick = escapeTelegramHtml(order.nickname);
-  const price = escapeTelegramHtml(
-    order.price_label || `${formatUahFromKopecks(order.amount_kopecks)} ₴`,
-  );
+  const qty = Math.max(1, order.quantity ?? 1);
+  const unit = order.price_label.trim();
+  const total = `${formatUahFromKopecks(order.amount_kopecks)} ₴`;
+  const price =
+    qty > 1
+      ? escapeTelegramHtml(
+          unit ? `${unit} × ${qty} = ${total}` : `${total} (×${qty})`,
+        )
+      : escapeTelegramHtml(unit || total);
+  const qtyLine = qty > 1 ? `\n🔢 Кількість: <b>${qty}</b>` : "";
   const note = order.note.trim()
     ? `\n📝 ${escapeTelegramHtml(order.note.trim())}`
     : "";
 
   return (
-    `📦 ${title}\n` +
+    `📦 ${title}${qtyLine}\n` +
     `👤 Нік: <b>${nick}</b>\n` +
     `💵 ${price}\n` +
     `🆔 #${order.id}` +

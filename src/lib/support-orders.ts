@@ -21,6 +21,7 @@ export async function ensureSupportOrdersTable(): Promise<void> {
       card_title VARCHAR(200) NOT NULL,
       price_label VARCHAR(64) NOT NULL,
       amount_kopecks INT NOT NULL,
+      quantity INT NOT NULL DEFAULT 1,
       nickname VARCHAR(64) NOT NULL,
       note TEXT NOT NULL DEFAULT '',
       status VARCHAR(20) NOT NULL DEFAULT 'pending',
@@ -28,6 +29,10 @@ export async function ensureSupportOrdersTable(): Promise<void> {
       notified_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `;
+  await sql`
+    ALTER TABLE support_orders
+    ADD COLUMN IF NOT EXISTS quantity INT NOT NULL DEFAULT 1
   `;
   await sql`
     CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
@@ -43,6 +48,12 @@ export function parsePriceLabelToKopecks(label: string): number | null {
   const uah = Number(m[1]);
   if (!Number.isFinite(uah) || uah <= 0) return null;
   return Math.round(uah * 100);
+}
+
+export function clampOrderQuantity(raw: unknown): number {
+  const n = Math.floor(Number(raw));
+  if (!Number.isFinite(n) || n < 1) return 1;
+  return Math.min(20, n);
 }
 
 export function buildMonoJarPayUrl(jarUrl: string, amountKopecks: number): string {
@@ -66,11 +77,27 @@ export type SupportOrderRecord = {
   card_title: string;
   price_label: string;
   amount_kopecks: number;
+  quantity: number;
   nickname: string;
   note: string;
   status: string;
   created_at: string;
 };
+
+function mapOrderRow(row: Record<string, unknown>): SupportOrderRecord {
+  return {
+    id: num(row.id),
+    card_id: row.card_id == null ? null : num(row.card_id),
+    card_title: String(row.card_title ?? ""),
+    price_label: String(row.price_label ?? ""),
+    amount_kopecks: num(row.amount_kopecks),
+    quantity: Math.max(1, num(row.quantity) || 1),
+    nickname: String(row.nickname ?? ""),
+    note: String(row.note ?? ""),
+    status: String(row.status ?? "pending"),
+    created_at: String(row.created_at ?? ""),
+  };
+}
 
 export async function getSupportOrderById(
   id: number,
@@ -80,7 +107,7 @@ export async function getSupportOrderById(
   const rows = rowsOf(
     await sql`
       SELECT
-        id, card_id, card_title, price_label, amount_kopecks,
+        id, card_id, card_title, price_label, amount_kopecks, quantity,
         nickname, note, status, created_at
       FROM support_orders
       WHERE id = ${id}
@@ -89,23 +116,14 @@ export async function getSupportOrderById(
   );
   const row = rows[0];
   if (!row) return null;
-  return {
-    id: num(row.id),
-    card_id: row.card_id == null ? null : num(row.card_id),
-    card_title: String(row.card_title ?? ""),
-    price_label: String(row.price_label ?? ""),
-    amount_kopecks: num(row.amount_kopecks),
-    nickname: String(row.nickname ?? ""),
-    note: String(row.note ?? ""),
-    status: String(row.status ?? "pending"),
-    created_at: String(row.created_at ?? ""),
-  };
+  return mapOrderRow(row);
 }
 
 export async function createSupportOrder(input: {
   cardId: number;
   nickname: string;
   note?: string;
+  quantity?: number;
 }): Promise<SupportOrderRecord> {
   await ensureSupportOrdersTable();
   const sql = getSql();
@@ -114,6 +132,7 @@ export async function createSupportOrder(input: {
     throw new Error("Вкажи нікнейм (мінімум 2 символи).");
   }
   const note = (input.note ?? "").trim().slice(0, 500);
+  const quantity = clampOrderQuantity(input.quantity);
 
   const cards = rowsOf(
     await sql`
@@ -128,44 +147,37 @@ export async function createSupportOrder(input: {
 
   const title = String(card.title ?? "");
   const priceLabel = String(card.price_label ?? "");
-  const amount = parsePriceLabelToKopecks(priceLabel);
-  if (amount == null) {
+  const unitAmount = parsePriceLabelToKopecks(priceLabel);
+  if (unitAmount == null) {
     throw new Error("Не вдалося розпізнати ціну картки.");
   }
+  const amount = unitAmount * quantity;
 
   const inserted = rowsOf(
     await sql`
       INSERT INTO support_orders (
-        card_id, card_title, price_label, amount_kopecks, nickname, note, status
+        card_id, card_title, price_label, amount_kopecks, quantity,
+        nickname, note, status
       )
       VALUES (
         ${num(card.id)},
         ${title},
         ${priceLabel},
         ${amount},
+        ${quantity},
         ${nick},
         ${note},
         ${"pending"}
       )
       RETURNING
-        id, card_id, card_title, price_label, amount_kopecks,
+        id, card_id, card_title, price_label, amount_kopecks, quantity,
         nickname, note, status, created_at
     `,
   );
   const row = inserted[0];
   if (!row) throw new Error("Не вдалося створити замовлення.");
 
-  return {
-    id: num(row.id),
-    card_id: row.card_id == null ? null : num(row.card_id),
-    card_title: String(row.card_title ?? ""),
-    price_label: String(row.price_label ?? ""),
-    amount_kopecks: num(row.amount_kopecks),
-    nickname: String(row.nickname ?? ""),
-    note: String(row.note ?? ""),
-    status: String(row.status ?? "pending"),
-    created_at: String(row.created_at ?? ""),
-  };
+  return mapOrderRow(row);
 }
 
 /** Протермінувати старі pending (немаatch після 36 год). */
@@ -190,11 +202,9 @@ function pickOrdersForAmount(
 ): SupportOrderRecord[] {
   if (!(differenceKopecks > 0) || pending.length === 0) return [];
 
-  // 1) Одна точна сума (найстаріше)
   const exact = pending.find((o) => o.amount_kopecks === differenceKopecks);
   if (exact) return [exact];
 
-  // 2) Кілька однакових номіналів
   const amounts = [...new Set(pending.map((o) => o.amount_kopecks))].filter(
     (a) => a > 0 && differenceKopecks % a === 0,
   );
@@ -204,7 +214,6 @@ function pickOrdersForAmount(
     if (pool.length >= need) return pool.slice(0, need);
   }
 
-  // 3) Підмножина (до 12 pending) — точна сума
   const pool = pending.slice(0, 12);
   const n = pool.length;
   const limit = 1 << n;
@@ -239,24 +248,14 @@ export async function matchPendingOrdersByPayment(
   const pending = rowsOf(
     await sql`
       SELECT
-        id, card_id, card_title, price_label, amount_kopecks,
+        id, card_id, card_title, price_label, amount_kopecks, quantity,
         nickname, note, status, created_at
       FROM support_orders
       WHERE status = 'pending'
       ORDER BY created_at ASC, id ASC
       LIMIT 100
     `,
-  ).map((row) => ({
-    id: num(row.id),
-    card_id: row.card_id == null ? null : num(row.card_id),
-    card_title: String(row.card_title ?? ""),
-    price_label: String(row.price_label ?? ""),
-    amount_kopecks: num(row.amount_kopecks),
-    nickname: String(row.nickname ?? ""),
-    note: String(row.note ?? ""),
-    status: String(row.status ?? "pending"),
-    created_at: String(row.created_at ?? ""),
-  }));
+  ).map(mapOrderRow);
 
   const matched = pickOrdersForAmount(pending, differenceKopecks);
   if (matched.length === 0) return [];

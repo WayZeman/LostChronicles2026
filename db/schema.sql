@@ -108,6 +108,7 @@ CREATE TABLE IF NOT EXISTS support_orders (
     card_title VARCHAR(200) NOT NULL,
     price_label VARCHAR(64) NOT NULL,
     amount_kopecks INT NOT NULL,
+    quantity INT NOT NULL DEFAULT 1,
     nickname VARCHAR(64) NOT NULL,
     note TEXT NOT NULL DEFAULT '',
     status VARCHAR(20) NOT NULL DEFAULT 'pending',

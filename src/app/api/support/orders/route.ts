@@ -22,13 +22,19 @@ export async function POST(req: Request) {
   const cardId = Number(b.cardId);
   const nickname = typeof b.nickname === "string" ? b.nickname : "";
   const note = typeof b.note === "string" ? b.note : "";
+  const quantity = b.quantity;
 
   if (!Number.isInteger(cardId) || cardId < 1) {
     return NextResponse.json({ error: "Некоректна картка" }, { status: 400 });
   }
 
   try {
-    const order = await createSupportOrder({ cardId, nickname, note });
+    const order = await createSupportOrder({
+      cardId,
+      nickname,
+      note,
+      quantity: typeof quantity === "number" ? quantity : Number(quantity),
+    });
     const support = await getSupportSettings();
     const jar =
       support.monoJarUrl.trim() ||
@@ -48,6 +54,7 @@ export async function POST(req: Request) {
         id: order.id,
         title: order.card_title,
         priceLabel: order.price_label,
+        quantity: order.quantity,
         nickname: order.nickname,
       },
       payUrl,
@@ -55,7 +62,10 @@ export async function POST(req: Request) {
   } catch (e) {
     const msg = e instanceof Error ? e.message : "Помилка створення замовлення";
     const status =
-      msg.includes("не знайдено") || msg.includes("ціну") || msg.includes("нік")
+      msg.includes("не знайдено") ||
+      msg.includes("ціну") ||
+      msg.includes("нік") ||
+      msg.includes("кількість")
         ? 400
         : 503;
     return NextResponse.json({ error: msg }, { status });
