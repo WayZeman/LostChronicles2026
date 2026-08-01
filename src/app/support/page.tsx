@@ -13,14 +13,13 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Підтримка — Lost Chronicles",
-  description: "Підтримай сервер Lost Chronicles: бонуси за донат.",
+  title: "Магазин підтримки — Lost Chronicles",
+  description: "Бонуси за підтримку сервера Lost Chronicles.",
 };
 
 export default async function SupportPage() {
   let cards: Awaited<ReturnType<typeof listSupportCards>> = [];
-  let blurb =
-    "Обери пропозицію, вкажи нік і натисни оплатити — адміни одразу отримають замовлення в Telegram.";
+  let blurb = "Обери бонуси, додай у кошик і оформи оплату.";
 
   try {
     const [list, support] = await Promise.all([
@@ -28,7 +27,6 @@ export default async function SupportPage() {
       getSupportSettings(),
     ]);
     cards = list;
-    // Не показуємо старий маркетинговий blurb з головної
     if (
       support.blurb.trim() &&
       support.blurb.trim() !==
@@ -44,26 +42,29 @@ export default async function SupportPage() {
     <main className={lcPageMainClass}>
       <div
         className={cn(
-          "site-container relative z-10 mx-auto w-full max-w-4xl",
-          "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-6",
-          "pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-4 sm:pb-12 sm:pt-10 md:py-14",
+          "site-container relative z-10 mx-auto w-full max-w-5xl",
+          "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(7rem,env(safe-area-inset-bottom,0px))] pt-5",
+          "pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-4 sm:pb-28 sm:pt-8 md:pt-10",
         )}
       >
         <SoftAppear>
-          <header className="mb-8 text-center sm:mb-10">
-            <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
-              Підтримка
+          <header className="mb-6 text-center sm:mb-8">
+            <p className="text-[11px] font-bold uppercase tracking-[0.14em] text-[var(--mc-text-muted)]">
+              Lost Chronicles
+            </p>
+            <h1 className="lc-hero-title lc-hero-display mt-1 text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
+              Магазин
             </h1>
             {blurb ? (
-              <p className="mx-auto mt-2 max-w-lg text-sm text-[var(--mc-text-muted)] sm:text-[0.9375rem]">
+              <p className="mx-auto mt-2 max-w-md text-sm text-[var(--mc-text-muted)]">
                 {blurb}
               </p>
             ) : null}
             <Link
-              href="/faq"
+              href="/"
               className="mt-3 inline-block text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
             >
-              ← До FAQ
+              ← На головну
             </Link>
           </header>
         </SoftAppear>

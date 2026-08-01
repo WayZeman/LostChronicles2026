@@ -651,14 +651,14 @@ export function AdminPanelClient() {
                     </Link>
                   </div>
 
-                  <ul className="space-y-3">
+                  <ul className="space-y-4">
                     {supportCards.map((card, idx) => (
                       <li
                         key={card.key}
-                        className="space-y-2 rounded-lg border border-white/10 p-3"
+                        className="space-y-3 border-2 border-black bg-[color-mix(in_srgb,#101010_88%,#1f1f1f)] p-3.5 shadow-[4px_4px_0_rgba(0,0,0,0.45)] sm:p-4"
                       >
                         <div className="flex flex-wrap items-center gap-2">
-                          <span className="text-xs font-bold tabular-nums text-[var(--mc-text-muted)]">
+                          <span className="inline-flex min-w-8 items-center justify-center border-2 border-black bg-[var(--mc-net-green)] px-1.5 py-0.5 text-xs font-extrabold text-black">
                             #{idx + 1}
                           </span>
                           <button

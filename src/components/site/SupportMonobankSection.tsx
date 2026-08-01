@@ -10,7 +10,6 @@ const DEFAULT_JAR_URL = "https://send.monobank.ua/jar/8f7nV8DopG";
 type Props = {
   jarUrl?: string;
   blurb?: string;
-  /** @deprecated голосування прибрано з блоку; лишається в пропсах для сумісності з page.tsx */
   catalogLinks?: CatalogVoteLink[];
 };
 
@@ -32,7 +31,7 @@ export function SupportMonobankSection({ jarUrl, blurb }: Props = {}) {
       )}
       aria-labelledby="support-donate-heading"
     >
-      <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] sm:gap-5 md:gap-6">
+      <div className="grid grid-cols-1 items-center gap-4 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] sm:gap-5 md:gap-6">
         <div className="relative mx-auto flex w-full max-w-[16rem] items-center justify-center order-1 sm:order-2 sm:mx-0 sm:max-w-none sm:self-center">
           <Image
             src="/support-gold-pile.png?v=1"
@@ -45,20 +44,20 @@ export function SupportMonobankSection({ jarUrl, blurb }: Props = {}) {
           />
         </div>
 
-        <div className="order-2 flex flex-col sm:order-1">
+        <div className="order-2 flex flex-col items-center text-center sm:order-1 sm:items-stretch sm:text-left">
           <h2
             id="support-donate-heading"
-            className="text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:text-left sm:text-base"
+            className="w-full text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:text-base"
           >
             Підтримати сервер
           </h2>
           {resolvedBlurb ? (
-            <p className="mt-2 text-center text-sm text-[var(--mc-ink-subtle)] sm:text-left">
+            <p className="mt-2 w-full text-center text-sm text-[var(--mc-ink-subtle)]">
               {resolvedBlurb}
             </p>
           ) : null}
 
-          <div className="mt-3 flex flex-col gap-2 sm:mt-4">
+          <div className="mt-3 flex w-full max-w-md flex-col gap-2 sm:mt-4 sm:max-w-none">
             <Link
               href="/support"
               className="lc-focus-ring lc-btn-accent inline-flex w-full min-h-11 items-center justify-center gap-2 px-6 py-2.5 text-center text-sm"
@@ -73,7 +72,10 @@ export function SupportMonobankSection({ jarUrl, blurb }: Props = {}) {
               className="lc-focus-ring mc-slot inline-flex min-h-10 w-full items-center justify-center gap-2 px-4 text-center text-sm font-semibold text-[var(--mc-text)] hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]"
             >
               <span>Просто підтримати</span>
-              <ExternalLink className="size-3.5 shrink-0 opacity-70" aria-hidden />
+              <ExternalLink
+                className="size-3.5 shrink-0 opacity-70"
+                aria-hidden
+              />
             </a>
           </div>
         </div>
