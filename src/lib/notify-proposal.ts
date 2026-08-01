@@ -32,7 +32,9 @@ function verdictOutcomePlain(
   yes: number,
   no: number,
   status?: string,
+  summary?: string,
 ): string {
+  if (summary?.trim()) return summary.trim();
   if (isCancelledLowTurnout(status)) {
     return `Голосування скасовано у звʼязку з недостатньою кількістю учасників (менше ${PROPOSAL_MIN_VOTES_FOR_RESULT}).`;
   }
@@ -47,7 +49,9 @@ function verdictOutcomeMarkdown(
   yes: number,
   no: number,
   status?: string,
+  summary?: string,
 ): string {
+  if (summary?.trim()) return summary.trim();
   if (isCancelledLowTurnout(status)) {
     return `Голосування скасовано у звʼязку з **недостатньою кількістю учасників** (менше ${PROPOSAL_MIN_VOTES_FOR_RESULT}).`;
   }
@@ -159,11 +163,24 @@ export async function notifyProposalClosedDiscord(params: {
   yes: number;
   no: number;
   status?: string;
+  summary?: string;
+  totalVotes?: number;
 }): Promise<void> {
   const link = proposalUrl(params.proposalId);
   const title = escapeDiscordBoldFragment(truncateTitle(params.title));
   const cancelled = isCancelledLowTurnout(params.status);
-  const outcome = verdictOutcomeMarkdown(params.yes, params.no, params.status);
+  const outcome = verdictOutcomeMarkdown(
+    params.yes,
+    params.no,
+    params.status,
+    params.summary,
+  );
+  const counts =
+    params.summary != null
+      ? `Усього голосів: **${params.totalVotes ?? params.yes + params.no}**\n`
+      : cancelled
+        ? `Було **${params.yes}** так · **${params.no}** ні\n\n`
+        : `**${params.yes}** так · **${params.no}** ні\n`;
 
   await postDiscordWebhook({
     embeds: [
@@ -172,10 +189,8 @@ export async function notifyProposalClosedDiscord(params: {
         description:
           `**${title}**\n\n` +
           (cancelled
-            ? `${outcome}\n\n` +
-              `Було **${params.yes}** так · **${params.no}** ні\n\n`
-            : `**${params.yes}** так · **${params.no}** ні\n` +
-              `${outcome}\n\n`) +
+            ? `${outcome}\n\n` + counts
+            : `${counts}${outcome}\n\n`) +
           `[Відкрити пропозицію ↗](${link})`,
         color: cancelled ? 0xed4245 : 0xf0b132,
         footer: { text: "Lost Chronicles" },
@@ -190,22 +205,33 @@ export async function notifyProposalClosedTelegram(params: {
   yes: number;
   no: number;
   status?: string;
+  summary?: string;
+  totalVotes?: number;
 }): Promise<void> {
   const link = proposalUrl(params.proposalId);
   const title = escapeTelegramHtml(truncateTitle(params.title));
   const cancelled = isCancelledLowTurnout(params.status);
   const outcome = escapeTelegramHtml(
-    verdictOutcomePlain(params.yes, params.no, params.status),
+    verdictOutcomePlain(
+      params.yes,
+      params.no,
+      params.status,
+      params.summary,
+    ),
   );
   const safeLink = escapeTelegramHtml(link);
+  const counts =
+    params.summary != null
+      ? `Усього: ${params.totalVotes ?? params.yes + params.no}\n`
+      : `👍 ${params.yes} · 👎 ${params.no}\n`;
 
   const html =
     `<b>${cancelled ? "Голосування скасовано" : "Голосування завершено"}</b>\n` +
     `<i>${cancelled ? "Недостатня кількість учасників" : "Підсумок голосування"}</i>\n\n` +
     `<b>${title}</b>\n\n` +
     (cancelled
-      ? `${outcome}\n\n👍 ${params.yes} · 👎 ${params.no}\n\n`
-      : `👍 ${params.yes} · 👎 ${params.no}\n${outcome}\n\n`) +
+      ? `${outcome}\n\n${counts}\n`
+      : `${counts}${outcome}\n\n`) +
     `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
     `<i>Lost Chronicles</i>`;
 
@@ -218,6 +244,9 @@ export type ProposalExpiredNotifyRow = {
   yes_votes: number;
   no_votes: number;
   status: string;
+  kind?: string;
+  total_votes?: number;
+  summary?: string;
 };
 
 /** Після автоматичного закриття (термін вичерпано) — один вебхук на кожну пропозицію. */
@@ -233,6 +262,8 @@ export async function notifyProposalResultsBatch(
         yes: row.yes_votes,
         no: row.no_votes,
         status: row.status,
+        summary: row.summary,
+        totalVotes: row.total_votes,
       }),
       notifyProposalClosedTelegram({
         title: row.title,
@@ -240,6 +271,8 @@ export async function notifyProposalResultsBatch(
         yes: row.yes_votes,
         no: row.no_votes,
         status: row.status,
+        summary: row.summary,
+        totalVotes: row.total_votes,
       }),
     ]),
   );

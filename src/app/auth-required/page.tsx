@@ -14,7 +14,7 @@ type Props = {
 
 function contentLabelFor(path: string): string {
   if (path.startsWith("/wiki")) return "вікі";
-  if (path.startsWith("/proposals")) return "пропозиції";
+  if (path.startsWith("/proposals")) return "пропозиції та голосування";
   return "цей вміст";
 }
 

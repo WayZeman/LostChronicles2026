@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 const links = [
   { href: "/news", label: "Новини", Icon: Newspaper },
   { href: "/map", label: "Мапа", Icon: MapIcon },
-  { href: "/proposals", label: "Пропозиції", Icon: ClipboardList },
+  { href: "/proposals", label: "Голосування", Icon: ClipboardList },
   { href: "/wiki", label: "Вікі", Icon: BookOpen },
   { href: "/faq", label: "FAQ", Icon: CircleHelp },
 ] as const;

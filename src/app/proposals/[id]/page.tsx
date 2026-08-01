@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
+import { ProposalChoiceBar } from "@/components/proposals/ProposalChoiceBar";
+import { ProposalChoiceButtons } from "@/components/proposals/ProposalChoiceButtons";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
 import { ProposalVoteBar } from "@/components/proposals/ProposalVoteBar";
 import { ProposalVoteButtons } from "@/components/proposals/ProposalVoteButtons";
@@ -11,6 +13,12 @@ import type { ProposalVoter } from "@/components/proposals/ProposalVoters";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
+import {
+  PROPOSAL_KIND_CHOICE,
+  choiceVerdictPlain,
+  type ProposalKind,
+  type ProposalOptionPublic,
+} from "@/lib/proposal-kinds";
 import {
   formatTimeRemainingUk,
   isProposalVotingOpenClient,
@@ -23,16 +31,21 @@ type ProposalDetail = {
   id: number;
   title: string;
   description: string;
+  kind: ProposalKind;
   status: string;
   ends_at: string;
   author_username: string;
   yes_votes: number;
   no_votes: number;
+  total_votes: number;
   user_vote: number | null;
+  user_option_id: number | null;
+  options: ProposalOptionPublic[];
   voting_open: boolean;
   is_author?: boolean;
   yes_voters?: ProposalVoter[];
   no_voters?: ProposalVoter[];
+  option_voters?: Record<string, ProposalVoter[]>;
 };
 
 type Me = {
@@ -55,10 +68,14 @@ function VerdictBanner({
   status,
   yes,
   no,
+  kind,
+  options,
 }: {
   status: string;
   yes: number;
   no: number;
+  kind: ProposalKind;
+  options: ProposalOptionPublic[];
 }) {
   if (status === "cancelled") {
     return (
@@ -74,6 +91,19 @@ function VerdictBanner({
   }
 
   if (status !== "closed") return null;
+
+  if (kind === PROPOSAL_KIND_CHOICE) {
+    return (
+      <div
+        className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 px-4 py-3 text-center"
+        role="status"
+      >
+        <p className="text-sm font-semibold text-emerald-100">
+          {choiceVerdictPlain(options, status, PROPOSAL_MIN_VOTES_FOR_RESULT)}
+        </p>
+      </div>
+    );
+  }
 
   const yesWins = yes > no;
   const noWins = no > yes;
@@ -168,26 +198,39 @@ export default function ProposalDetailPage() {
       if (!res.ok) return;
       const s = (await res.json()) as {
         status?: string;
+        kind?: ProposalKind;
         yes_votes: number;
         no_votes: number;
+        total_votes?: number;
         user_vote: number | null;
+        user_option_id?: number | null;
+        options?: ProposalOptionPublic[];
         voting_open: boolean;
         ends_at: string;
         yes_voters?: ProposalVoter[];
         no_voters?: ProposalVoter[];
+        option_voters?: Record<string, ProposalVoter[]>;
       };
       setProposal((prev) =>
         prev
           ? {
               ...prev,
               status: s.status ?? prev.status,
+              kind: s.kind ?? prev.kind,
               yes_votes: s.yes_votes,
               no_votes: s.no_votes,
+              total_votes: s.total_votes ?? prev.total_votes,
               user_vote: s.user_vote,
+              user_option_id:
+                s.user_option_id !== undefined
+                  ? s.user_option_id
+                  : prev.user_option_id,
+              options: s.options ?? prev.options,
               voting_open: s.voting_open,
               ends_at: s.ends_at,
               yes_voters: s.yes_voters ?? prev.yes_voters,
               no_voters: s.no_voters ?? prev.no_voters,
+              option_voters: s.option_voters ?? prev.option_voters,
             }
           : prev,
       );
@@ -266,7 +309,7 @@ export default function ProposalDetailPage() {
     return () => cancelAnimationFrame(t);
   }, [id, notFound, loadComments]);
 
-  async function vote(v: 0 | 1) {
+  async function voteYesNo(v: 0 | 1) {
     if (!id || voteBusy || !proposal?.voting_open) return;
     if (!me) {
       const next = `/proposals/${id}`;
@@ -293,6 +336,7 @@ export default function ProposalDetailPage() {
       const data = (await res.json()) as {
         yes_votes?: number;
         no_votes?: number;
+        total_votes?: number;
         user_vote?: number | null;
         yes_voters?: ProposalVoter[];
         no_voters?: ProposalVoter[];
@@ -316,10 +360,73 @@ export default function ProposalDetailPage() {
               ...prev,
               yes_votes: data.yes_votes ?? prev.yes_votes,
               no_votes: data.no_votes ?? prev.no_votes,
+              total_votes: data.total_votes ?? prev.total_votes,
               user_vote:
                 data.user_vote !== undefined ? data.user_vote : prev.user_vote,
               yes_voters: data.yes_voters ?? prev.yes_voters,
               no_voters: data.no_voters ?? prev.no_voters,
+            }
+          : prev,
+      );
+    } catch {
+      setError("Мережа недоступна");
+    }
+    setVoteBusy(false);
+  }
+
+  async function voteChoice(optionId: number) {
+    if (!id || voteBusy || !proposal?.voting_open) return;
+    if (!me) {
+      window.location.assign(
+        `/auth-required?next=${encodeURIComponent(`/proposals/${id}`)}`,
+      );
+      return;
+    }
+    if (me.needsNickname) {
+      window.location.assign(
+        `/profile/setup?next=${encodeURIComponent(`/proposals/${id}`)}`,
+      );
+      return;
+    }
+    setVoteBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/proposals/${id}/vote`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ optionId }),
+      });
+      const data = (await res.json()) as {
+        options?: ProposalOptionPublic[];
+        total_votes?: number;
+        user_option_id?: number | null;
+        option_voters?: Record<string, ProposalVoter[]>;
+        error?: string;
+        code?: string;
+      };
+      if (!res.ok) {
+        if (data.code === "needs_nickname") {
+          window.location.assign(
+            `/profile/setup?next=${encodeURIComponent(`/proposals/${id}`)}`,
+          );
+          return;
+        }
+        setError(data.error || "Не вдалося проголосувати");
+        setVoteBusy(false);
+        return;
+      }
+      setProposal((prev) =>
+        prev
+          ? {
+              ...prev,
+              options: data.options ?? prev.options,
+              total_votes: data.total_votes ?? prev.total_votes,
+              user_option_id:
+                data.user_option_id !== undefined
+                  ? data.user_option_id
+                  : prev.user_option_id,
+              option_voters: data.option_voters ?? prev.option_voters,
             }
           : prev,
       );
@@ -497,7 +604,7 @@ export default function ProposalDetailPage() {
     return (
       <main className={lcPageMainClass}>
         <div className="site-container mx-auto max-w-2xl px-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] py-12 text-center">
-          <p className="text-[var(--mc-text-muted)]">Пропозицію не знайдено.</p>
+          <p className="text-[var(--mc-text-muted)]">Голосування не знайдено.</p>
           <Link
             href="/proposals"
             className="mt-4 inline-block font-bold text-[var(--mc-net-green)] hover:underline"
@@ -537,7 +644,7 @@ export default function ProposalDetailPage() {
             href="/proposals"
             className="lc-focus-ring inline-flex min-h-11 min-w-[11rem] items-center justify-center rounded-lg px-2 text-sm font-semibold text-[var(--mc-net-green)] hover:underline sm:min-w-0 sm:justify-start"
           >
-            ← Усі пропозиції
+            ← Усі голосування
           </Link>
         </div>
 
@@ -570,15 +677,19 @@ export default function ProposalDetailPage() {
               </p>
             </div>
 
-            <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text)] [overflow-wrap:anywhere]">
-              {proposal.description}
-            </p>
+            {proposal.description.trim() ? (
+              <p className="hyphens-auto whitespace-pre-wrap break-words text-left text-base leading-relaxed text-[var(--mc-text)] [overflow-wrap:anywhere]">
+                {proposal.description}
+              </p>
+            ) : null}
 
             {!open ? (
               <VerdictBanner
                 status={proposal.status}
                 yes={proposal.yes_votes}
                 no={proposal.no_votes}
+                kind={proposal.kind ?? "yes_no"}
+                options={proposal.options ?? []}
               />
             ) : null}
 
@@ -586,12 +697,20 @@ export default function ProposalDetailPage() {
               aria-label="Голосування"
               className="lc-vote-match-stage space-y-3 p-3 sm:space-y-4 sm:p-4"
             >
-              <ProposalVoteBar
-                yes={proposal.yes_votes}
-                no={proposal.no_votes}
-                showQuorum={open}
-                votingOpen={open}
-              />
+              {(proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE ? (
+                <ProposalChoiceBar
+                  options={proposal.options ?? []}
+                  showQuorum={open}
+                  votingOpen={open}
+                />
+              ) : (
+                <ProposalVoteBar
+                  yes={proposal.yes_votes}
+                  no={proposal.no_votes}
+                  showQuorum={open}
+                  votingOpen={open}
+                />
+              )}
 
               {error ? (
                 <p className="text-center text-sm text-rose-300" role="alert">
@@ -600,12 +719,22 @@ export default function ProposalDetailPage() {
               ) : null}
 
               {open ? (
-                <ProposalVoteButtons
-                  open={open}
-                  busy={voteBusy}
-                  userVote={proposal.user_vote}
-                  onVote={(v) => void vote(v)}
-                />
+                (proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE ? (
+                  <ProposalChoiceButtons
+                    open={open}
+                    busy={voteBusy}
+                    options={proposal.options ?? []}
+                    userOptionId={proposal.user_option_id}
+                    onVote={(optionId) => void voteChoice(optionId)}
+                  />
+                ) : (
+                  <ProposalVoteButtons
+                    open={open}
+                    busy={voteBusy}
+                    userVote={proposal.user_vote}
+                    onVote={(v) => void voteYesNo(v)}
+                  />
+                )
               ) : null}
 
               {!me && open ? (
@@ -635,6 +764,12 @@ export default function ProposalDetailPage() {
               <ProposalVoters
                 yesVoters={proposal.yes_voters ?? []}
                 noVoters={proposal.no_voters ?? []}
+                options={
+                  (proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE
+                    ? proposal.options
+                    : undefined
+                }
+                optionVoters={proposal.option_voters}
               />
             </section>
 

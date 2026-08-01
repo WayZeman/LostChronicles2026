@@ -1,6 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
+import type { ProposalOptionPublic } from "@/lib/proposal-kinds";
 
 export type ProposalVoter = {
   id: number;
@@ -15,21 +16,23 @@ function VoterList({
 }: {
   title: string;
   voters: ProposalVoter[];
-  tone: "yes" | "no";
+  tone: "yes" | "no" | "option";
 }) {
   return (
     <div
       className={cn(
         "rounded-lg border p-3 sm:p-4",
-        tone === "yes"
-          ? "border-emerald-500/25 bg-emerald-500/[0.06]"
-          : "border-rose-500/25 bg-rose-500/[0.06]",
+        tone === "yes" && "border-emerald-500/25 bg-emerald-500/[0.06]",
+        tone === "no" && "border-rose-500/25 bg-rose-500/[0.06]",
+        tone === "option" && "border-white/10 bg-white/[0.03]",
       )}
     >
       <h3
         className={cn(
           "mb-2.5 text-center text-xs font-extrabold uppercase tracking-wide sm:text-left",
-          tone === "yes" ? "text-emerald-200/90" : "text-rose-200/90",
+          tone === "yes" && "text-emerald-200/90",
+          tone === "no" && "text-rose-200/90",
+          tone === "option" && "normal-case tracking-normal text-[var(--mc-text)]",
         )}
       >
         {title}{" "}
@@ -65,10 +68,32 @@ function VoterList({
 export function ProposalVoters({
   yesVoters,
   noVoters,
+  options,
+  optionVoters,
 }: {
   yesVoters: ProposalVoter[];
   noVoters: ProposalVoter[];
+  options?: ProposalOptionPublic[];
+  optionVoters?: Record<string, ProposalVoter[]>;
 }) {
+  if (options && options.length > 0) {
+    return (
+      <div
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+        aria-label="Хто як проголосував"
+      >
+        {options.map((o) => (
+          <VoterList
+            key={o.id}
+            title={o.label}
+            voters={optionVoters?.[String(o.id)] ?? []}
+            tone="option"
+          />
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div
       className="grid grid-cols-1 gap-3 sm:grid-cols-2"

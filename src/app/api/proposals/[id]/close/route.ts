@@ -40,18 +40,35 @@ export async function POST(
 
     const p = await getProposalForUser(id, userId);
     if (p) {
+      const summary =
+        p.kind === "choice"
+          ? (() => {
+              const max = p.options.length
+                ? Math.max(0, ...p.options.map((o) => o.votes))
+                : 0;
+              const leaders = p.options.filter((o) => o.votes === max && max > 0);
+              if (leaders.length === 0) return "Без голосів";
+              if (leaders.length > 1)
+                return `Нічия: ${leaders.map((o) => o.label).join(", ")}`;
+              return `Переміг варіант «${leaders[0]!.label}» (${leaders[0]!.votes})`;
+            })()
+          : undefined;
       void Promise.all([
         notifyProposalClosedDiscord({
           title: p.title,
           proposalId: p.id,
           yes: p.yes_votes,
           no: p.no_votes,
+          summary,
+          totalVotes: p.total_votes,
         }),
         notifyProposalClosedTelegram({
           title: p.title,
           proposalId: p.id,
           yes: p.yes_votes,
           no: p.no_votes,
+          summary,
+          totalVotes: p.total_votes,
         }),
       ]).catch(() => {});
     }

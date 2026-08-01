@@ -3,6 +3,13 @@ import {
   notifyProposalResultsBatch,
   type ProposalExpiredNotifyRow,
 } from "@/lib/notify-proposal";
+import {
+  PROPOSAL_KIND_CHOICE,
+  PROPOSAL_KIND_YES_NO,
+  type ProposalKind,
+  type ProposalOptionPublic,
+  isProposalKind,
+} from "@/lib/proposal-kinds";
 import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
 
 /** Результат `sql` у режимі рядків-об’єктів; тип драйвера занадто широкий для union. */
@@ -11,6 +18,7 @@ function rowsOf(r: unknown): Record<string, unknown>[] {
 }
 
 let authProviderColumnsEnsured = false;
+let pollSchemaEnsured = false;
 
 /** Discord + Google: discord_id nullable, google_id unique. */
 async function ensureAuthProviderColumns(): Promise<void> {
@@ -35,18 +43,54 @@ async function ensureAuthProviderColumns(): Promise<void> {
   authProviderColumnsEnsured = true;
 }
 
+/** kind + proposal_options + votes.option_id */
+async function ensurePollSchema(): Promise<void> {
+  if (pollSchemaEnsured) return;
+  const sql = getSql();
+  await sql`
+    ALTER TABLE proposals
+    ADD COLUMN IF NOT EXISTS kind VARCHAR(20) NOT NULL DEFAULT 'yes_no'
+  `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS proposal_options (
+      id SERIAL PRIMARY KEY,
+      proposal_id INT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+      label VARCHAR(200) NOT NULL,
+      sort_order INT NOT NULL DEFAULT 0
+    )
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_proposal_options_proposal
+    ON proposal_options (proposal_id, sort_order, id)
+  `;
+  await sql`
+    ALTER TABLE votes
+    ADD COLUMN IF NOT EXISTS option_id INT REFERENCES proposal_options(id) ON DELETE CASCADE
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS idx_votes_option ON votes (option_id)
+  `;
+  pollSchemaEnsured = true;
+}
+
 export type ProposalRow = {
   id: number;
   user_id: number;
   title: string;
   description: string;
+  kind: ProposalKind;
   status: string;
   created_at: Date;
   ends_at: Date;
   author_username: string;
   yes_votes: number;
   no_votes: number;
+  /** yes_no: 0|1; choice: не використовується (див. user_option_id) */
   user_vote: number | null;
+  user_option_id: number | null;
+  options: ProposalOptionPublic[];
+  /** Сума голосів (для choice і кворуму). */
+  total_votes: number;
 };
 
 function num(v: unknown): number {
@@ -60,26 +104,83 @@ function asDate(v: unknown): Date {
   return new Date(String(v));
 }
 
-function mapProposalRow(r: Record<string, unknown>): ProposalRow {
+function mapKind(v: unknown): ProposalKind {
+  const s = String(v ?? "");
+  return isProposalKind(s) ? s : PROPOSAL_KIND_YES_NO;
+}
+
+function mapProposalRow(
+  r: Record<string, unknown>,
+  options: ProposalOptionPublic[] = [],
+): ProposalRow {
+  const kind = mapKind(r.kind);
   const uv = r.user_vote;
   let userVote: number | null = null;
   if (uv !== null && uv !== undefined) {
     const n = num(uv);
     if (n === 0 || n === 1) userVote = n;
   }
+  const uo = r.user_option_id;
+  let userOptionId: number | null = null;
+  if (uo !== null && uo !== undefined) {
+    const n = num(uo);
+    if (n > 0) userOptionId = n;
+  }
+  const yes = num(r.yes_votes);
+  const no = num(r.no_votes);
+  const optVotes = options.reduce((s, o) => s + o.votes, 0);
+  const total =
+    kind === PROPOSAL_KIND_CHOICE ? optVotes : yes + no;
   return {
     id: num(r.id),
     user_id: num(r.user_id),
     title: String(r.title ?? ""),
     description: String(r.description ?? ""),
+    kind,
     status: String(r.status ?? ""),
     created_at: asDate(r.created_at),
     ends_at: asDate(r.ends_at),
     author_username: String(r.author_username ?? ""),
-    yes_votes: num(r.yes_votes),
-    no_votes: num(r.no_votes),
-    user_vote: userVote,
+    yes_votes: yes,
+    no_votes: no,
+    user_vote: kind === PROPOSAL_KIND_YES_NO ? userVote : null,
+    user_option_id: kind === PROPOSAL_KIND_CHOICE ? userOptionId : null,
+    options,
+    total_votes: total,
   };
+}
+
+async function loadOptionsByProposalIds(
+  proposalIds: number[],
+): Promise<Map<number, ProposalOptionPublic[]>> {
+  const map = new Map<number, ProposalOptionPublic[]>();
+  if (proposalIds.length === 0) return map;
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT
+      o.id,
+      o.proposal_id,
+      o.label,
+      o.sort_order,
+      COALESCE(COUNT(v.id), 0)::int AS votes
+    FROM proposal_options o
+    LEFT JOIN votes v ON v.option_id = o.id
+    WHERE o.proposal_id = ANY(${proposalIds})
+    GROUP BY o.id, o.proposal_id, o.label, o.sort_order
+    ORDER BY o.sort_order ASC, o.id ASC
+  `);
+  for (const r of rows) {
+    const pid = num(r.proposal_id);
+    const list = map.get(pid) ?? [];
+    list.push({
+      id: num(r.id),
+      label: String(r.label ?? ""),
+      sort_order: num(r.sort_order),
+      votes: num(r.votes),
+    });
+    map.set(pid, list);
+  }
+  return map;
 }
 
 /** Закриває прострочені active-пропозиції; надсилає Discord/Telegram про результати (не блокує відповідь при помилках вебхуків).
@@ -92,17 +193,19 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
       SELECT
         p.id,
         p.title,
-        COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
-        COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes
+        COALESCE(p.kind, 'yes_no') AS kind,
+        COALESCE(COUNT(v.id), 0)::int AS total_votes,
+        COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+        COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes
       FROM proposals p
       LEFT JOIN votes v ON v.proposal_id = p.id
       WHERE p.status = 'active' AND p.ends_at < NOW()
-      GROUP BY p.id, p.title
+      GROUP BY p.id, p.title, p.kind
     ),
     upd AS (
       UPDATE proposals p
       SET status = CASE
-        WHEN e.yes_votes + e.no_votes < ${minVotes} THEN 'cancelled'
+        WHEN e.total_votes < ${minVotes} THEN 'cancelled'
         ELSE 'closed'
       END
       FROM expired e
@@ -113,18 +216,43 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
       upd.id,
       upd.title,
       upd.status,
+      e.kind,
       e.yes_votes,
-      e.no_votes
+      e.no_votes,
+      e.total_votes
     FROM upd
     INNER JOIN expired e ON e.id = upd.id
   `);
-  const closed: ProposalExpiredNotifyRow[] = rows.map((r) => ({
-    id: num(r.id),
-    title: String(r.title ?? ""),
-    yes_votes: num(r.yes_votes),
-    no_votes: num(r.no_votes),
-    status: String(r.status ?? "closed"),
-  }));
+  const closed: ProposalExpiredNotifyRow[] = [];
+  for (const r of rows) {
+    const id = num(r.id);
+    const kind = mapKind(r.kind);
+    let summary: string | undefined;
+    if (kind === PROPOSAL_KIND_CHOICE) {
+      const opts = (await loadOptionsByProposalIds([id])).get(id) ?? [];
+      const max = opts.length ? Math.max(0, ...opts.map((o) => o.votes)) : 0;
+      const leaders = opts.filter((o) => o.votes === max && max > 0);
+      if (String(r.status) === "cancelled") {
+        summary = undefined;
+      } else if (leaders.length === 0) {
+        summary = "Без голосів";
+      } else if (leaders.length > 1) {
+        summary = `Нічия: ${leaders.map((o) => o.label).join(", ")}`;
+      } else {
+        summary = `Переміг варіант «${leaders[0]!.label}» (${leaders[0]!.votes})`;
+      }
+    }
+    closed.push({
+      id,
+      title: String(r.title ?? ""),
+      yes_votes: num(r.yes_votes),
+      no_votes: num(r.no_votes),
+      status: String(r.status ?? "closed"),
+      kind,
+      total_votes: num(r.total_votes),
+      summary,
+    });
+  }
   if (closed.length > 0) {
     void notifyProposalResultsBatch(closed).catch(() => {});
   }
@@ -135,6 +263,7 @@ export async function listProposalsForUser(
   currentUserId: number | null,
 ): Promise<ProposalRow[]> {
   await ensureAuthProviderColumns();
+  await ensurePollSchema();
   await expireActiveProposals();
   const sql = getSql();
   const uid = currentUserId ?? 0;
@@ -144,22 +273,30 @@ export async function listProposalsForUser(
       p.user_id,
       p.title,
       p.description,
+      COALESCE(p.kind, 'yes_no') AS kind,
       p.status,
       p.created_at,
       p.ends_at,
       COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
-      COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
-      COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes,
       (SELECT v2.vote FROM votes v2
        WHERE v2.proposal_id = p.id AND v2.user_id = ${uid}
-       LIMIT 1) AS user_vote
+       LIMIT 1) AS user_vote,
+      (SELECT v2.option_id FROM votes v2
+       WHERE v2.proposal_id = p.id AND v2.user_id = ${uid}
+       LIMIT 1) AS user_option_id
     FROM proposals p
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
-    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
+    GROUP BY p.id, p.user_id, p.title, p.description, p.kind, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
     ORDER BY p.created_at DESC
   `);
-  return rows.map((r) => mapProposalRow(r));
+  const ids = rows.map((r) => num(r.id));
+  const optionsMap = await loadOptionsByProposalIds(ids);
+  return rows.map((r) =>
+    mapProposalRow(r, optionsMap.get(num(r.id)) ?? []),
+  );
 }
 
 export async function getProposalForUser(
@@ -167,6 +304,7 @@ export async function getProposalForUser(
   currentUserId: number | null,
 ): Promise<ProposalRow | null> {
   await ensureAuthProviderColumns();
+  await ensurePollSchema();
   await expireActiveProposals();
   const sql = getSql();
   const uid = currentUserId ?? 0;
@@ -176,24 +314,29 @@ export async function getProposalForUser(
       p.user_id,
       p.title,
       p.description,
+      COALESCE(p.kind, 'yes_no') AS kind,
       p.status,
       p.created_at,
       p.ends_at,
       COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
-      COALESCE(SUM(CASE WHEN v.vote = 1 THEN 1 ELSE 0 END), 0)::int AS yes_votes,
-      COALESCE(SUM(CASE WHEN v.vote = 0 THEN 1 ELSE 0 END), 0)::int AS no_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes,
       (SELECT v2.vote FROM votes v2
        WHERE v2.proposal_id = p.id AND v2.user_id = ${uid}
-       LIMIT 1) AS user_vote
+       LIMIT 1) AS user_vote,
+      (SELECT v2.option_id FROM votes v2
+       WHERE v2.proposal_id = p.id AND v2.user_id = ${uid}
+       LIMIT 1) AS user_option_id
     FROM proposals p
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
     WHERE p.id = ${id}
-    GROUP BY p.id, p.user_id, p.title, p.description, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
+    GROUP BY p.id, p.user_id, p.title, p.description, p.kind, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
     LIMIT 1
   `);
   if (!rows.length) return null;
-  return mapProposalRow(rows[0]!);
+  const optionsMap = await loadOptionsByProposalIds([id]);
+  return mapProposalRow(rows[0]!, optionsMap.get(id) ?? []);
 }
 
 export function isProposalVotingOpen(row: {
@@ -387,17 +530,20 @@ export type ProposalVoterRow = {
   custom_avatar: string | null;
   discord_id: string | null;
   vote: 0 | 1;
+  option_id: number | null;
 };
 
 export async function listProposalVoters(
   proposalId: number,
 ): Promise<ProposalVoterRow[]> {
   await ensureAuthProviderColumns();
+  await ensurePollSchema();
   const sql = getSql();
   const rows = rowsOf(await sql`
     SELECT
       v.user_id,
       v.vote,
+      v.option_id,
       COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS display_name,
       u.avatar,
       u.custom_avatar,
@@ -409,6 +555,12 @@ export async function listProposalVoters(
   `);
   return rows.map((r) => {
     const voteNum = num(r.vote);
+    const optRaw = r.option_id;
+    let optionId: number | null = null;
+    if (optRaw !== null && optRaw !== undefined) {
+      const n = num(optRaw);
+      if (n > 0) optionId = n;
+    }
     return {
       user_id: num(r.user_id),
       display_name: String(r.display_name ?? ""),
@@ -423,6 +575,7 @@ export async function listProposalVoters(
           ? null
           : String(r.discord_id),
       vote: (voteNum === 1 ? 1 : 0) as 0 | 1,
+      option_id: optionId,
     };
   });
 }
@@ -432,14 +585,36 @@ export async function createProposalRecord(params: {
   title: string;
   description: string;
   endsAt: Date;
+  kind?: ProposalKind;
+  options?: string[];
 }): Promise<number> {
+  await ensurePollSchema();
   const sql = getSql();
+  const kind = params.kind ?? PROPOSAL_KIND_YES_NO;
   const rows = rowsOf(await sql`
-    INSERT INTO proposals (user_id, title, description, status, ends_at)
-    VALUES (${params.userId}, ${params.title}, ${params.description}, 'active', ${params.endsAt})
+    INSERT INTO proposals (user_id, title, description, kind, status, ends_at)
+    VALUES (
+      ${params.userId},
+      ${params.title},
+      ${params.description},
+      ${kind},
+      'active',
+      ${params.endsAt}
+    )
     RETURNING id
   `);
-  return num(rows[0]?.id);
+  const id = num(rows[0]?.id);
+  if (kind === PROPOSAL_KIND_CHOICE && params.options?.length) {
+    let order = 0;
+    for (const label of params.options) {
+      await sql`
+        INSERT INTO proposal_options (proposal_id, label, sort_order)
+        VALUES (${id}, ${label}, ${order})
+      `;
+      order += 1;
+    }
+  }
+  return id;
 }
 
 export async function setUserVote(params: {
@@ -447,13 +622,39 @@ export async function setUserVote(params: {
   userId: number;
   vote: 0 | 1;
 }): Promise<void> {
+  await ensurePollSchema();
   const sql = getSql();
   await sql`
-    INSERT INTO votes (proposal_id, user_id, vote)
-    VALUES (${params.proposalId}, ${params.userId}, ${params.vote})
+    INSERT INTO votes (proposal_id, user_id, vote, option_id)
+    VALUES (${params.proposalId}, ${params.userId}, ${params.vote}, NULL)
     ON CONFLICT (proposal_id, user_id) DO UPDATE SET
-      vote = EXCLUDED.vote
+      vote = EXCLUDED.vote,
+      option_id = NULL
   `;
+}
+
+/** Голос за варіант у choice-голосуванні. */
+export async function setUserChoiceVote(params: {
+  proposalId: number;
+  userId: number;
+  optionId: number;
+}): Promise<boolean> {
+  await ensurePollSchema();
+  const sql = getSql();
+  const ok = rowsOf(await sql`
+    SELECT id FROM proposal_options
+    WHERE id = ${params.optionId} AND proposal_id = ${params.proposalId}
+    LIMIT 1
+  `);
+  if (!ok.length) return false;
+  await sql`
+    INSERT INTO votes (proposal_id, user_id, vote, option_id)
+    VALUES (${params.proposalId}, ${params.userId}, 1, ${params.optionId})
+    ON CONFLICT (proposal_id, user_id) DO UPDATE SET
+      vote = 1,
+      option_id = EXCLUDED.option_id
+  `;
+  return true;
 }
 
 /** Для cron: закрити прострочені та надіслати сповіщення (те саме, що й при завантаженні списку). */

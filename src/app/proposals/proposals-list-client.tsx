@@ -4,11 +4,18 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { PlusCircle } from "lucide-react";
+import { ProposalChoiceBar } from "@/components/proposals/ProposalChoiceBar";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
 import { ProposalVoteBar } from "@/components/proposals/ProposalVoteBar";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
+import {
+  PROPOSAL_KIND_CHOICE,
+  proposalKindLabelUk,
+  type ProposalKind,
+  type ProposalOptionPublic,
+} from "@/lib/proposal-kinds";
 import {
   formatTimeRemainingUk,
   isProposalVotingOpenClient,
@@ -21,11 +28,14 @@ type ProposalItem = {
   id: number;
   title: string;
   description: string;
+  kind: ProposalKind;
   status: string;
   ends_at: string;
   author_username: string;
   yes_votes: number;
   no_votes: number;
+  total_votes: number;
+  options: ProposalOptionPublic[];
 };
 
 export function ProposalsListClient() {
@@ -80,10 +90,11 @@ export function ProposalsListClient() {
             <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
               <div className="max-w-xl text-center sm:text-left">
                 <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
-                  Пропозиції
+                  Пропозиції та голосування
                 </h1>
                 <p className="mt-2 text-sm text-[var(--mc-text-muted)]">
-                  Від {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів · за або проти
+                  За/проти або вибір варіантів · від{" "}
+                  {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів
                 </p>
                 {list && list.length > 0 ? (
                   <p className="mt-2 text-sm tabular-nums text-[var(--mc-text)]">
@@ -96,7 +107,7 @@ export function ProposalsListClient() {
                 className="lc-focus-ring lc-btn-accent mx-auto inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 px-5 text-sm sm:mx-0 sm:w-auto sm:max-w-none"
               >
                 <PlusCircle className="size-4 opacity-80" aria-hidden />
-                Нова пропозиція
+                Створити
               </Link>
             </div>
           </header>
@@ -182,14 +193,14 @@ export function ProposalsListClient() {
               )}
             >
               <p className="text-[var(--mc-text-muted)]">
-                Пропозицій ще немає.
+                Голосувань ще немає.
               </p>
               <Link
                 href="/proposals/new"
                 className="lc-focus-ring lc-btn-accent mt-4 inline-flex min-h-11 items-center gap-2 px-5 text-sm"
               >
                 <PlusCircle className="size-4 opacity-80" aria-hidden />
-                Створити першу
+                Створити перше
               </Link>
             </div>
           </SoftAppear>
@@ -197,6 +208,7 @@ export function ProposalsListClient() {
           <ul className="lc-stagger grid gap-3 sm:gap-4">
             {list.map((p) => {
               const open = isProposalVotingOpenClient(p.status, p.ends_at);
+              const isChoice = p.kind === PROPOSAL_KIND_CHOICE;
               return (
                 <li key={p.id}>
                   <Link
@@ -214,9 +226,15 @@ export function ProposalsListClient() {
                       <ProposalStatusBadge status={p.status} votingOpen={open} />
                     </div>
 
-                    <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--mc-text-muted)]">
-                      {p.description}
+                    <p className="mt-1.5 text-[11px] font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
+                      {proposalKindLabelUk(p.kind ?? "yes_no")}
                     </p>
+
+                    {p.description.trim() ? (
+                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-[var(--mc-text-muted)]">
+                        {p.description}
+                      </p>
+                    ) : null}
 
                     <p className="mt-2.5 text-sm text-[var(--mc-text)]">
                       {p.author_username}
@@ -227,13 +245,22 @@ export function ProposalsListClient() {
                     </p>
 
                     <div className="mt-3">
-                      <ProposalVoteBar
-                        yes={p.yes_votes}
-                        no={p.no_votes}
-                        compact
-                        showQuorum={open}
-                        votingOpen={open}
-                      />
+                      {isChoice ? (
+                        <ProposalChoiceBar
+                          options={p.options ?? []}
+                          compact
+                          showQuorum={open}
+                          votingOpen={open}
+                        />
+                      ) : (
+                        <ProposalVoteBar
+                          yes={p.yes_votes}
+                          no={p.no_votes}
+                          compact
+                          showQuorum={open}
+                          votingOpen={open}
+                        />
+                      )}
                     </div>
                   </Link>
                 </li>

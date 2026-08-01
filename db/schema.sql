@@ -29,20 +29,36 @@ CREATE TABLE IF NOT EXISTS proposals (
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     title VARCHAR(255) NOT NULL,
     description TEXT NOT NULL,
+    -- yes_no | choice
+    kind VARCHAR(20) NOT NULL DEFAULT 'yes_no',
     status VARCHAR(50) NOT NULL DEFAULT 'active',
     -- active | closed (результат) | cancelled (замало голосів після ends_at)
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ends_at TIMESTAMPTZ NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS proposal_options (
+    id SERIAL PRIMARY KEY,
+    proposal_id INT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
+    label VARCHAR(200) NOT NULL,
+    sort_order INT NOT NULL DEFAULT 0
+);
+
+CREATE INDEX IF NOT EXISTS idx_proposal_options_proposal
+    ON proposal_options (proposal_id, sort_order, id);
+
 CREATE TABLE IF NOT EXISTS votes (
     id SERIAL PRIMARY KEY,
     proposal_id INT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
     user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    -- yes_no: 1=за, 0=проти; choice: 1 (обрано), див. option_id
     vote SMALLINT NOT NULL,
+    option_id INT REFERENCES proposal_options(id) ON DELETE CASCADE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     UNIQUE (proposal_id, user_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_votes_option ON votes (option_id);
 
 CREATE INDEX IF NOT EXISTS idx_proposals_status_ends ON proposals (status, ends_at);
 CREATE INDEX IF NOT EXISTS idx_proposals_user ON proposals (user_id);
