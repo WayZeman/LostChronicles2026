@@ -55,7 +55,7 @@ export function SupportMonobankSection({
         lcGlassPanelClass,
         "lc-interactive-panel-static am-reveal am-delay-1 mt-10 md:mt-14",
       )}
-      aria-labelledby="support-mono-heading"
+      aria-labelledby="support-vote-heading"
     >
       <div className="grid grid-cols-1 items-center gap-3 sm:grid-cols-[minmax(0,1.15fr)_minmax(0,0.95fr)] sm:gap-5 md:gap-6">
         <div className="relative mx-auto flex w-full max-w-[16rem] items-center justify-center order-1 sm:order-2 sm:mx-0 sm:max-w-none sm:self-center">
@@ -71,21 +71,18 @@ export function SupportMonobankSection({
         </div>
 
         <div className="order-2 flex flex-col sm:order-1">
-          <h2
-            id="support-mono-heading"
-            className="lc-section-title text-center text-lg uppercase sm:text-left md:text-xl"
-          >
-            Підтримка сервера
-          </h2>
           {resolvedBlurb ? (
-            <p className="mt-2 text-center text-sm text-[var(--mc-ink-subtle)] sm:text-left">
+            <p className="mb-1 text-center text-sm text-[var(--mc-ink-subtle)] sm:text-left">
               {resolvedBlurb}
             </p>
           ) : null}
 
-          <h3 className="mt-5 text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:mt-6 sm:text-left sm:text-base">
+          <h2
+            id="support-vote-heading"
+            className="text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:text-left sm:text-base"
+          >
             Проголосуй за сервер
-          </h3>
+          </h2>
           <ul className="mt-2 grid grid-cols-3 gap-1.5 sm:mt-2.5 sm:grid-cols-1 sm:gap-2">
             {links.map(({ href, label, shortLabel }) => (
               <li key={href} className="min-w-0">
@@ -95,8 +92,8 @@ export function SupportMonobankSection({
                   rel="noopener noreferrer"
                   title={label}
                   className={cn(
-                    "lc-focus-ring mc-slot flex items-center justify-center gap-1",
-                    "min-h-9 px-1.5 py-1.5 text-[11px] leading-tight sm:min-h-11 sm:justify-between sm:gap-2 sm:px-3 sm:py-2.5 sm:text-sm",
+                    "lc-focus-ring mc-slot inline-flex w-full items-center justify-center gap-1.5",
+                    "min-h-9 px-1.5 py-1.5 text-center text-[11px] leading-tight sm:min-h-11 sm:px-3 sm:py-2.5 sm:text-sm",
                     "text-[var(--mc-text)] transition-[background-color,color] duration-150",
                     "hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]",
                   )}
@@ -104,7 +101,7 @@ export function SupportMonobankSection({
                   <span className="truncate sm:hidden">{shortLabel}</span>
                   <span className="hidden truncate sm:inline">{label}</span>
                   <ExternalLink
-                    className="hidden size-3 shrink-0 opacity-40 sm:block"
+                    className="hidden size-3 shrink-0 opacity-40 sm:inline"
                     aria-hidden
                   />
                 </a>
@@ -118,18 +115,18 @@ export function SupportMonobankSection({
           <div className="mt-2 flex flex-col gap-2 sm:mt-2.5">
             <Link
               href="/support"
-              className="lc-focus-ring lc-btn-accent w-full min-h-11 px-6 py-2.5 text-sm"
+              className="lc-focus-ring lc-btn-accent inline-flex w-full min-h-11 items-center justify-center gap-2 px-6 py-2.5 text-center text-sm"
             >
               <HeartHandshake className="size-4 shrink-0" aria-hidden />
-              Відкрити магазин підтримки
+              <span>Відкрити магазин підтримки</span>
             </Link>
             <a
               href={resolvedJar}
               target="_blank"
               rel="noopener noreferrer"
-              className="lc-focus-ring mc-slot inline-flex min-h-10 w-full items-center justify-center gap-2 px-4 text-sm font-semibold text-[var(--mc-text)] hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]"
+              className="lc-focus-ring mc-slot inline-flex min-h-10 w-full items-center justify-center gap-2 px-4 text-center text-sm font-semibold text-[var(--mc-text)] hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]"
             >
-              Банка Monobank
+              <span>Банка Monobank</span>
               <ExternalLink className="size-3.5 shrink-0 opacity-70" aria-hidden />
             </a>
           </div>
