@@ -205,7 +205,115 @@
   font-size: 0.8125rem;
 }
 
+/* ——— RP новини (Telegram → wiki mirror) ——— */
+
+.wiki-mirror .wiki-rp-heading {
+  text-align: center;
+  font-size: clamp(1.35rem, 4.5vw, 1.85rem);
+  margin: 0 0 0.85em;
+  border: none;
+  padding: 0;
+}
+
+.wiki-mirror .wiki-rp-news {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.wiki-mirror .wiki-rp-date {
+  text-align: center;
+  margin: 0.85em 0 0.15em;
+  font-size: 0.95em;
+}
+
+.wiki-mirror .wiki-rp-date:first-child {
+  margin-top: 0;
+}
+
+.wiki-mirror .wiki-rp-post {
+  min-width: 0;
+  max-width: 100%;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--wiki-border);
+  border-radius: 1rem;
+  background: rgba(0, 0, 0, 0.25);
+  overflow: hidden;
+}
+
+.wiki-mirror .wiki-rp-meta {
+  margin: 0 0 0.45em;
+  color: #ffd54f;
+  font-weight: 700;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.wiki-mirror .wiki-rp-time,
+.wiki-mirror .wiki-rp-title {
+  color: #ffd54f;
+  font-weight: 700;
+}
+
+.wiki-mirror .wiki-rp-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.wiki-mirror .wiki-rp-body > :first-child {
+  margin-top: 0;
+}
+
+.wiki-mirror .wiki-rp-body > :last-child {
+  margin-bottom: 0;
+}
+
+.wiki-mirror .wiki-rp-media {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.65rem;
+  min-width: 0;
+}
+
+.wiki-mirror .wiki-rp-figure {
+  margin: 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 0.65rem;
+}
+
+.wiki-mirror .wiki-rp-figure img {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.wiki-mirror table.wikitable {
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+}
+
+.wiki-mirror table.wikitable td,
+.wiki-mirror table.wikitable th {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 @media (max-width: 640px) {
+  .wiki-mirror {
+    font-size: 0.875rem;
+    line-height: 1.55;
+  }
+
   .wiki-mirror table.infobox,
   .wiki-mirror .infobox,
   .wiki-mirror aside.portable-infobox {
@@ -218,6 +326,43 @@
   .wiki-mirror .tleft {
     float: none;
     margin: 0.75em 0;
+  }
+
+  .wiki-mirror table.wikitable th,
+  .wiki-mirror table.wikitable td {
+    padding: 0.5em 0.55em;
+  }
+
+  .wiki-mirror .wiki-rp-heading {
+    font-size: 1.35rem;
+    margin-bottom: 0.65em;
+  }
+
+  .wiki-mirror .wiki-rp-news {
+    gap: 0.55rem;
+  }
+
+  .wiki-mirror .wiki-rp-date {
+    margin: 0.7em 0 0.05em;
+    font-size: 0.9em;
+  }
+
+  .wiki-mirror .wiki-rp-post {
+    padding: 0.7rem 0.75rem;
+    border-radius: 0.75rem;
+  }
+
+  .wiki-mirror .wiki-rp-meta {
+    font-size: 0.95em;
+  }
+
+  .wiki-mirror .wiki-rp-media {
+    gap: 0.4rem;
+    margin-top: 0.55rem;
+  }
+
+  .wiki-mirror .wiki-rp-figure {
+    border-radius: 0.5rem;
   }
 }
 

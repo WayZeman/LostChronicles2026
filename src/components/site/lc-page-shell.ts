@@ -7,7 +7,7 @@ export const lcPageMainMapClass = `${lcPageMainClass} justify-center`;
 
 /** Типовий контентний контейнер (вікі, новини, мапа, статті вікі). */
 export const lcPageContainerClass =
-  "site-container relative z-10 mx-auto w-full max-w-4xl px-4 py-12 md:py-16";
+  "site-container relative z-10 mx-auto w-full max-w-4xl px-3 py-6 sm:px-4 sm:py-10 md:py-16";
 
 /** Головна: той самий верхній ритм, більший нижній відступ під футер. */
 export const lcPageContainerHomeClass =

@@ -7,6 +7,10 @@ import {
   getFandomWikiBase,
 } from "@/lib/fandom";
 import { isWikiHomeSlug } from "@/lib/wiki-home";
+import {
+  fetchRpNewsWikiContent,
+  isRpNewsWikiSlug,
+} from "@/lib/telegram-rp-news";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
@@ -25,6 +29,34 @@ export default async function WikiArticlePage({
 
   const fandomBase = getFandomWikiBase();
 
+  // RP новини — з Telegram-гілки, у стилі Fandom wikitable
+  if (isRpNewsWikiSlug(slug)) {
+    const rp = await fetchRpNewsWikiContent();
+    if (!rp) return notFound();
+
+    return (
+      <main className={lcPageMainClass}>
+        <div className={lcPageContainerClass}>
+          <Link
+            href="/wiki"
+            className="lc-focus-ring mb-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--mc-text-muted)] transition-colors hover:text-[var(--mc-net-green)] sm:mb-8"
+          >
+            <ArrowLeft className="size-4" aria-hidden />
+            Головна вікі
+          </Link>
+
+          <WikiContentFrame>
+            <WikiMirrorHtml
+              html={`<h1 class="wiki-rp-heading">RP новини</h1>${rp.html}`}
+              fandomBase={fandomBase}
+              rewriteWikiLinksToLocal={false}
+            />
+          </WikiContentFrame>
+        </div>
+      </main>
+    );
+  }
+
   const parsed = await fetchFandomPageHtml(fandomTitleFromWikiSlug(slug));
   if (!parsed) return notFound();
 
@@ -33,7 +65,7 @@ export default async function WikiArticlePage({
       <div className={lcPageContainerClass}>
         <Link
           href="/wiki"
-          className="lc-focus-ring mb-8 inline-flex items-center gap-2 text-sm font-bold text-[var(--mc-text-muted)] transition-colors hover:text-[var(--mc-net-green)]"
+          className="lc-focus-ring mb-5 inline-flex items-center gap-2 text-sm font-bold text-[var(--mc-text-muted)] transition-colors hover:text-[var(--mc-net-green)] sm:mb-8"
         >
           <ArrowLeft className="size-4" aria-hidden />
           Головна вікі

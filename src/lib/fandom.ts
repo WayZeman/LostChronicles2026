@@ -73,7 +73,8 @@ export function getFandomNewsPageTitle(): string {
 
 /**
  * Fandom не кешуємо на етапі білду: на Vercel статична генерація часто не досягає api.php,
- * і в HTML «запікалась» би лише помилка. Сторінки /wiki та /news — force-dynamic; fetch — no-store.
+ * і в HTML «запікалась» би лише помилка. Сторінка /wiki — force-dynamic; fetch — no-store.
+ * Новини (/news) тепер з Telegram — див. src/lib/telegram-news.ts.
  */
 const fetchInit = () =>
   ({

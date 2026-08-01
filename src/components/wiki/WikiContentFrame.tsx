@@ -12,7 +12,7 @@ export function WikiContentFrame({ children, topSlot }: Props) {
   return (
     <div className="mx-auto w-full max-w-4xl">
       <div className={cn(lcGlassPanelClass, "overflow-hidden p-0")}>
-        <div className="px-4 py-6 sm:px-6 sm:py-8 md:px-10 md:py-10">
+        <div className="px-3 py-4 sm:px-6 sm:py-8 md:px-10 md:py-10">
           {topSlot ? (
             <div className="mb-6 hidden sm:block md:mb-8">{topSlot}</div>
           ) : null}
