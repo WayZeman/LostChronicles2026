@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { ExternalLink, HeartHandshake } from "lucide-react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
@@ -31,7 +32,7 @@ type Props = {
 };
 
 /**
- * Підтримка сервера: ілюстрація + голоси + monobank.
+ * Підтримка сервера: голосування в каталогах + донат/магазин.
  */
 export function SupportMonobankSection({
   jarUrl,
@@ -82,9 +83,9 @@ export function SupportMonobankSection({
             </p>
           ) : null}
 
-          <p className="mt-4 text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)] sm:mt-5 sm:text-left">
-            Голосування
-          </p>
+          <h3 className="mt-5 text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:mt-6 sm:text-left sm:text-base">
+            Проголосуй за сервер
+          </h3>
           <ul className="mt-2 grid grid-cols-3 gap-1.5 sm:mt-2.5 sm:grid-cols-1 sm:gap-2">
             {links.map(({ href, label, shortLabel }) => (
               <li key={href} className="min-w-0">
@@ -111,16 +112,27 @@ export function SupportMonobankSection({
             ))}
           </ul>
 
-          <a
-            href={resolvedJar}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lc-focus-ring lc-btn-accent mt-4 w-full min-h-11 px-6 py-2.5 text-sm sm:mt-5"
-          >
-            <HeartHandshake className="size-4 shrink-0" aria-hidden />
-            Підтримати в monobank
-            <ExternalLink className="size-3.5 shrink-0 opacity-70" aria-hidden />
-          </a>
+          <h3 className="mt-5 text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:mt-6 sm:text-left sm:text-base">
+            Підтримай сервер
+          </h3>
+          <div className="mt-2 flex flex-col gap-2 sm:mt-2.5">
+            <Link
+              href="/support"
+              className="lc-focus-ring lc-btn-accent w-full min-h-11 px-6 py-2.5 text-sm"
+            >
+              <HeartHandshake className="size-4 shrink-0" aria-hidden />
+              Відкрити магазин підтримки
+            </Link>
+            <a
+              href={resolvedJar}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lc-focus-ring mc-slot inline-flex min-h-10 w-full items-center justify-center gap-2 px-4 text-sm font-semibold text-[var(--mc-text)] hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]"
+            >
+              Банка Monobank
+              <ExternalLink className="size-3.5 shrink-0 opacity-70" aria-hidden />
+            </a>
+          </div>
         </div>
       </div>
     </section>
