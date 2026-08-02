@@ -8,6 +8,11 @@ import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { compressImageFile } from "@/lib/compress-image";
+import {
+  normalizePriceTiers,
+  summarizePriceLabel,
+  type SupportPriceTier,
+} from "@/lib/support-price-tiers";
 import { cn } from "@/lib/utils";
 
 type Tab = "faq" | "connect" | "support" | "voting" | "admins";
@@ -34,7 +39,7 @@ type SupportCardDraft = {
   title: string;
   description: string;
   image_url: string;
-  price_label: string;
+  price_tiers: SupportPriceTier[];
   button_url: string;
   quantity_enabled: boolean;
 };
@@ -122,20 +127,29 @@ export function AdminPanelClient() {
             description: string;
             image_url: string;
             price_label: string;
+            price_tiers?: SupportPriceTier[];
             button_url: string;
             quantity_enabled?: boolean;
           }[];
         };
         setSupportCards(
-          (d.items ?? []).map((i) => ({
-            key: newCardKey(),
-            title: i.title,
-            description: i.description,
-            image_url: i.image_url,
-            price_label: i.price_label,
-            button_url: i.button_url ?? "",
-            quantity_enabled: i.quantity_enabled !== false,
-          })),
+          (d.items ?? []).map((i) => {
+            const tiers = normalizePriceTiers(i.price_tiers ?? []);
+            return {
+              key: newCardKey(),
+              title: i.title,
+              description: i.description,
+              image_url: i.image_url,
+              price_tiers:
+                tiers.length > 0
+                  ? tiers
+                  : i.price_label.trim()
+                    ? [{ label: "", price_label: i.price_label.trim() }]
+                    : [{ label: "", price_label: "" }],
+              button_url: i.button_url ?? "",
+              quantity_enabled: i.quantity_enabled !== false,
+            };
+          }),
         );
       }
       if (usersRes.ok) {
@@ -232,24 +246,45 @@ export function AdminPanelClient() {
     setBusy(false);
   }
 
+  async function uploadCardImage(dataUrl: string): Promise<string> {
+    const res = await fetch("/api/admin/media", {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ dataUrl }),
+    });
+    const d = (await res.json()) as { error?: string; url?: string };
+    if (!res.ok || !d.url) {
+      throw new Error(d.error || "Не вдалося завантажити фото");
+    }
+    return d.url;
+  }
+
   async function saveSupportCards() {
     setBusy(true);
     setErr(null);
     setMsg(null);
     try {
+      // Старі data URL у БД / локальному стейті — виносимо по одному, щоб PUT не впирався в ліміт тіла.
+      const resolvedUrls: string[] = [];
+      for (const card of supportCards) {
+        if (card.image_url.startsWith("data:")) {
+          resolvedUrls.push(await uploadCardImage(card.image_url));
+        } else {
+          resolvedUrls.push(card.image_url);
+        }
+      }
+
       const payload = supportCards.map(
-        ({
+        (
+          { title, description, price_tiers, button_url, quantity_enabled },
+          i,
+        ) => ({
           title,
           description,
-          image_url,
-          price_label,
-          button_url,
-          quantity_enabled,
-        }) => ({
-          title,
-          description,
-          image_url,
-          price_label,
+          image_url: resolvedUrls[i]!,
+          price_tiers: normalizePriceTiers(price_tiers),
+          price_label: summarizePriceLabel(normalizePriceTiers(price_tiers)),
           button_url,
           quantity_enabled,
         }),
@@ -267,6 +302,7 @@ export function AdminPanelClient() {
           description: string;
           image_url: string;
           price_label: string;
+          price_tiers?: SupportPriceTier[];
           button_url: string;
           quantity_enabled?: boolean;
         }[];
@@ -278,20 +314,30 @@ export function AdminPanelClient() {
       }
       if (d.items) {
         setSupportCards(
-          d.items.map((i, idx) => ({
-            key: supportCards[idx]?.key ?? newCardKey(),
-            title: i.title,
-            description: i.description,
-            image_url: i.image_url,
-            price_label: i.price_label,
-            button_url: i.button_url ?? "",
-            quantity_enabled: i.quantity_enabled !== false,
-          })),
+          d.items.map((i, idx) => {
+            const tiers = normalizePriceTiers(i.price_tiers ?? []);
+            return {
+              key: supportCards[idx]?.key ?? newCardKey(),
+              title: i.title,
+              description: i.description,
+              image_url: i.image_url,
+              price_tiers:
+                tiers.length > 0
+                  ? tiers
+                  : i.price_label.trim()
+                    ? [{ label: "", price_label: i.price_label.trim() }]
+                    : [{ label: "", price_label: "" }],
+              button_url: i.button_url ?? "",
+              quantity_enabled: i.quantity_enabled !== false,
+            };
+          }),
         );
       }
       setMsg("Картки підтримки збережено.");
-    } catch {
-      setErr("Мережа недоступна");
+    } catch (e) {
+      setErr(
+        e instanceof Error ? e.message : "Мережа недоступна",
+      );
     }
     setBusy(false);
   }
@@ -375,14 +421,17 @@ export function AdminPanelClient() {
   async function onCardImageFile(idx: number, file: File | null) {
     if (!file) return;
     setErr(null);
+    setBusy(true);
     try {
       const dataUrl = await compressImageFile(file);
+      const url = await uploadCardImage(dataUrl);
       setSupportCards((prev) =>
-        prev.map((c, i) => (i === idx ? { ...c, image_url: dataUrl } : c)),
+        prev.map((c, i) => (i === idx ? { ...c, image_url: url } : c)),
       );
     } catch (e) {
       setErr(e instanceof Error ? e.message : "Не вдалося завантажити фото");
     }
+    setBusy(false);
   }
 
   return (
@@ -783,22 +832,139 @@ export function AdminPanelClient() {
                               )
                             }
                             placeholder="або URL фото"
-                            className="lc-focus-ring mc-input px-2.5 py-2 text-sm"
+                            className="lc-focus-ring mc-input px-2.5 py-2 text-sm sm:col-span-2"
                           />
-                          <input
-                            value={card.price_label}
-                            onChange={(e) =>
-                              setSupportCards((prev) =>
-                                prev.map((c, i) =>
-                                  i === idx
-                                    ? { ...c, price_label: e.target.value }
-                                    : c,
-                                ),
-                              )
-                            }
-                            placeholder="Ціна (25 ₴)"
-                            className="lc-focus-ring mc-input px-2.5 py-2 text-sm"
-                          />
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <p className="text-xs font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
+                              Ціни / варіанти
+                            </p>
+                            <button
+                              type="button"
+                              disabled={busy || card.price_tiers.length >= 12}
+                              onClick={() =>
+                                setSupportCards((prev) =>
+                                  prev.map((c, i) =>
+                                    i === idx
+                                      ? {
+                                          ...c,
+                                          price_tiers: [
+                                            ...c.price_tiers,
+                                            {
+                                              label:
+                                                c.price_tiers.length === 0
+                                                  ? ""
+                                                  : "Новий варіант",
+                                              price_label: "",
+                                            },
+                                          ],
+                                        }
+                                      : c,
+                                  ),
+                                )
+                              }
+                              className="lc-focus-ring inline-flex items-center gap-1 rounded border border-white/15 px-2 py-1 text-[11px] font-bold text-[var(--mc-text)] disabled:opacity-40"
+                            >
+                              <Plus className="size-3" />
+                              Додати ціну
+                            </button>
+                          </div>
+                          {card.price_tiers.map((tier, tIdx) => (
+                            <div
+                              key={tIdx}
+                              className="grid gap-2 sm:grid-cols-[1fr_7rem_auto]"
+                            >
+                              <input
+                                value={tier.label}
+                                onChange={(e) =>
+                                  setSupportCards((prev) =>
+                                    prev.map((c, i) =>
+                                      i === idx
+                                        ? {
+                                            ...c,
+                                            price_tiers: c.price_tiers.map(
+                                              (t, j) =>
+                                                j === tIdx
+                                                  ? {
+                                                      ...t,
+                                                      label: e.target.value,
+                                                    }
+                                                  : t,
+                                            ),
+                                          }
+                                        : c,
+                                    ),
+                                  )
+                                }
+                                placeholder={
+                                  card.price_tiers.length > 1
+                                    ? "Назва (Рідкісна / Епічна…)"
+                                    : "Назва варіанту (опційно)"
+                                }
+                                className="lc-focus-ring mc-input px-2.5 py-2 text-sm"
+                              />
+                              <input
+                                value={tier.price_label}
+                                onChange={(e) =>
+                                  setSupportCards((prev) =>
+                                    prev.map((c, i) =>
+                                      i === idx
+                                        ? {
+                                            ...c,
+                                            price_tiers: c.price_tiers.map(
+                                              (t, j) =>
+                                                j === tIdx
+                                                  ? {
+                                                      ...t,
+                                                      price_label:
+                                                        e.target.value,
+                                                    }
+                                                  : t,
+                                            ),
+                                          }
+                                        : c,
+                                    ),
+                                  )
+                                }
+                                placeholder="20 ₴"
+                                className="lc-focus-ring mc-input px-2.5 py-2 text-sm"
+                              />
+                              <button
+                                type="button"
+                                disabled={
+                                  busy || card.price_tiers.length <= 1
+                                }
+                                onClick={() =>
+                                  setSupportCards((prev) =>
+                                    prev.map((c, i) =>
+                                      i === idx
+                                        ? {
+                                            ...c,
+                                            price_tiers: c.price_tiers.filter(
+                                              (_, j) => j !== tIdx,
+                                            ),
+                                          }
+                                        : c,
+                                    ),
+                                  )
+                                }
+                                className="lc-focus-ring inline-flex items-center justify-center rounded border border-rose-500/40 px-2 py-2 text-rose-200 disabled:opacity-35"
+                                aria-label="Прибрати ціну"
+                              >
+                                <Trash2 className="size-3.5" />
+                              </button>
+                            </div>
+                          ))}
+                          {card.price_tiers.length > 1 ? (
+                            <p className="text-[11px] text-[var(--mc-text-muted)]">
+                              На вітрині:{" "}
+                              {summarizePriceLabel(
+                                normalizePriceTiers(card.price_tiers),
+                              ) || "—"}{" "}
+                              · при «У кошик» гравець обере варіант
+                            </p>
+                          ) : null}
                         </div>
                       </li>
                     ))}
@@ -816,7 +982,7 @@ export function AdminPanelClient() {
                             title: "",
                             description: "",
                             image_url: "/support-gold-pile.png",
-                            price_label: "",
+                            price_tiers: [{ label: "", price_label: "" }],
                             button_url: "",
                             quantity_enabled: true,
                           },

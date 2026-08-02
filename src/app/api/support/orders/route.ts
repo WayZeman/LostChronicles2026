@@ -23,17 +23,19 @@ export async function POST(req: Request) {
   const note = typeof b.note === "string" ? b.note : "";
 
   // Новий формат: items[]; старий: cardId + quantity
-  let items: { cardId: number; quantity?: number }[] = [];
+  let items: { cardId: number; quantity?: number; tierIndex?: number }[] = [];
   if (Array.isArray(b.items)) {
     for (const raw of b.items) {
       if (!raw || typeof raw !== "object") continue;
       const o = raw as Record<string, unknown>;
       const cardId = Number(o.cardId);
       if (!Number.isInteger(cardId) || cardId < 1) continue;
+      const tierIndex = Math.max(0, Math.floor(Number(o.tierIndex ?? 0)) || 0);
       items.push({
         cardId,
         quantity:
           typeof o.quantity === "number" ? o.quantity : Number(o.quantity),
+        tierIndex,
       });
     }
   } else {
@@ -44,6 +46,7 @@ export async function POST(req: Request) {
           cardId,
           quantity:
             typeof b.quantity === "number" ? b.quantity : Number(b.quantity),
+          tierIndex: 0,
         },
       ];
     }

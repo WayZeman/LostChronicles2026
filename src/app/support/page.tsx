@@ -66,6 +66,7 @@ export default async function SupportPage() {
             description: c.description,
             image_url: c.image_url,
             price_label: c.price_label,
+            price_tiers: c.price_tiers,
             quantity_enabled: c.quantity_enabled,
           }))}
         />

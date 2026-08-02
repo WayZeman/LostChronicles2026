@@ -3,6 +3,10 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { ShoppingBag, ShoppingCart, Trash2, X } from "lucide-react";
 
+import {
+  effectivePriceTiers,
+  type SupportPriceTier,
+} from "@/lib/support-price-tiers";
 import { cn } from "@/lib/utils";
 
 export type SupportCardView = {
@@ -11,6 +15,7 @@ export type SupportCardView = {
   description: string;
   image_url: string;
   price_label: string;
+  price_tiers?: SupportPriceTier[];
   quantity_enabled: boolean;
 };
 
@@ -20,6 +25,7 @@ type Props = {
 
 type CartLine = {
   cardId: number;
+  tierIndex: number;
   quantity: number;
 };
 
@@ -35,7 +41,7 @@ type Phase =
       notified: boolean;
     };
 
-const CART_KEY = "lc-support-cart-v1";
+const CART_KEY = "lc-support-cart-v2";
 const MAX_QTY = 20;
 
 function parseUnitUah(label: string): number | null {
@@ -49,6 +55,10 @@ function formatUah(n: number): string {
   return `${n.toLocaleString("uk-UA")} ₴`;
 }
 
+function cardTiers(card: SupportCardView): SupportPriceTier[] {
+  return effectivePriceTiers(card.price_label, card.price_tiers ?? []);
+}
+
 function loadCart(): CartLine[] {
   try {
     const raw = localStorage.getItem(CART_KEY);
@@ -60,9 +70,11 @@ function loadCart(): CartLine[] {
         const o = x as Record<string, unknown>;
         const cardId = Number(o.cardId);
         const quantity = Math.floor(Number(o.quantity));
+        const tierIndex = Math.max(0, Math.floor(Number(o.tierIndex ?? 0)) || 0);
         if (!Number.isInteger(cardId) || cardId < 1) return null;
         return {
           cardId,
+          tierIndex,
           quantity: Math.min(MAX_QTY, Math.max(1, quantity || 1)),
         };
       })
@@ -76,6 +88,10 @@ export function SupportOrderCards({ cards }: Props) {
   const [cart, setCart] = useState<CartLine[]>([]);
   const [cartReady, setCartReady] = useState(false);
   const [cartOpen, setCartOpen] = useState(false);
+  const [tierPick, setTierPick] = useState<{
+    card: SupportCardView;
+    qty: number;
+  } | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
   const [nickname, setNickname] = useState("");
   const [note, setNote] = useState("");
@@ -111,11 +127,20 @@ export function SupportOrderCards({ cards }: Props) {
       .map((line) => {
         const card = cardById.get(line.cardId);
         if (!card) return null;
-        const unit = parseUnitUah(card.price_label) ?? 0;
+        const tiers = cardTiers(card);
+        if (tiers.length === 0) return null;
+        const tier = tiers[Math.min(line.tierIndex, tiers.length - 1)]!;
+        const unit = parseUnitUah(tier.price_label) ?? 0;
         const qty = card.quantity_enabled ? line.quantity : 1;
+        const displayTitle =
+          tiers.length > 1 && tier.label
+            ? `${card.title} (${tier.label})`
+            : card.title;
         return {
           line: { ...line, quantity: qty },
           card,
+          tier,
+          displayTitle,
           unit,
           total: unit * qty,
         };
@@ -137,35 +162,55 @@ export function SupportOrderCards({ cards }: Props) {
     }));
   }
 
-  function addToCart(card: SupportCardView) {
-    const addQty = card.quantity_enabled ? qtyFor(card.id) : 1;
+  function addToCartWithTier(
+    card: SupportCardView,
+    tierIndex: number,
+    addQty: number,
+  ) {
     setCart((prev) => {
-      const i = prev.findIndex((l) => l.cardId === card.id);
-      if (i < 0) return [...prev, { cardId: card.id, quantity: addQty }];
+      const i = prev.findIndex(
+        (l) => l.cardId === card.id && l.tierIndex === tierIndex,
+      );
+      if (i < 0) {
+        return [...prev, { cardId: card.id, tierIndex, quantity: addQty }];
+      }
       const next = [...prev];
       const maxAdd = card.quantity_enabled
-        ? Math.min(MAX_QTY, next[i].quantity + addQty)
+        ? Math.min(MAX_QTY, next[i]!.quantity + addQty)
         : 1;
-      next[i] = { ...next[i], quantity: maxAdd };
+      next[i] = { ...next[i]!, quantity: maxAdd };
       return next;
     });
     setJustAdded(card.id);
+    setTierPick(null);
   }
 
-  function updateCartQty(cardId: number, quantity: number) {
+  function requestAddToCart(card: SupportCardView) {
+    const tiers = cardTiers(card);
+    const addQty = card.quantity_enabled ? qtyFor(card.id) : 1;
+    if (tiers.length > 1) {
+      setTierPick({ card, qty: addQty });
+      return;
+    }
+    addToCartWithTier(card, 0, addQty);
+  }
+
+  function updateCartQty(cardId: number, tierIndex: number, quantity: number) {
     const card = cardById.get(cardId);
     if (!card?.quantity_enabled) return;
     setCart((prev) =>
       prev.map((l) =>
-        l.cardId === cardId
+        l.cardId === cardId && l.tierIndex === tierIndex
           ? { ...l, quantity: Math.min(MAX_QTY, Math.max(1, quantity)) }
           : l,
       ),
     );
   }
 
-  function removeFromCart(cardId: number) {
-    setCart((prev) => prev.filter((l) => l.cardId !== cardId));
+  function removeFromCart(cardId: number, tierIndex: number) {
+    setCart((prev) =>
+      prev.filter((l) => !(l.cardId === cardId && l.tierIndex === tierIndex)),
+    );
   }
 
   function continueShopping() {
@@ -201,6 +246,7 @@ export function SupportOrderCards({ cards }: Props) {
             items: cartRows.map((r) => ({
               cardId: r.card.id,
               quantity: r.line.quantity,
+              tierIndex: r.line.tierIndex,
             })),
           }),
         });
@@ -279,6 +325,12 @@ export function SupportOrderCards({ cards }: Props) {
           {cards.map((card) => {
             const q = qtyFor(card.id);
             const added = justAdded === card.id;
+            const tiers = cardTiers(card);
+            const badge =
+              tiers.length > 1
+                ? card.price_label ||
+                  (tiers[0] ? `від ${tiers[0].price_label}` : "")
+                : (tiers[0]?.price_label ?? card.price_label);
             return (
               <li key={card.id}>
                 <article
@@ -298,7 +350,7 @@ export function SupportOrderCards({ cards }: Props) {
                       decoding="async"
                     />
                     <div className="absolute bottom-2 right-2 border-2 border-black bg-black/80 px-2.5 py-1.5 text-xl font-black tabular-nums leading-none text-[var(--mc-net-green)] sm:text-2xl">
-                      {card.price_label}
+                      {badge}
                     </div>
                   </div>
                   <div className="flex flex-1 flex-col gap-2.5 p-3.5 sm:p-4">
@@ -335,14 +387,18 @@ export function SupportOrderCards({ cards }: Props) {
                     ) : null}
                     <button
                       type="button"
-                      onClick={() => addToCart(card)}
+                      onClick={() => requestAddToCart(card)}
                       className={cn(
                         "lc-focus-ring lc-btn-accent mt-auto inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 text-sm font-bold",
                         added && "!bg-[var(--mc-net-green)] !text-black",
                       )}
                     >
                       <ShoppingCart className="size-4" aria-hidden />
-                      {added ? "Додано" : "У кошик"}
+                      {added
+                        ? "Додано"
+                        : tiers.length > 1
+                          ? "Обрати варіант"
+                          : "У кошик"}
                     </button>
                   </div>
                 </article>
@@ -385,6 +441,63 @@ export function SupportOrderCards({ cards }: Props) {
                 Оформити
               </button>
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {tierPick ? (
+        <div
+          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="support-tier-title"
+          onClick={() => setTierPick(null)}
+        >
+          <div
+            className={cn(modalShell, "w-full max-w-md p-4 sm:p-5")}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="mb-3 flex items-start justify-between gap-2">
+              <div>
+                <h3
+                  id="support-tier-title"
+                  className="text-lg font-extrabold text-[var(--mc-text)]"
+                >
+                  Обери варіант
+                </h3>
+                <p className="mt-0.5 text-sm text-[var(--mc-text-muted)]">
+                  {tierPick.card.title}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTierPick(null)}
+                className="lc-focus-ring border-2 border-black p-1.5 text-[var(--mc-text-muted)]"
+                aria-label="Закрити"
+              >
+                <X className="size-4" />
+              </button>
+            </div>
+            <ul className="space-y-2">
+              {cardTiers(tierPick.card).map((tier, idx) => (
+                <li key={`${tier.label}-${tier.price_label}-${idx}`}>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      addToCartWithTier(tierPick.card, idx, tierPick.qty)
+                    }
+                    className="lc-focus-ring flex w-full items-center justify-between gap-3 border-2 border-black bg-black/35 px-3.5 py-3 text-left transition-colors hover:bg-black/50"
+                  >
+                    <span className="min-w-0 font-bold text-[var(--mc-text)] [overflow-wrap:anywhere]">
+                      {tier.label || `Варіант ${idx + 1}`}
+                    </span>
+                    <span className="shrink-0 text-base font-black tabular-nums text-[var(--mc-net-green)]">
+                      {tier.price_label}
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
       ) : null}
@@ -434,12 +547,15 @@ export function SupportOrderCards({ cards }: Props) {
               ) : (
                 <div className="border-2 border-dashed border-black/40 bg-[#0d0d0d] px-3 py-3 font-mono sm:px-4">
                   <ul className="space-y-0 divide-y divide-dashed divide-white/15">
-                    {cartRows.map(({ line, card, unit, total }, idx) => (
-                      <li key={card.id} className="py-3 first:pt-0 last:pb-0">
+                    {cartRows.map(({ line, card, displayTitle, unit, total }, idx) => (
+                      <li
+                        key={`${card.id}:${line.tierIndex}`}
+                        className="py-3 first:pt-0 last:pb-0"
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0 flex-1">
                             <p className="text-sm font-bold leading-snug text-[var(--mc-text)] [overflow-wrap:anywhere]">
-                              {idx + 1}. {card.title}
+                              {idx + 1}. {displayTitle}
                             </p>
                             <p className="mt-1 text-xs text-[var(--mc-text-muted)]">
                               {line.quantity} × {formatUah(unit)}
@@ -450,7 +566,11 @@ export function SupportOrderCards({ cards }: Props) {
                                   type="button"
                                   className="lc-focus-ring h-8 w-8 border-2 border-black bg-black/40 font-bold"
                                   onClick={() =>
-                                    updateCartQty(card.id, line.quantity - 1)
+                                    updateCartQty(
+                                      card.id,
+                                      line.tierIndex,
+                                      line.quantity - 1,
+                                    )
                                   }
                                 >
                                   −
@@ -462,7 +582,11 @@ export function SupportOrderCards({ cards }: Props) {
                                   type="button"
                                   className="lc-focus-ring h-8 w-8 border-2 border-black bg-black/40 font-bold"
                                   onClick={() =>
-                                    updateCartQty(card.id, line.quantity + 1)
+                                    updateCartQty(
+                                      card.id,
+                                      line.tierIndex,
+                                      line.quantity + 1,
+                                    )
                                   }
                                 >
                                   +
@@ -476,7 +600,9 @@ export function SupportOrderCards({ cards }: Props) {
                             </span>
                             <button
                               type="button"
-                              onClick={() => removeFromCart(card.id)}
+                              onClick={() =>
+                                removeFromCart(card.id, line.tierIndex)
+                              }
                               className="lc-focus-ring p-1 text-rose-200/90"
                               aria-label="Прибрати"
                             >

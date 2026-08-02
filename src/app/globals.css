@@ -223,20 +223,11 @@
   html.lc-cursor-on .lc-focus-ring,
   html.lc-cursor-on .lc-btn-accent,
   html.lc-cursor-on .mc-btn-primary,
-  html.lc-cursor-on .mc-btn-secondary {
-    cursor: none !important;
-  }
-
-  html.lc-cursor-on input[type="text"],
-  html.lc-cursor-on input[type="search"],
-  html.lc-cursor-on input[type="email"],
-  html.lc-cursor-on input[type="password"],
-  html.lc-cursor-on input[type="url"],
-  html.lc-cursor-on input[type="tel"],
-  html.lc-cursor-on input[type="number"],
+  html.lc-cursor-on .mc-btn-secondary,
+  html.lc-cursor-on input,
   html.lc-cursor-on textarea,
   html.lc-cursor-on [contenteditable="true"] {
-    cursor: text !important;
+    cursor: none !important;
   }
 }
 
@@ -244,7 +235,8 @@
   position: fixed;
   top: 0;
   left: 0;
-  z-index: 9999;
+  /* Завжди поверх модалок, навбару, інтро та полів вводу */
+  z-index: 2147483646;
   width: 16px;
   height: 16px;
   margin: 0;

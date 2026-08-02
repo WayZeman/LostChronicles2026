@@ -142,12 +142,13 @@ export default function RootLayout({
           </div>
         </div>
         <AtmosphereParticles />
-        <SiteCursor />
         <Navbar />
         <div className="lc-page-enter relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] [&>*:only-child]:flex [&>*:only-child]:min-h-0 [&>*:only-child]:w-full [&>*:only-child]:flex-1 [&>*:only-child]:flex-col [&>*:only-child]:pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
           <RouteEnter>{children}</RouteEnter>
         </div>
         <DeferVercelMetrics />
+        {/* Курсор в кінці DOM + portal у body — завжди поверх шарів */}
+        <SiteCursor />
       </body>
     </html>
   );

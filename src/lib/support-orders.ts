@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { effectivePriceTiers } from "@/lib/support-price-tiers";
 
 function rowsOf(r: unknown): Record<string, unknown>[] {
   return Array.isArray(r) ? (r as Record<string, unknown>[]) : [];
@@ -53,6 +54,10 @@ export async function ensureSupportOrdersTable(): Promise<void> {
   await sql`
     CREATE INDEX IF NOT EXISTS support_order_items_order_idx
     ON support_order_items (order_id)
+  `;
+  await sql`
+    ALTER TABLE support_cards
+    ADD COLUMN IF NOT EXISTS price_tiers TEXT NOT NULL DEFAULT '[]'
   `;
   ensured = true;
 }
@@ -176,6 +181,8 @@ export async function getSupportOrderById(
 export type CheckoutItemInput = {
   cardId: number;
   quantity?: number;
+  /** Індекс варіанту ціни (0 = перший / єдина ціна). */
+  tierIndex?: number;
 };
 
 /**
@@ -200,13 +207,24 @@ export async function createSupportCheckout(input: {
     throw new Error("Занадто багато позицій у кошику.");
   }
 
-  const merged = new Map<number, number>();
+  const merged = new Map<string, { cardId: number; tierIndex: number; quantity: number }>();
   for (const raw of input.items) {
     const cardId = Number(raw.cardId);
     if (!Number.isInteger(cardId) || cardId < 1) {
       throw new Error("Некоректна картка в кошику.");
     }
-    merged.set(cardId, (merged.get(cardId) ?? 0) + clampOrderQuantity(raw.quantity));
+    const tierIndex = Math.max(
+      0,
+      Math.floor(Number(raw.tierIndex ?? 0)) || 0,
+    );
+    const key = `${cardId}:${tierIndex}`;
+    const prev = merged.get(key);
+    const add = clampOrderQuantity(raw.quantity);
+    merged.set(key, {
+      cardId,
+      tierIndex,
+      quantity: (prev?.quantity ?? 0) + add,
+    });
   }
 
   type Line = {
@@ -220,10 +238,10 @@ export async function createSupportCheckout(input: {
   };
   const lines: Line[] = [];
 
-  for (const [cardId, qtyRaw] of merged) {
+  for (const { cardId, tierIndex, quantity: qtyRaw } of merged.values()) {
     const cards = rowsOf(
       await sql`
-        SELECT id, title, price_label, quantity_enabled
+        SELECT id, title, price_label, price_tiers, quantity_enabled
         FROM support_cards
         WHERE id = ${cardId}
         LIMIT 1
@@ -235,8 +253,20 @@ export async function createSupportCheckout(input: {
     const quantityEnabled =
       card.quantity_enabled !== false && card.quantity_enabled !== "f";
     const quantity = quantityEnabled ? clampOrderQuantity(qtyRaw) : 1;
-    const title = String(card.title ?? "");
-    const priceLabel = String(card.price_label ?? "");
+    const baseTitle = String(card.title ?? "");
+    const tiers = effectivePriceTiers(
+      String(card.price_label ?? ""),
+      card.price_tiers,
+    );
+    if (tiers.length === 0) {
+      throw new Error(`Немає ціни для: ${baseTitle}`);
+    }
+    const tier = tiers[Math.min(tierIndex, tiers.length - 1)]!;
+    const priceLabel = tier.price_label;
+    const title =
+      tiers.length > 1 && tier.label
+        ? `${baseTitle} (${tier.label})`
+        : baseTitle;
     const unitKopecks = parsePriceLabelToKopecks(priceLabel);
     if (unitKopecks == null) {
       throw new Error(`Не вдалося розпізнати ціну: ${title}`);

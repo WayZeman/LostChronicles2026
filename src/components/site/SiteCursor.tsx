@@ -1,23 +1,26 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 const INTERACTIVE =
   'a,button,[role="button"],[role="link"],[role="tab"],[role="menuitem"],summary,label[for],select,.lc-focus-ring,.lc-btn-accent,.mc-btn-primary,.mc-btn-secondary,input[type="button"],input[type="submit"],input[type="checkbox"],input[type="radio"],input[type="file"],input[type="range"]';
 
-const TEXTUAL =
-  'input[type="text"],input[type="search"],input[type="email"],input[type="password"],input[type="url"],input[type="tel"],input[type="number"],textarea,[contenteditable="true"]';
-
 /**
- * Маленький кастомний курсор з плавним переходом у зелений на кнопках.
+ * Маленький кастомний курсор — завжди поверх усіх шарів (модалок, форм, навбару).
  * Лише для миші (fine pointer + hover).
  */
 export function SiteCursor() {
   const dotRef = useRef<HTMLDivElement>(null);
   const [enabled, setEnabled] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const [hover, setHover] = useState(false);
   const [hidden, setHidden] = useState(false);
   const [down, setDown] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -40,15 +43,8 @@ export function SiteCursor() {
       const target = document.elementFromPoint(e.clientX, e.clientY);
       if (!target || !(target instanceof Element)) {
         setHover(false);
-        setHidden(false);
         return;
       }
-      if (target.closest(TEXTUAL)) {
-        setHidden(true);
-        setHover(false);
-        return;
-      }
-      setHidden(false);
       setHover(Boolean(target.closest(INTERACTIVE)));
     };
 
@@ -73,9 +69,9 @@ export function SiteCursor() {
     };
   }, [enabled]);
 
-  if (!enabled) return null;
+  if (!enabled || !mounted) return null;
 
-  return (
+  return createPortal(
     <div
       ref={dotRef}
       className={[
@@ -87,6 +83,7 @@ export function SiteCursor() {
         .filter(Boolean)
         .join(" ")}
       aria-hidden
-    />
+    />,
+    document.body,
   );
 }
