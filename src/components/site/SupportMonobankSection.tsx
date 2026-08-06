@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, HeartHandshake } from "lucide-react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { PlayerNamesStrip } from "@/components/site/PlayerNamesStrip";
 import { cn } from "@/lib/utils";
 import type { CatalogVoteLink } from "@/lib/site-content";
 
@@ -11,17 +12,26 @@ type Props = {
   jarUrl?: string;
   blurb?: string;
   catalogLinks?: CatalogVoteLink[];
+  /** Ніки тих, хто підтримав сервер цього місяця (оплачені замовлення). */
+  supporterNicks?: string[];
 };
 
 /**
  * Підтримка сервера: магазин бонусів + банка Monobank.
  */
-export function SupportMonobankSection({ jarUrl, blurb }: Props = {}) {
+export function SupportMonobankSection({
+  jarUrl,
+  blurb,
+  supporterNicks = [],
+}: Props = {}) {
   const resolvedJar =
     jarUrl?.trim() ||
     process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
     DEFAULT_JAR_URL;
   const resolvedBlurb = blurb?.trim() || "";
+  const nicks = supporterNicks
+    .map((n) => n.trim())
+    .filter(Boolean);
 
   return (
     <section
@@ -55,6 +65,18 @@ export function SupportMonobankSection({ jarUrl, blurb }: Props = {}) {
             <p className="mt-2 w-full text-center text-sm text-[var(--mc-ink-subtle)]">
               {resolvedBlurb}
             </p>
+          ) : null}
+
+          {nicks.length > 0 ? (
+            <div className="mt-3 w-full sm:mt-4">
+              <p className="mb-2 w-full text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)] sm:text-left">
+                Цього місяця нас підтримали
+              </p>
+              <PlayerNamesStrip
+                names={nicks}
+                ariaLabel="Хто підтримав сервер цього місяця. Перетягніть смужку або натисніть на нік, щоб скопіювати."
+              />
+            </div>
           ) : null}
 
           <div className="mt-3 flex w-full max-w-md flex-col gap-2 sm:mt-4 sm:max-w-none">

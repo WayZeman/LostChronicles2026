@@ -17,6 +17,7 @@ import {
   getConnectSettings,
   getSupportSettings,
 } from "@/lib/site-content";
+import { listPaidSupportersThisMonth } from "@/lib/support-orders";
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 
 export const metadata: Metadata = {
@@ -45,6 +46,7 @@ export default async function Home() {
       shortLabel: string;
     }[];
   } = {};
+  let supporterNicks: string[] = [];
 
   try {
     const [connect, supportDb] = await Promise.all([
@@ -64,6 +66,12 @@ export default async function Home() {
     };
   } catch {
     /* env / hardcoded fallbacks */
+  }
+
+  try {
+    supporterNicks = await listPaidSupportersThisMonth();
+  } catch {
+    /* стрічка підтримки опційна */
   }
 
   const voteUrl = process.env.NEXT_PUBLIC_VOTE_URL;
@@ -175,8 +183,8 @@ export default async function Home() {
           jarUrl={support.jarUrl}
           blurb={support.blurb}
           catalogLinks={support.catalogLinks}
-        />
-      </div>
+          supporterNicks={supporterNicks}
+        />      </div>
     </main>
   );
 }

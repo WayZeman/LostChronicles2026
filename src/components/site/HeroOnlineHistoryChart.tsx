@@ -1,13 +1,6 @@
 "use client";
 
-import {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-  type PointerEvent as ReactPointerEvent,
-} from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { readClientNetworkHints } from "@/lib/client-network";
 import {
   CategoryScale,
@@ -22,6 +15,7 @@ import {
 import { Line } from "react-chartjs-2";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { OnlineChartSkeleton } from "@/components/site/OnlineChartSkeleton";
+import { PlayerNamesStrip } from "@/components/site/PlayerNamesStrip";
 import { ServerAgeCounter } from "@/components/site/ServerAgeCounter";
 import { cn } from "@/lib/utils";
 
@@ -57,17 +51,6 @@ function ukPlayersWord(n: number): string {
   return "гравців";
 }
 
-/** Швидкий рендер голови (Mojang); для Ely-акаунтів підставляється резерв нижче. */
-function getMcHeadAvatarUrl(nick: string, size: 32 | 48 = 32): string {
-  return `https://mc-heads.net/avatar/${encodeURIComponent(nick)}/${size}`;
-}
-
-/** Ely — лише як fallback: менший scale швидше віддає PNG. */
-function getElyPlayerHeadUrl(nick: string): string {
-  const skinUrl = `http://skinsystem.ely.by/skins/${encodeURIComponent(nick)}.png`;
-  return `https://ely.by/services/skins-renderer?url=${encodeURIComponent(skinUrl)}&scale=10&renderFace=1`;
-}
-
 type ChartPayload = {
   labels: string[];
   values: number[];
@@ -85,267 +68,6 @@ type Props = {
   /** Без зовнішньої «скляної» рамки — для вбудови в спільну картку. */
   embedded?: boolean;
 };
-
-function PlayerHead({
-  nick,
-  eager,
-}: {
-  nick: string;
-  eager?: boolean;
-}) {
-  return (
-    <img
-      src={getMcHeadAvatarUrl(nick)}
-      alt=""
-      width={22}
-      height={22}
-      loading={eager ? "eager" : "lazy"}
-      decoding="async"
-      fetchPriority={eager ? "high" : undefined}
-      data-player={nick}
-      data-head-stage="mc"
-      onError={(event) => {
-        const img = event.currentTarget;
-        const playerNick = img.dataset.player ?? "";
-        const stage = img.dataset.headStage ?? "mc";
-        if (stage === "mc") {
-          img.dataset.headStage = "ely";
-          img.src = getElyPlayerHeadUrl(playerNick);
-          return;
-        }
-        if (stage === "ely") {
-          img.dataset.headStage = "steve";
-          img.src = getMcHeadAvatarUrl("steve");
-        }
-      }}
-      className="pointer-events-none size-[22px] shrink-0 rounded-[3px] border border-white/20"
-      aria-hidden
-    />
-  );
-}
-
-function PlayerNamesStrip({ names }: { names: string[] }) {
-  const [reduceMotion, setReduceMotion] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [copiedNick, setCopiedNick] = useState<string | null>(null);
-
-  const stripRef = useRef<HTMLDivElement>(null);
-  const trackRef = useRef<HTMLUListElement>(null);
-  const offsetRef = useRef(0);
-  const draggingRef = useRef(false);
-  const hoverPausedRef = useRef(false);
-  const lastXRef = useRef(0);
-  const dragDistRef = useRef(0);
-  const resumeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const rafRef = useRef<number>(0);
-  const halfWidthRef = useRef(0);
-  const copiedTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const apply = () => setReduceMotion(mq.matches);
-    apply();
-    mq.addEventListener("change", apply);
-    return () => mq.removeEventListener("change", apply);
-  }, []);
-
-  const marquee = names.length > 4 && !reduceMotion;
-
-  const applyTransform = useCallback(() => {
-    const track = trackRef.current;
-    if (!track) return;
-    let half = halfWidthRef.current;
-    if (half <= 0) {
-      half = track.scrollWidth / 2;
-      halfWidthRef.current = half;
-    }
-    if (half > 0) {
-      let x = offsetRef.current % half;
-      if (x > 0) x -= half;
-      offsetRef.current = x;
-    }
-    track.style.transform = `translate3d(${offsetRef.current}px, 0, 0)`;
-  }, []);
-
-  useEffect(() => {
-    if (!marquee) {
-      if (trackRef.current) trackRef.current.style.transform = "";
-      return;
-    }
-
-    const measure = () => {
-      const track = trackRef.current;
-      if (!track) return;
-      halfWidthRef.current = track.scrollWidth / 2;
-    };
-    measure();
-
-    const ro = new ResizeObserver(measure);
-    if (trackRef.current) ro.observe(trackRef.current);
-
-    const SPEED = 28; // px/s
-    let last = performance.now();
-
-    const tick = (now: number) => {
-      const dt = Math.min(32, now - last) / 1000;
-      last = now;
-      if (!draggingRef.current && !hoverPausedRef.current) {
-        offsetRef.current -= SPEED * dt;
-        applyTransform();
-      }
-      rafRef.current = requestAnimationFrame(tick);
-    };
-    rafRef.current = requestAnimationFrame(tick);
-
-    return () => {
-      cancelAnimationFrame(rafRef.current);
-      ro.disconnect();
-      if (resumeTimerRef.current) clearTimeout(resumeTimerRef.current);
-    };
-  }, [marquee, names, applyTransform]);
-
-  const pauseAuto = useCallback(() => {
-    if (resumeTimerRef.current) {
-      clearTimeout(resumeTimerRef.current);
-      resumeTimerRef.current = null;
-    }
-  }, []);
-
-  const scheduleResume = useCallback(() => {
-    pauseAuto();
-    resumeTimerRef.current = setTimeout(() => {
-      hoverPausedRef.current = false;
-      resumeTimerRef.current = null;
-    }, 1400);
-  }, [pauseAuto]);
-
-  useEffect(() => {
-    return () => {
-      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!marquee) return;
-    const el = stripRef.current;
-    if (!el) return;
-    const onWheelNative = (e: WheelEvent) => {
-      const dx =
-        Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY;
-      if (dx === 0) return;
-      e.preventDefault();
-      pauseAuto();
-      hoverPausedRef.current = true;
-      offsetRef.current -= dx;
-      applyTransform();
-      scheduleResume();
-    };
-    el.addEventListener("wheel", onWheelNative, { passive: false });
-    return () => el.removeEventListener("wheel", onWheelNative);
-  }, [marquee, applyTransform, pauseAuto, scheduleResume]);
-
-  const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!marquee) return;
-    if (e.button !== 0) return;
-    pauseAuto();
-    draggingRef.current = true;
-    hoverPausedRef.current = true;
-    setDragging(true);
-    lastXRef.current = e.clientX;
-    dragDistRef.current = 0;
-    e.currentTarget.setPointerCapture(e.pointerId);
-  };
-
-  const onPointerMove = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!marquee || !draggingRef.current) return;
-    const dx = e.clientX - lastXRef.current;
-    lastXRef.current = e.clientX;
-    dragDistRef.current += Math.abs(dx);
-    offsetRef.current += dx;
-    applyTransform();
-  };
-
-  const onPointerUp = (e: ReactPointerEvent<HTMLDivElement>) => {
-    if (!marquee) return;
-    if (!draggingRef.current) return;
-    draggingRef.current = false;
-    setDragging(false);
-    try {
-      e.currentTarget.releasePointerCapture(e.pointerId);
-    } catch {
-      /* already released */
-    }
-    scheduleResume();
-  };
-
-  const copyNick = async (nick: string) => {
-    if (dragDistRef.current > 8) return;
-    try {
-      await navigator.clipboard.writeText(nick);
-      setCopiedNick(nick);
-      if (copiedTimerRef.current) clearTimeout(copiedTimerRef.current);
-      copiedTimerRef.current = setTimeout(() => setCopiedNick(null), 1600);
-    } catch {
-      /* clipboard may be unavailable */
-    }
-  };
-
-  const chip = (nick: string, key: string, eager?: boolean) => (
-    <li key={key} className="list-none">
-      <button
-        type="button"
-        className={cn(
-          "lc-player-chip inline-flex shrink-0 items-center gap-1.5 rounded-[var(--radius)] border border-[var(--mc-border-card)] bg-[var(--mc-surface-elevated)] px-2 py-1.5",
-          "cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-[var(--mc-net-green)]",
-          copiedNick === nick && "lc-player-chip-copied",
-        )}
-        title={
-          copiedNick === nick ? "Скопійовано" : `Скопіювати нік: ${nick}`
-        }
-        aria-label={`Скопіювати нік ${nick}`}
-        onClick={() => void copyNick(nick)}
-      >
-        <PlayerHead nick={nick} eager={eager} />
-        <span className="max-w-[7.5rem] truncate text-xs font-medium text-[var(--mc-text)] sm:max-w-[9rem] sm:text-[13px]">
-          {copiedNick === nick ? "Скопійовано" : nick}
-        </span>
-      </button>
-    </li>
-  );
-
-  return (
-    <div
-      ref={stripRef}
-      className={cn(
-        "lc-player-strip mt-3",
-        marquee ? "lc-player-strip-marquee" : "lc-player-strip-static",
-        marquee && (dragging ? "lc-player-strip-dragging" : "lc-player-strip-grab"),
-      )}
-      role="list"
-      aria-label="Гравці онлайн. Перетягніть смужку або натисніть на нік, щоб скопіювати."
-      onPointerDown={onPointerDown}
-      onPointerMove={onPointerMove}
-      onPointerUp={onPointerUp}
-      onPointerCancel={onPointerUp}
-      onPointerEnter={() => {
-        if (!marquee) return;
-        pauseAuto();
-        hoverPausedRef.current = true;
-      }}
-      onPointerLeave={() => {
-        if (!marquee || draggingRef.current) return;
-        scheduleResume();
-      }}
-    >
-      <ul ref={trackRef} className="lc-player-strip-track">
-        {names.map((nick, i) => chip(nick, nick, i < 8))}
-        {marquee
-          ? names.map((nick) => chip(nick, `dup-${nick}`, false))
-          : null}
-      </ul>
-    </div>
-  );
-}
 
 export function HeroOnlineHistoryChart({ embedded = false }: Props) {
   const [payload, setPayload] = useState<ChartPayload | null>(null);
@@ -633,7 +355,11 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
       payload.liveOnline > 0 &&
       payload.livePlayerNames &&
       payload.livePlayerNames.length > 0 ? (
-        <PlayerNamesStrip names={payload.livePlayerNames} />
+        <PlayerNamesStrip
+          names={payload.livePlayerNames}
+          className="mt-3"
+          ariaLabel="Гравці онлайн. Перетягніть смужку або натисніть на нік, щоб скопіювати."
+        />
       ) : null}
 
       <div className="relative mt-4 hidden h-[220px] w-full overflow-hidden sm:block md:h-[300px] lg:h-[360px]">

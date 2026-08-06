@@ -461,6 +461,50 @@ export async function markOrdersNotified(ids: number[]): Promise<void> {
   }
 }
 
+/**
+ * Унікальні ніки з оплачених замовлень за поточний календарний місяць (Europe/Kyiv).
+ * Свіжіші платежі — раніше в списку.
+ */
+export async function listPaidSupportersThisMonth(
+  limit = 48,
+): Promise<string[]> {
+  const take = Math.min(100, Math.max(1, Math.floor(limit)));
+  await ensureSupportOrdersTable();
+  const sql = getSql();
+  const rows = rowsOf(
+    await sql`
+      SELECT nickname FROM (
+        SELECT DISTINCT ON (LOWER(TRIM(nickname)))
+          TRIM(nickname) AS nickname,
+          COALESCE(paid_at, created_at) AS paid_sort
+        FROM support_orders
+        WHERE status = 'paid'
+          AND TRIM(nickname) <> ''
+          AND COALESCE(paid_at, created_at) >= (
+            date_trunc(
+              'month',
+              NOW() AT TIME ZONE 'Europe/Kyiv'
+            ) AT TIME ZONE 'Europe/Kyiv'
+          )
+        ORDER BY LOWER(TRIM(nickname)), COALESCE(paid_at, created_at) DESC
+      ) t
+      ORDER BY paid_sort DESC
+      LIMIT ${take}
+    `,
+  );
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const row of rows) {
+    const nick = String(row.nickname ?? "").trim();
+    if (!nick) continue;
+    const key = nick.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(nick);
+  }
+  return out;
+}
+
 const BALANCE_KEY = "mono_jar_last_balance_kopecks";
 
 export async function getStoredMonoBalanceKopecks(): Promise<number | null> {

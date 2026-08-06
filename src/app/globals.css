@@ -1252,6 +1252,7 @@ textarea.mc-input:focus {
 
 .lc-player-strip-track {
   display: flex;
+  flex-wrap: nowrap;
   width: max-content;
   align-items: center;
   gap: 0.45rem;
