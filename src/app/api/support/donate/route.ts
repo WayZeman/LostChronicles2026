@@ -6,17 +6,21 @@ import { getUserPublicById } from "@/lib/proposals-queries";
 import { getSupportSettings } from "@/lib/site-content";
 import {
   buildMonoJarPayUrl,
-  createSupportCheckout,
+  createSupportDonation,
   markOrdersNotified,
+  parseDonationUahToKopecks,
 } from "@/lib/support-orders";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Проста підтримка: авторизований гравець вказує суму → pending + банка з ?a=.
+ */
 export async function POST(req: Request) {
   const userId = await getSessionUserIdFromCookies();
   if (!userId) {
     return NextResponse.json(
-      { error: "Увійди в акаунт, щоб оформити покупку." },
+      { error: "Увійди в акаунт, щоб підтримати сервер." },
       { status: 401 },
     );
   }
@@ -38,44 +42,27 @@ export async function POST(req: Request) {
   }
 
   const b = body as Record<string, unknown>;
+  const amountKopecks =
+    parseDonationUahToKopecks(b.amountUah) ??
+    (typeof b.amountKopecks === "number" && Number.isFinite(b.amountKopecks)
+      ? Math.round(b.amountKopecks)
+      : null);
+
+  if (amountKopecks == null) {
+    return NextResponse.json(
+      { error: "Вкажи суму від 1 до 500 000 ₴." },
+      { status: 400 },
+    );
+  }
+
   const note = typeof b.note === "string" ? b.note : "";
 
-  // Новий формат: items[]; старий: cardId + quantity
-  let items: { cardId: number; quantity?: number; tierIndex?: number }[] = [];
-  if (Array.isArray(b.items)) {
-    for (const raw of b.items) {
-      if (!raw || typeof raw !== "object") continue;
-      const o = raw as Record<string, unknown>;
-      const cardId = Number(o.cardId);
-      if (!Number.isInteger(cardId) || cardId < 1) continue;
-      const tierIndex = Math.max(0, Math.floor(Number(o.tierIndex ?? 0)) || 0);
-      items.push({
-        cardId,
-        quantity:
-          typeof o.quantity === "number" ? o.quantity : Number(o.quantity),
-        tierIndex,
-      });
-    }
-  } else {
-    const cardId = Number(b.cardId);
-    if (Number.isInteger(cardId) && cardId >= 1) {
-      items = [
-        {
-          cardId,
-          quantity:
-            typeof b.quantity === "number" ? b.quantity : Number(b.quantity),
-          tierIndex: 0,
-        },
-      ];
-    }
-  }
-
-  if (items.length === 0) {
-    return NextResponse.json({ error: "Кошик порожній" }, { status: 400 });
-  }
-
   try {
-    const order = await createSupportCheckout({ nickname, note, items });
+    const order = await createSupportDonation({
+      nickname,
+      amountKopecks,
+      note,
+    });
     const support = await getSupportSettings();
     const jar =
       support.monoJarUrl.trim() ||
@@ -95,22 +82,15 @@ export async function POST(req: Request) {
         id: order.id,
         title: order.card_title,
         priceLabel: order.price_label,
-        quantity: order.quantity,
         nickname: order.nickname,
         amountKopecks: order.amount_kopecks,
-        items: order.items,
       },
       payUrl,
     });
   } catch (e) {
-    const msg = e instanceof Error ? e.message : "Помилка створення замовлення";
+    const msg = e instanceof Error ? e.message : "Помилка створення донату";
     const status =
-      msg.includes("не знайдено") ||
-      msg.includes("ціну") ||
-      msg.includes("нік") ||
-      msg.includes("кількість") ||
-      msg.includes("Кошик") ||
-      msg.includes("картк")
+      msg.includes("нік") || msg.includes("Сума") || msg.includes("Вкажи")
         ? 400
         : 503;
     return NextResponse.json({ error: msg }, { status });

@@ -346,6 +346,74 @@ export async function createSupportCheckout(input: {
   return mapOrderRow(row, items);
 }
 
+const DONATION_MIN_KOPECKS = 100; // 1 ₴
+const DONATION_MAX_KOPECKS = 50_000_000; // 500 000 ₴
+
+/** Сума в грн → копійки для «простої» підтримки. */
+export function parseDonationUahToKopecks(raw: unknown): number | null {
+  const n =
+    typeof raw === "number"
+      ? raw
+      : Number(String(raw ?? "").trim().replace(",", "."));
+  if (!Number.isFinite(n) || n <= 0) return null;
+  const kopecks = Math.round(n * 100);
+  if (kopecks < DONATION_MIN_KOPECKS || kopecks > DONATION_MAX_KOPECKS) {
+    return null;
+  }
+  return kopecks;
+}
+
+/**
+ * Pending-донат без товарів: нік з акаунта + сума → mono-check зможе зіставити.
+ */
+export async function createSupportDonation(input: {
+  nickname: string;
+  amountKopecks: number;
+  note?: string;
+}): Promise<SupportOrderRecord> {
+  await ensureSupportOrdersTable();
+  const nick = input.nickname.trim().slice(0, 64);
+  if (nick.length < 2) {
+    throw new Error("Вкажи нікнейм.");
+  }
+  const amount = Math.round(input.amountKopecks);
+  if (
+    !Number.isFinite(amount) ||
+    amount < DONATION_MIN_KOPECKS ||
+    amount > DONATION_MAX_KOPECKS
+  ) {
+    throw new Error("Сума від 1 до 500 000 ₴.");
+  }
+  const note = (input.note ?? "").trim().slice(0, 500);
+  const priceLabel = `${(amount / 100).toLocaleString("uk-UA")} ₴`;
+  const sql = getSql();
+
+  const inserted = rowsOf(
+    await sql`
+      INSERT INTO support_orders (
+        card_id, card_title, price_label, amount_kopecks, quantity,
+        nickname, note, status
+      )
+      VALUES (
+        ${null},
+        ${"Підтримка сервера"},
+        ${priceLabel},
+        ${amount},
+        ${1},
+        ${nick},
+        ${note},
+        ${"pending"}
+      )
+      RETURNING
+        id, card_id, card_title, price_label, amount_kopecks, quantity,
+        nickname, note, status, created_at
+    `,
+  );
+  const row = inserted[0];
+  if (!row) throw new Error("Не вдалося створити донат.");
+  return mapOrderRow(row, []);
+}
+
 /** @deprecated use createSupportCheckout */
 export async function createSupportOrder(input: {
   cardId: number;

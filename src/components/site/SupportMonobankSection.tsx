@@ -1,11 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, HeartHandshake } from "lucide-react";
+import { SupportPlainDonate } from "@/components/site/SupportPlainDonate";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { cn } from "@/lib/utils";
 import type { CatalogVoteLink } from "@/lib/site-content";
-
-const DEFAULT_JAR_URL = "https://send.monobank.ua/jar/8f7nV8DopG";
 
 const DEFAULT_CATALOG_VOTE_LINKS: CatalogVoteLink[] = [
   {
@@ -32,17 +31,12 @@ type Props = {
 };
 
 /**
- * Підтримка сервера: магазин / банка + голосування в каталогах.
+ * Підтримка сервера: магазин / донат з сумою + голосування в каталогах.
  */
 export function SupportMonobankSection({
-  jarUrl,
   blurb,
   catalogLinks,
 }: Props = {}) {
-  const resolvedJar =
-    jarUrl?.trim() ||
-    process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
-    DEFAULT_JAR_URL;
   const resolvedBlurb = blurb?.trim() || "";
   const links =
     catalogLinks && catalogLinks.length > 0
@@ -70,7 +64,7 @@ export function SupportMonobankSection({
           />
         </div>
 
-        <div className="order-2 flex flex-col items-center text-center sm:order-1 sm:items-stretch sm:text-left">
+        <div className="order-2 flex flex-col items-center text-center sm:order-1">
           <h2
             id="support-donate-heading"
             className="w-full text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:text-base"
@@ -83,7 +77,7 @@ export function SupportMonobankSection({
             </p>
           ) : null}
 
-          <div className="mt-3 flex w-full max-w-md flex-col gap-2 sm:mt-4 sm:max-w-none">
+          <div className="mt-3 flex w-full max-w-md flex-col items-stretch gap-2 sm:mt-4">
             <Link
               href="/support"
               className="lc-focus-ring lc-btn-accent inline-flex w-full min-h-11 items-center justify-center gap-2 px-6 py-2.5 text-center text-sm"
@@ -91,18 +85,7 @@ export function SupportMonobankSection({
               <HeartHandshake className="size-4 shrink-0" aria-hidden />
               <span>З плюшками</span>
             </Link>
-            <a
-              href={resolvedJar}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="lc-focus-ring mc-slot inline-flex min-h-10 w-full items-center justify-center gap-2 px-4 text-center text-sm font-semibold text-[var(--mc-text)] hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]"
-            >
-              <span>Просто підтримати</span>
-              <ExternalLink
-                className="size-3.5 shrink-0 opacity-70"
-                aria-hidden
-              />
-            </a>
+            <SupportPlainDonate nextPath="/#support-donate-heading" />
           </div>
 
           <h3

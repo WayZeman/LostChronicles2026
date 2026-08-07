@@ -3,6 +3,8 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { ShoppingBag, ShoppingCart, Trash2, X } from "lucide-react";
 
+import { AUTH_ME_CHANGED_EVENT } from "@/lib/auth-me-events";
+import { authRequiredPath } from "@/lib/auth-paths";
 import {
   effectivePriceTiers,
   type SupportPriceTier,
@@ -41,8 +43,15 @@ type Phase =
       notified: boolean;
     };
 
+type AuthMe = {
+  gameNickname: string | null;
+  needsNickname: boolean;
+} | null;
+
 const CART_KEY = "lc-support-cart-v2";
 const MAX_QTY = 20;
+const SUPPORT_NEXT = "/support";
+
 
 function parseUnitUah(label: string): number | null {
   const m = label.replace(",", ".").match(/(\d+(?:\.\d+)?)/);
@@ -93,7 +102,7 @@ export function SupportOrderCards({ cards }: Props) {
     qty: number;
   } | null>(null);
   const [phase, setPhase] = useState<Phase>({ kind: "idle" });
-  const [nickname, setNickname] = useState("");
+  const [me, setMe] = useState<AuthMe | undefined>(undefined);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -109,6 +118,34 @@ export function SupportOrderCards({ cards }: Props) {
     if (!cartReady) return;
     localStorage.setItem(CART_KEY, JSON.stringify(cart));
   }, [cart, cartReady]);
+
+  useEffect(() => {
+    async function loadMe() {
+      try {
+        const res = await fetch("/api/auth/me", { credentials: "include" });
+        const data = (await res.json()) as {
+          user?: {
+            gameNickname: string | null;
+            needsNickname: boolean;
+          } | null;
+        };
+        setMe(
+          data.user
+            ? {
+                gameNickname: data.user.gameNickname,
+                needsNickname: Boolean(data.user.needsNickname),
+              }
+            : null,
+        );
+      } catch {
+        setMe(null);
+      }
+    }
+    void loadMe();
+    const onChange = () => void loadMe();
+    window.addEventListener(AUTH_ME_CHANGED_EVENT, onChange);
+    return () => window.removeEventListener(AUTH_ME_CHANGED_EVENT, onChange);
+  }, []);
 
   useEffect(() => {
     if (justAdded == null) return;
@@ -221,8 +258,15 @@ export function SupportOrderCards({ cards }: Props) {
     if (cartRows.length === 0) return;
     setCartOpen(false);
     setError(null);
-    setNickname("");
     setNote("");
+    if (!me) {
+      window.location.href = authRequiredPath(SUPPORT_NEXT);
+      return;
+    }
+    if (me.needsNickname || !me.gameNickname) {
+      window.location.href = `/profile/setup?next=${encodeURIComponent(SUPPORT_NEXT)}`;
+      return;
+    }
     setPhase({ kind: "checkout" });
   }
 
@@ -234,14 +278,18 @@ export function SupportOrderCards({ cards }: Props) {
 
   function submitCheckout() {
     if (phase.kind !== "checkout" || cartRows.length === 0) return;
+    if (!me?.gameNickname) {
+      setError("Увійди в акаунт і вкажи Minecraft-нік.");
+      return;
+    }
     setError(null);
     startTransition(async () => {
       try {
         const res = await fetch("/api/support/orders", {
           method: "POST",
+          credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            nickname,
             note,
             items: cartRows.map((r) => ({
               cardId: r.card.id,
@@ -258,6 +306,9 @@ export function SupportOrderCards({ cards }: Props) {
         };
         if (!res.ok || !data.order || !data.payUrl) {
           setError(data.error || "Не вдалося створити замовлення");
+          if (res.status === 401) {
+            window.location.href = authRequiredPath(SUPPORT_NEXT);
+          }
           return;
         }
         window.open(data.payUrl, "_blank", "noopener,noreferrer");
@@ -685,23 +736,19 @@ export function SupportOrderCards({ cards }: Props) {
                 <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
                   {cartCount} поз. · {formatUah(cartTotal)}
                 </p>
-                <label className="mt-4 block text-xs font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
+                <p className="mt-4 text-xs font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
                   Нікнейм
-                  <input
-                    value={nickname}
-                    onChange={(e) => setNickname(e.target.value)}
-                    maxLength={64}
-                    autoFocus
-                    placeholder="Steve"
-                    className="lc-focus-ring mt-1.5 w-full border-2 border-black bg-black/30 px-3 py-2.5 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
-                  />
-                </label>
+                </p>
+                <p className="mt-1.5 border-2 border-black bg-black/30 px-3 py-2.5 text-sm font-semibold text-[var(--mc-text)]">
+                  {me?.gameNickname}
+                </p>
                 <label className="mt-3 block text-xs font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
                   Коментар (опційно)
                   <input
                     value={note}
                     onChange={(e) => setNote(e.target.value)}
                     maxLength={500}
+                    autoFocus
                     placeholder="Пісня / деталі"
                     className="lc-focus-ring mt-1.5 w-full border-2 border-black bg-black/30 px-3 py-2.5 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
                   />
@@ -725,7 +772,7 @@ export function SupportOrderCards({ cards }: Props) {
                   </button>
                   <button
                     type="button"
-                    disabled={pending || nickname.trim().length < 2}
+                    disabled={pending || !me?.gameNickname}
                     onClick={submitCheckout}
                     className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center px-4 text-sm font-bold disabled:opacity-50"
                   >
