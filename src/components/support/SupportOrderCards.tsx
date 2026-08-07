@@ -447,14 +447,17 @@ export function SupportOrderCards({ cards }: Props) {
 
       {tierPick ? (
         <div
-          className="fixed inset-0 z-[70] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="support-tier-title"
           onClick={() => setTierPick(null)}
         >
           <div
-            className={cn(modalShell, "w-full max-w-md p-4 sm:p-5")}
+            className={cn(
+              modalShell,
+              "max-h-[min(90vh,36rem)] w-full max-w-md overflow-y-auto p-4 sm:p-5",
+            )}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-start justify-between gap-2">
@@ -504,7 +507,7 @@ export function SupportOrderCards({ cards }: Props) {
 
       {cartOpen ? (
         <div
-          className="fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="support-cart-title"
@@ -513,7 +516,7 @@ export function SupportOrderCards({ cards }: Props) {
           <div
             className={cn(
               modalShell,
-              "flex max-h-[92vh] w-full max-w-lg flex-col overflow-hidden sm:max-h-[85vh]",
+              "flex max-h-[min(88vh,40rem)] w-full max-w-lg flex-col overflow-hidden",
             )}
             onClick={(e) => e.stopPropagation()}
           >
@@ -655,14 +658,17 @@ export function SupportOrderCards({ cards }: Props) {
 
       {phase.kind !== "idle" ? (
         <div
-          className="fixed inset-0 z-[60] flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4"
+          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 sm:p-4"
           role="dialog"
           aria-modal="true"
           aria-labelledby="support-checkout-title"
           onClick={closeOverlay}
         >
           <div
-            className={cn(modalShell, "w-full max-w-md p-4 sm:p-6")}
+            className={cn(
+              modalShell,
+              "max-h-[min(90vh,36rem)] w-full max-w-md overflow-y-auto p-4 sm:p-6",
+            )}
             onClick={(e) => e.stopPropagation()}
           >
             {phase.kind === "checkout" ? (

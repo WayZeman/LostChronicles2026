@@ -8,7 +8,7 @@ import {
   getSupportSettings,
   listSupportCards,
 } from "@/lib/site-content";
-import { listPaidSupportersThisMonth } from "@/lib/support-orders";
+import { listSupportersLeaderboard } from "@/lib/support-orders";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -21,7 +21,7 @@ export const metadata: Metadata = {
 export default async function SupportPage() {
   let cards: Awaited<ReturnType<typeof listSupportCards>> = [];
   let blurb = "Обери бонуси, додай у кошик і оформи оплату.";
-  let supporterNicks: string[] = [];
+  let leaderboard: Awaited<ReturnType<typeof listSupportersLeaderboard>> = [];
 
   try {
     const [list, support] = await Promise.all([
@@ -41,9 +41,9 @@ export default async function SupportPage() {
   }
 
   try {
-    supporterNicks = await listPaidSupportersThisMonth();
+    leaderboard = await listSupportersLeaderboard();
   } catch {
-    /* стрічка опційна */
+    /* рейтинг опційний */
   }
 
   return (
@@ -80,7 +80,7 @@ export default async function SupportPage() {
           }))}
         />
 
-        <SupportSupportersSection nicknames={supporterNicks} />
+        <SupportSupportersSection entries={leaderboard} />
       </div>
     </main>
   );

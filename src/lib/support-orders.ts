@@ -461,48 +461,69 @@ export async function markOrdersNotified(ids: number[]): Promise<void> {
   }
 }
 
+export type SupportLeaderboardEntry = {
+  nickname: string;
+  total_kopecks: number;
+  orders: number;
+};
+
 /**
- * Унікальні ніки з оплачених замовлень за поточний календарний місяць (Europe/Kyiv).
- * Свіжіші платежі — раніше в списку.
+ * Загальний рейтинг підтримки: усі ніки з paid/pending замовленнями.
  */
-export async function listPaidSupportersThisMonth(
-  limit = 48,
-): Promise<string[]> {
-  const take = Math.min(100, Math.max(1, Math.floor(limit)));
+export async function listSupportersLeaderboard(): Promise<
+  SupportLeaderboardEntry[]
+> {
   await ensureSupportOrdersTable();
   const sql = getSql();
   const rows = rowsOf(
     await sql`
-      SELECT nickname FROM (
-        SELECT DISTINCT ON (LOWER(TRIM(nickname)))
-          TRIM(nickname) AS nickname,
-          COALESCE(paid_at, created_at) AS paid_sort
+      SELECT
+        nickname,
+        total_kopecks,
+        orders
+      FROM (
+        SELECT
+          LOWER(TRIM(nickname)) AS nick_key,
+          (ARRAY_AGG(
+            TRIM(nickname)
+            ORDER BY COALESCE(paid_at, created_at) DESC
+          ))[1] AS nickname,
+          SUM(amount_kopecks)::int AS total_kopecks,
+          COUNT(*)::int AS orders
         FROM support_orders
-        WHERE status = 'paid'
+        WHERE status IN ('paid', 'pending')
           AND TRIM(nickname) <> ''
-          AND COALESCE(paid_at, created_at) >= (
-            date_trunc(
-              'month',
-              NOW() AT TIME ZONE 'Europe/Kyiv'
-            ) AT TIME ZONE 'Europe/Kyiv'
-          )
-        ORDER BY LOWER(TRIM(nickname)), COALESCE(paid_at, created_at) DESC
+          AND LOWER(TRIM(nickname)) NOT IN ('тест', 'test')
+        GROUP BY LOWER(TRIM(nickname))
       ) t
-      ORDER BY paid_sort DESC
-      LIMIT ${take}
+      ORDER BY total_kopecks DESC, orders DESC, nickname ASC
     `,
   );
-  const out: string[] = [];
-  const seen = new Set<string>();
-  for (const row of rows) {
-    const nick = String(row.nickname ?? "").trim();
-    if (!nick) continue;
-    const key = nick.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    out.push(nick);
-  }
-  return out;
+
+  return rows
+    .map((row) => {
+      const nickname = String(row.nickname ?? "").trim();
+      const total_kopecks = Math.max(0, Math.round(Number(row.total_kopecks) || 0));
+      const orders = Math.max(0, Math.floor(Number(row.orders) || 0));
+      if (!nickname || total_kopecks <= 0) return null;
+      return { nickname, total_kopecks, orders };
+    })
+    .filter((x): x is SupportLeaderboardEntry => x != null);
+}
+
+/** @deprecated use listSupportersLeaderboard */
+export async function listSupportersLeaderboardThisMonth(
+  _limit?: number,
+): Promise<SupportLeaderboardEntry[]> {
+  return listSupportersLeaderboard();
+}
+
+/** @deprecated use listSupportersLeaderboard */
+export async function listPaidSupportersThisMonth(
+  _limit?: number,
+): Promise<string[]> {
+  const board = await listSupportersLeaderboard();
+  return board.map((e) => e.nickname);
 }
 
 const BALANCE_KEY = "mono_jar_last_balance_kopecks";
