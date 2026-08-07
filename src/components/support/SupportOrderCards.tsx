@@ -321,7 +321,7 @@ export function SupportOrderCards({ cards }: Props) {
           Товарів поки немає.
         </div>
       ) : (
-        <ul className="grid grid-cols-1 gap-4 pb-8 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3">
+        <ul className="flex flex-wrap justify-center gap-4 pb-8 sm:gap-5">
           {cards.map((card) => {
             const q = qtyFor(card.id);
             const added = justAdded === card.id;
@@ -332,7 +332,10 @@ export function SupportOrderCards({ cards }: Props) {
                   (tiers[0] ? `від ${tiers[0].price_label}` : "")
                 : (tiers[0]?.price_label ?? card.price_label);
             return (
-              <li key={card.id}>
+              <li
+                key={card.id}
+                className="w-full sm:w-[calc((100%-1.25rem)/2)] lg:w-[calc((100%-2.5rem)/3)]"
+              >
                 <article
                   className={cn(
                     "flex h-full flex-col overflow-hidden border-2 border-black bg-black/30",
