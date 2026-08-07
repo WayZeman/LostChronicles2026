@@ -3,10 +3,12 @@ import type { Metadata } from "next";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SupportOrderCards } from "@/components/support/SupportOrderCards";
+import { SupportSupportersSection } from "@/components/support/SupportSupportersSection";
 import {
   getSupportSettings,
   listSupportCards,
 } from "@/lib/site-content";
+import { listPaidSupportersThisMonth } from "@/lib/support-orders";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
@@ -19,6 +21,7 @@ export const metadata: Metadata = {
 export default async function SupportPage() {
   let cards: Awaited<ReturnType<typeof listSupportCards>> = [];
   let blurb = "Обери бонуси, додай у кошик і оформи оплату.";
+  let supporterNicks: string[] = [];
 
   try {
     const [list, support] = await Promise.all([
@@ -35,6 +38,12 @@ export default async function SupportPage() {
     }
   } catch {
     /* empty / fallback */
+  }
+
+  try {
+    supporterNicks = await listPaidSupportersThisMonth();
+  } catch {
+    /* стрічка опційна */
   }
 
   return (
@@ -70,6 +79,8 @@ export default async function SupportPage() {
             quantity_enabled: c.quantity_enabled,
           }))}
         />
+
+        <SupportSupportersSection nicknames={supporterNicks} />
       </div>
     </main>
   );

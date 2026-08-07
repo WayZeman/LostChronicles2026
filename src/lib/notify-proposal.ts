@@ -1,5 +1,8 @@
 import { getSiteBaseUrl } from "@/lib/site-base-url";
-import { PROPOSAL_MIN_VOTES_FOR_RESULT } from "@/lib/proposal-ui";
+import {
+  PROPOSAL_MIN_VOTES_FOR_RESULT,
+  PROPOSAL_TIE_EXTENSION_DAYS,
+} from "@/lib/proposal-ui";
 
 function proposalUrl(id: number): string {
   return `${getSiteBaseUrl()}/proposals/${id}`;
@@ -63,17 +66,31 @@ function verdictOutcomeMarkdown(
 
 async function postDiscordWebhook(
   payload: Record<string, unknown>,
-): Promise<void> {
+): Promise<boolean> {
   const webhook = process.env.DISCORD_WEBHOOK_URL?.trim();
-  if (!webhook) return;
-  await fetch(webhook, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...payload,
-      allowed_mentions: { parse: [] },
-    }),
-  }).catch(() => {});
+  if (!webhook) return false;
+  try {
+    const res = await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...payload,
+        allowed_mentions: { parse: [] },
+      }),
+    });
+    if (!res.ok) {
+      console.error(
+        "[notify-proposal] Discord webhook error:",
+        res.status,
+        await res.text().catch(() => ""),
+      );
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[notify-proposal] Discord webhook failed:", e);
+    return false;
+  }
 }
 
 /** ID теми форуму/каналу (гілки). Без нього Telegram не шлємо — інакше все йде в «загальну». */
@@ -89,13 +106,23 @@ function parseTelegramMessageThreadId(): number | undefined {
  * Усі сповіщення про пропозиції в Telegram тільки в тему з TELEGRAM_MESSAGE_THREAD_ID,
  * не в корінь чату (див. message_thread_id у sendMessage).
  */
-async function postTelegramHtml(text: string): Promise<void> {
+async function postTelegramHtml(text: string): Promise<boolean> {
   const token = process.env.TELEGRAM_BOT_TOKEN?.trim();
   const chatId = process.env.TELEGRAM_CHAT_ID?.trim();
-  if (!token || !chatId) return;
+  if (!token || !chatId) {
+    console.error(
+      "[notify-proposal] TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID missing",
+    );
+    return false;
+  }
 
   const messageThreadId = parseTelegramMessageThreadId();
-  if (messageThreadId === undefined) return;
+  if (messageThreadId === undefined) {
+    console.error(
+      "[notify-proposal] TELEGRAM_MESSAGE_THREAD_ID missing — skip Telegram",
+    );
+    return false;
+  }
 
   const payload: Record<string, unknown> = {
     chat_id: chatId,
@@ -105,11 +132,28 @@ async function postTelegramHtml(text: string): Promise<void> {
     disable_web_page_preview: true,
   };
 
-  await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(payload),
-  }).catch(() => {});
+  try {
+    const res = await fetch(
+      `https://api.telegram.org/bot${token}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      },
+    );
+    if (!res.ok) {
+      console.error(
+        "[notify-proposal] Telegram error:",
+        res.status,
+        await res.text().catch(() => ""),
+      );
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[notify-proposal] Telegram request failed:", e);
+    return false;
+  }
 }
 
 /** Старт голосування: нова пропозиція на сайті. */
@@ -165,7 +209,7 @@ export async function notifyProposalClosedDiscord(params: {
   status?: string;
   summary?: string;
   totalVotes?: number;
-}): Promise<void> {
+}): Promise<boolean> {
   const link = proposalUrl(params.proposalId);
   const title = escapeDiscordBoldFragment(truncateTitle(params.title));
   const cancelled = isCancelledLowTurnout(params.status);
@@ -182,7 +226,7 @@ export async function notifyProposalClosedDiscord(params: {
         ? `Було **${params.yes}** так · **${params.no}** ні\n\n`
         : `**${params.yes}** так · **${params.no}** ні\n`;
 
-  await postDiscordWebhook({
+  return postDiscordWebhook({
     embeds: [
       {
         title: cancelled ? "Голосування скасовано" : "Голосування завершено",
@@ -207,7 +251,7 @@ export async function notifyProposalClosedTelegram(params: {
   status?: string;
   summary?: string;
   totalVotes?: number;
-}): Promise<void> {
+}): Promise<boolean> {
   const link = proposalUrl(params.proposalId);
   const title = escapeTelegramHtml(truncateTitle(params.title));
   const cancelled = isCancelledLowTurnout(params.status);
@@ -235,7 +279,55 @@ export async function notifyProposalClosedTelegram(params: {
     `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
     `<i>Lost Chronicles</i>`;
 
-  await postTelegramHtml(html);
+  return postTelegramHtml(html);
+}
+
+/** Нічия з кворумом — голосування продовжено на N діб. */
+export async function notifyProposalTieExtendedDiscord(params: {
+  title: string;
+  proposalId: number;
+  extensionDays?: number;
+}): Promise<boolean> {
+  const days = params.extensionDays ?? PROPOSAL_TIE_EXTENSION_DAYS;
+  const link = proposalUrl(params.proposalId);
+  const title = escapeDiscordBoldFragment(truncateTitle(params.title));
+  const dayWord = days === 1 ? "1 добу" : `${days} діб`;
+
+  return postDiscordWebhook({
+    embeds: [
+      {
+        title: "Голосування продовжено",
+        description:
+          `**${title}**\n\n` +
+          `Через **нічию** строк продовжено на **${dayWord}** для остаточного вирішення.\n\n` +
+          `[Відкрити пропозицію ↗](${link})`,
+        color: 0xfee75c,
+        footer: { text: "Lost Chronicles" },
+      },
+    ],
+  });
+}
+
+export async function notifyProposalTieExtendedTelegram(params: {
+  title: string;
+  proposalId: number;
+  extensionDays?: number;
+}): Promise<boolean> {
+  const days = params.extensionDays ?? PROPOSAL_TIE_EXTENSION_DAYS;
+  const link = proposalUrl(params.proposalId);
+  const title = escapeTelegramHtml(truncateTitle(params.title));
+  const dayWord = days === 1 ? "1 добу" : `${days} діб`;
+  const safeLink = escapeTelegramHtml(link);
+
+  const html =
+    `<b>Голосування продовжено</b>\n` +
+    `<i>Нічия — потрібне остаточне вирішення</i>\n\n` +
+    `<b>${title}</b>\n\n` +
+    `Через нічию голосування продовжено на <b>${escapeTelegramHtml(dayWord)}</b> для остаточного вирішення.\n\n` +
+    `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
+    `<i>Lost Chronicles</i>`;
+
+  return postTelegramHtml(html);
 }
 
 export type ProposalExpiredNotifyRow = {
@@ -249,13 +341,18 @@ export type ProposalExpiredNotifyRow = {
   summary?: string;
 };
 
-/** Після автоматичного закриття (термін вичерпано) — один вебхук на кожну пропозицію. */
+export type ProposalTieExtendedNotifyRow = {
+  id: number;
+  title: string;
+};
+
+/** Після автоматичного закриття (термін вичерпано) — послідовно, щоб не губити вебхуки. */
 export async function notifyProposalResultsBatch(
   rows: ProposalExpiredNotifyRow[],
 ): Promise<void> {
   if (rows.length === 0) return;
-  await Promise.all(
-    rows.flatMap((row) => [
+  for (const row of rows) {
+    await Promise.all([
       notifyProposalClosedDiscord({
         title: row.title,
         proposalId: row.id,
@@ -274,6 +371,25 @@ export async function notifyProposalResultsBatch(
         summary: row.summary,
         totalVotes: row.total_votes,
       }),
-    ]),
-  );
+    ]);
+  }
+}
+
+/** Сповіщення про продовження через нічию. */
+export async function notifyProposalTieExtendedBatch(
+  rows: ProposalTieExtendedNotifyRow[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  for (const row of rows) {
+    await Promise.all([
+      notifyProposalTieExtendedDiscord({
+        title: row.title,
+        proposalId: row.id,
+      }),
+      notifyProposalTieExtendedTelegram({
+        title: row.title,
+        proposalId: row.id,
+      }),
+    ]);
+  }
 }

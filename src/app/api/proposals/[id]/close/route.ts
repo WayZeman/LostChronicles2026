@@ -38,7 +38,7 @@ export async function POST(
       );
     }
 
-    const p = await getProposalForUser(id, userId);
+    const p = await getProposalForUser(id, userId, { skipLifecycleSync: true });
     if (p) {
       const summary =
         p.kind === "choice"
@@ -53,24 +53,31 @@ export async function POST(
               return `Переміг варіант «${leaders[0]!.label}» (${leaders[0]!.votes})`;
             })()
           : undefined;
-      void Promise.all([
-        notifyProposalClosedDiscord({
-          title: p.title,
-          proposalId: p.id,
-          yes: p.yes_votes,
-          no: p.no_votes,
-          summary,
-          totalVotes: p.total_votes,
-        }),
-        notifyProposalClosedTelegram({
-          title: p.title,
-          proposalId: p.id,
-          yes: p.yes_votes,
-          no: p.no_votes,
-          summary,
-          totalVotes: p.total_votes,
-        }),
-      ]).catch(() => {});
+      // Await: інакше Vercel може обірвати вебхуки після відповіді.
+      try {
+        await Promise.all([
+          notifyProposalClosedDiscord({
+            title: p.title,
+            proposalId: p.id,
+            yes: p.yes_votes,
+            no: p.no_votes,
+            status: p.status,
+            summary,
+            totalVotes: p.total_votes,
+          }),
+          notifyProposalClosedTelegram({
+            title: p.title,
+            proposalId: p.id,
+            yes: p.yes_votes,
+            no: p.no_votes,
+            status: p.status,
+            summary,
+            totalVotes: p.total_votes,
+          }),
+        ]);
+      } catch (e) {
+        console.error("[proposals] close notify failed:", e);
+      }
     }
 
     return NextResponse.json({ ok: true, status: "closed", voting_open: false });

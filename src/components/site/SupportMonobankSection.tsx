@@ -2,36 +2,52 @@ import Image from "next/image";
 import Link from "next/link";
 import { ExternalLink, HeartHandshake } from "lucide-react";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
-import { PlayerNamesStrip } from "@/components/site/PlayerNamesStrip";
 import { cn } from "@/lib/utils";
 import type { CatalogVoteLink } from "@/lib/site-content";
 
 const DEFAULT_JAR_URL = "https://send.monobank.ua/jar/8f7nV8DopG";
 
+const DEFAULT_CATALOG_VOTE_LINKS: CatalogVoteLink[] = [
+  {
+    href: "https://minecraft.org.ua/minecraft-servers/Lost-Chronicles/3210",
+    label: "Minecraft.org.ua",
+    shortLabel: "ОУМ",
+  },
+  {
+    href: "https://monicore.com.ua/server/281/lostchronicles",
+    label: "MoniCore",
+    shortLabel: "MoniCore",
+  },
+  {
+    href: "https://allmc.in.ua/play-lost-chronicles-site",
+    label: "AllMC.in.ua",
+    shortLabel: "AllMC",
+  },
+];
+
 type Props = {
   jarUrl?: string;
   blurb?: string;
   catalogLinks?: CatalogVoteLink[];
-  /** Ніки тих, хто підтримав сервер цього місяця (оплачені замовлення). */
-  supporterNicks?: string[];
 };
 
 /**
- * Підтримка сервера: магазин бонусів + банка Monobank.
+ * Підтримка сервера: магазин / банка + голосування в каталогах.
  */
 export function SupportMonobankSection({
   jarUrl,
   blurb,
-  supporterNicks = [],
+  catalogLinks,
 }: Props = {}) {
   const resolvedJar =
     jarUrl?.trim() ||
     process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
     DEFAULT_JAR_URL;
   const resolvedBlurb = blurb?.trim() || "";
-  const nicks = supporterNicks
-    .map((n) => n.trim())
-    .filter(Boolean);
+  const links =
+    catalogLinks && catalogLinks.length > 0
+      ? catalogLinks
+      : DEFAULT_CATALOG_VOTE_LINKS;
 
   return (
     <section
@@ -67,18 +83,6 @@ export function SupportMonobankSection({
             </p>
           ) : null}
 
-          {nicks.length > 0 ? (
-            <div className="mt-3 w-full sm:mt-4">
-              <p className="mb-2 w-full text-center text-xs font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)] sm:text-left">
-                Цього місяця нас підтримали
-              </p>
-              <PlayerNamesStrip
-                names={nicks}
-                ariaLabel="Хто підтримав сервер цього місяця. Перетягніть смужку або натисніть на нік, щоб скопіювати."
-              />
-            </div>
-          ) : null}
-
           <div className="mt-3 flex w-full max-w-md flex-col gap-2 sm:mt-4 sm:max-w-none">
             <Link
               href="/support"
@@ -100,6 +104,39 @@ export function SupportMonobankSection({
               />
             </a>
           </div>
+
+          <h3
+            id="support-vote-heading"
+            className="mt-5 w-full text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:mt-6"
+          >
+            Підтримати голосуючи
+          </h3>
+          <ul className="mt-2 flex w-full flex-wrap justify-center gap-1.5">
+            {links.map(({ href, label, shortLabel }) => (
+              <li key={href} className="min-w-0">
+                <a
+                  href={href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={label}
+                  className={cn(
+                    "lc-focus-ring mc-slot inline-flex items-center justify-center gap-1",
+                    "min-h-7 px-2 py-1 text-[11px] font-semibold leading-none sm:min-h-8 sm:px-2.5 sm:text-xs",
+                    "text-[var(--mc-text)] transition-[background-color,color] duration-150",
+                    "hover:bg-[#242424] hover:text-[var(--mc-grass-bright)]",
+                  )}
+                >
+                  <span className="max-w-[7.5rem] truncate sm:max-w-[9rem]">
+                    {shortLabel || label}
+                  </span>
+                  <ExternalLink
+                    className="size-2.5 shrink-0 opacity-45"
+                    aria-hidden
+                  />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

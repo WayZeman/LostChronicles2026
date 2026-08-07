@@ -1,6 +1,7 @@
 import { getSql } from "@/lib/db";
 import {
   notifyProposalResultsBatch,
+  notifyProposalTieExtendedBatch,
   type ProposalExpiredNotifyRow,
 } from "@/lib/notify-proposal";
 import {
@@ -213,6 +214,7 @@ async function reopenTiedClosedProposals(): Promise<number> {
   const rows = rowsOf(await sql`
     SELECT
       p.id,
+      p.title,
       COALESCE(p.kind, 'yes_no') AS kind,
       COALESCE(COUNT(v.id), 0)::int AS total_votes,
       COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
@@ -220,11 +222,12 @@ async function reopenTiedClosedProposals(): Promise<number> {
     FROM proposals p
     LEFT JOIN votes v ON v.proposal_id = p.id
     WHERE p.status = 'closed'
-    GROUP BY p.id, p.kind
+      AND p.ends_at < NOW()
+    GROUP BY p.id, p.title, p.kind
   `);
   if (rows.length === 0) return 0;
 
-  const toReopen: number[] = [];
+  const toReopen: { id: number; title: string }[] = [];
   for (const r of rows) {
     const id = num(r.id);
     const tied = await isQuorumTie({
@@ -234,18 +237,28 @@ async function reopenTiedClosedProposals(): Promise<number> {
       no: num(r.no_votes),
       total: num(r.total_votes),
     });
-    if (tied) toReopen.push(id);
+    if (tied) {
+      toReopen.push({ id, title: String(r.title ?? "") });
+    }
   }
   if (toReopen.length === 0) return 0;
 
+  const reopenIds = toReopen.map((x) => x.id);
   await sql`
     UPDATE proposals
     SET
       status = 'active',
       ends_at = NOW() + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
-    WHERE id = ANY(${toReopen})
+    WHERE id = ANY(${reopenIds})
       AND status = 'closed'
   `;
+
+  try {
+    await notifyProposalTieExtendedBatch(toReopen);
+  } catch (e) {
+    console.error("[proposals] tie-extend notify (reopen) failed:", e);
+  }
+
   return toReopen.length;
 }
 
@@ -279,7 +292,7 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
     no: number;
     total: number;
   }[] = [];
-  const toExtend: number[] = [];
+  const toExtend: { id: number; title: string }[] = [];
 
   for (const r of expired) {
     const id = num(r.id);
@@ -287,6 +300,7 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
     const total = num(r.total_votes);
     const yes = num(r.yes_votes);
     const no = num(r.no_votes);
+    const title = String(r.title ?? "");
 
     if (total < minVotes) {
       toCancel.push(id);
@@ -295,11 +309,11 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
 
     const tied = await isQuorumTie({ id, kind, yes, no, total });
     if (tied) {
-      toExtend.push(id);
+      toExtend.push({ id, title });
     } else {
       toClose.push({
         id,
-        title: String(r.title ?? ""),
+        title,
         kind,
         yes,
         no,
@@ -309,10 +323,11 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   }
 
   if (toExtend.length > 0) {
+    const extendIds = toExtend.map((x) => x.id);
     await sql`
       UPDATE proposals
       SET ends_at = GREATEST(ends_at, NOW()) + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
-      WHERE id = ANY(${toExtend})
+      WHERE id = ANY(${extendIds})
         AND status = 'active'
     `;
   }
@@ -376,8 +391,16 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
     });
   }
 
-  if (closed.length > 0) {
-    void notifyProposalResultsBatch(closed).catch(() => {});
+  // Обовʼязково await: інакше на Vercel serverless вебхуки обриваються після відповіді.
+  try {
+    if (toExtend.length > 0) {
+      await notifyProposalTieExtendedBatch(toExtend);
+    }
+    if (closed.length > 0) {
+      await notifyProposalResultsBatch(closed);
+    }
+  } catch (e) {
+    console.error("[proposals] expire notify failed:", e);
   }
   return closed;
 }
@@ -430,10 +453,13 @@ export async function listProposalsForUser(
 export async function getProposalForUser(
   id: number,
   currentUserId: number | null,
+  opts?: { skipLifecycleSync?: boolean },
 ): Promise<ProposalRow | null> {
   await ensureAuthProviderColumns();
   await ensurePollSchema();
-  await syncProposalLifecycle();
+  if (!opts?.skipLifecycleSync) {
+    await syncProposalLifecycle();
+  }
   const sql = getSql();
   const uid = currentUserId ?? 0;
   const rows = rowsOf(await sql`
