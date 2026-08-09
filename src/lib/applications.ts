@@ -1,20 +1,20 @@
 import { getSql } from "@/lib/db";
+import type { ApplyQuestion } from "@/lib/application-form-config";
+import {
+  formatAnswerValue,
+  pickAnswerByLabelHint,
+} from "@/lib/application-form-config";
 
-export type ApplicationInput = {
-  email: string;
-  nickname: string;
-  birthday: string;
-  age: string;
-  contacts: string;
-  experience: string;
-  previousProjects: string;
-  whyServer: string;
-  howFound: string;
-};
+export type ApplicationAnswers = Record<string, string | string[]>;
 
-export type ApplicationRow = ApplicationInput & {
+export type ApplicationRow = {
   id: number;
   createdAt: string;
+  answers: ApplicationAnswers;
+  /** Зручні підсумки для списку */
+  nickname: string;
+  contacts: string;
+  email: string;
 };
 
 function rowsOf(r: unknown): Record<string, unknown>[] {
@@ -30,16 +30,21 @@ async function ensureApplicationsTable(): Promise<void> {
     CREATE TABLE IF NOT EXISTS applications (
       id BIGSERIAL PRIMARY KEY,
       email TEXT NOT NULL DEFAULT '',
-      nickname TEXT NOT NULL,
+      nickname TEXT NOT NULL DEFAULT '',
       birthday TEXT,
       age TEXT NOT NULL DEFAULT '',
-      contacts TEXT NOT NULL,
+      contacts TEXT NOT NULL DEFAULT '',
       experience TEXT NOT NULL DEFAULT '',
       previous_projects TEXT NOT NULL DEFAULT '',
       why_server TEXT NOT NULL DEFAULT '',
       how_found TEXT NOT NULL DEFAULT '',
+      answers_json TEXT NOT NULL DEFAULT '{}',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
+  `;
+  await sql`
+    ALTER TABLE applications
+      ADD COLUMN IF NOT EXISTS answers_json TEXT NOT NULL DEFAULT '{}'
   `;
   await sql`
     CREATE INDEX IF NOT EXISTS applications_created_at_idx
@@ -48,69 +53,143 @@ async function ensureApplicationsTable(): Promise<void> {
   ensured = true;
 }
 
-function mapRow(row: Record<string, unknown>): ApplicationRow {
+function parseAnswersJson(raw: unknown): ApplicationAnswers {
+  if (typeof raw !== "string" || !raw.trim()) return {};
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return {};
+    }
+    const out: ApplicationAnswers = {};
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof v === "string") out[k] = v;
+      else if (Array.isArray(v)) {
+        out[k] = v.map((x) => String(x)).filter(Boolean);
+      }
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function legacyAnswersFromRow(row: Record<string, unknown>): ApplicationAnswers {
+  const map: Record<string, string> = {
+    q_email: String(row.email ?? ""),
+    q_nickname: String(row.nickname ?? ""),
+    q_birthday: String(row.birthday ?? ""),
+    q_age: String(row.age ?? ""),
+    q_contacts: String(row.contacts ?? ""),
+    q_experience: String(row.experience ?? ""),
+    q_previous: String(row.previousProjects ?? row.previous_projects ?? ""),
+    q_why: String(row.whyServer ?? row.why_server ?? ""),
+    q_how: String(row.howFound ?? row.how_found ?? ""),
+  };
+  const out: ApplicationAnswers = {};
+  for (const [k, v] of Object.entries(map)) {
+    if (v.trim()) out[k] = v;
+  }
+  return out;
+}
+
+function summarize(
+  answers: ApplicationAnswers,
+  questions: ApplyQuestion[] | null,
+  row: Record<string, unknown>,
+): Pick<ApplicationRow, "nickname" | "contacts" | "email"> {
+  if (questions && questions.length > 0) {
+    return {
+      nickname:
+        pickAnswerByLabelHint(questions, answers, [
+          /нік|nickname|ігрове/i,
+        ]) || String(row.nickname ?? ""),
+      contacts:
+        pickAnswerByLabelHint(questions, answers, [
+          /телеграм|discord|діскорд|контакт/i,
+        ]) || String(row.contacts ?? ""),
+      email:
+        pickAnswerByLabelHint(questions, answers, [/email|пошта|електронн/i]) ||
+        String(row.email ?? ""),
+    };
+  }
   return {
-    id: Number(row.id),
-    email: String(row.email ?? ""),
     nickname: String(row.nickname ?? ""),
-    birthday: String(row.birthday ?? ""),
-    age: String(row.age ?? ""),
     contacts: String(row.contacts ?? ""),
-    experience: String(row.experience ?? ""),
-    previousProjects: String(row.previousProjects ?? ""),
-    whyServer: String(row.whyServer ?? ""),
-    howFound: String(row.howFound ?? ""),
-    createdAt: String(row.createdAt ?? ""),
+    email: String(row.email ?? ""),
   };
 }
 
-export async function createApplication(
-  input: ApplicationInput,
-): Promise<ApplicationRow> {
+function mapRow(
+  row: Record<string, unknown>,
+  questions: ApplyQuestion[] | null = null,
+): ApplicationRow {
+  let answers = parseAnswersJson(row.answers_json ?? row.answersJson);
+  if (Object.keys(answers).length === 0) {
+    answers = legacyAnswersFromRow(row);
+  }
+  const summary = summarize(answers, questions, row);
+  return {
+    id: Number(row.id),
+    createdAt: String(row.createdAt ?? row.created_at ?? ""),
+    answers,
+    ...summary,
+  };
+}
+
+export function answersToTelegramLines(
+  questions: ApplyQuestion[],
+  answers: ApplicationAnswers,
+): string[] {
+  const lines: string[] = [];
+  for (const q of questions) {
+    if (!q.enabled) continue;
+    const raw = answers[q.id];
+    const val = formatAnswerValue(raw);
+    if (val === "—" && !q.required) continue;
+    lines.push(`▪️ ${q.label}: ${val}`);
+  }
+  return lines;
+}
+
+export async function createApplication(input: {
+  answers: ApplicationAnswers;
+  questions: ApplyQuestion[];
+}): Promise<ApplicationRow> {
   await ensureApplicationsTable();
   const sql = getSql();
+  const summary = summarize(input.answers, input.questions, {});
+  const answersJson = JSON.stringify(input.answers);
+
   const rows = rowsOf(await sql`
     INSERT INTO applications (
       email,
       nickname,
-      birthday,
-      age,
       contacts,
-      experience,
-      previous_projects,
-      why_server,
-      how_found
+      answers_json
     )
     VALUES (
-      ${input.email},
-      ${input.nickname},
-      ${input.birthday || null},
-      ${input.age},
-      ${input.contacts},
-      ${input.experience},
-      ${input.previousProjects},
-      ${input.whyServer},
-      ${input.howFound}
+      ${summary.email},
+      ${summary.nickname || "—"},
+      ${summary.contacts},
+      ${answersJson}
     )
     RETURNING
       id,
       email,
       nickname,
-      COALESCE(birthday, '') AS birthday,
-      age,
       contacts,
-      experience,
-      previous_projects AS "previousProjects",
-      why_server AS "whyServer",
-      how_found AS "howFound",
+      answers_json,
       created_at AS "createdAt"
   `);
   const row = rows[0];
   if (!row) throw new Error("Failed to insert application");
-  return mapRow(row);
+  return mapRow(row, input.questions);
 }
 
-export async function listApplications(limit = 50): Promise<ApplicationRow[]> {
+export async function listApplications(
+  limit = 50,
+  questions: ApplyQuestion[] | null = null,
+): Promise<ApplicationRow[]> {
   await ensureApplicationsTable();
   const sql = getSql();
   const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
@@ -126,16 +205,18 @@ export async function listApplications(limit = 50): Promise<ApplicationRow[]> {
       previous_projects AS "previousProjects",
       why_server AS "whyServer",
       how_found AS "howFound",
+      answers_json,
       created_at AS "createdAt"
     FROM applications
     ORDER BY id DESC
     LIMIT ${safeLimit}
   `);
-  return rows.map(mapRow);
+  return rows.map((r) => mapRow(r, questions));
 }
 
 export async function getApplicationById(
   id: number,
+  questions: ApplyQuestion[] | null = null,
 ): Promise<ApplicationRow | null> {
   await ensureApplicationsTable();
   const sql = getSql();
@@ -151,13 +232,14 @@ export async function getApplicationById(
       previous_projects AS "previousProjects",
       why_server AS "whyServer",
       how_found AS "howFound",
+      answers_json,
       created_at AS "createdAt"
     FROM applications
     WHERE id = ${id}
     LIMIT 1
   `);
   const row = rows[0];
-  return row ? mapRow(row) : null;
+  return row ? mapRow(row, questions) : null;
 }
 
 export async function deleteApplication(id: number): Promise<boolean> {

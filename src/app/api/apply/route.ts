@@ -2,25 +2,16 @@ import { NextResponse } from "next/server";
 
 import {
   getApplyFormConfig,
-  type ApplyFieldKey,
   type ApplyFormConfig,
+  type ApplyQuestion,
 } from "@/lib/application-form-config";
-import { createApplication } from "@/lib/applications";
+import {
+  createApplication,
+  type ApplicationAnswers,
+} from "@/lib/applications";
 import { notifyApplicationTelegram } from "@/lib/notify-application";
 
 export const dynamic = "force-dynamic";
-
-const MAX: Record<ApplyFieldKey, number> = {
-  email: 120,
-  nickname: 80,
-  birthday: 32,
-  age: 8,
-  contacts: 200,
-  experience: 2000,
-  previousProjects: 2000,
-  whyServer: 2000,
-  howFound: 500,
-};
 
 type RateBucket = { count: number; resetAt: number };
 const rateByIp = new Map<string, RateBucket>();
@@ -60,26 +51,59 @@ function formatBirthdayUk(raw: string): string {
   return `${m[3]}.${m[2]}.${m[1]}`;
 }
 
-function validateAgainstConfig(
-  config: ApplyFormConfig,
-  values: Record<ApplyFieldKey, string>,
-): string | null {
-  for (const field of config.fields) {
-    if (!field.enabled) continue;
-    const v = values[field.key];
-    if (field.required && !v) {
-      return `Заповни поле: ${field.label}`;
-    }
-    if (!v) continue;
+function normalizeAnswerForQuestion(
+  q: ApplyQuestion,
+  raw: unknown,
+): string | string[] {
+  if (q.type === "multi_choice") {
+    const arr = Array.isArray(raw)
+      ? raw
+      : typeof raw === "string" && raw
+        ? [raw]
+        : [];
+    return arr
+      .map((x) => trimStr(x, 200))
+      .filter(Boolean)
+      .filter((x) => q.options.includes(x))
+      .slice(0, 30);
+  }
 
-    if (field.key === "email" && !isEmail(v)) {
-      return "Вкажи коректну електронну адресу.";
+  let s = trimStr(raw, q.type === "long_text" ? 2000 : 500);
+  if (q.type === "date" && s) s = formatBirthdayUk(s);
+  if (
+    (q.type === "single_choice" || q.type === "dropdown") &&
+    s &&
+    !q.options.includes(s)
+  ) {
+    return "";
+  }
+  return s;
+}
+
+function validateAnswers(
+  config: ApplyFormConfig,
+  answers: ApplicationAnswers,
+): string | null {
+  for (const q of config.questions) {
+    if (!q.enabled) continue;
+    const v = answers[q.id];
+    const empty =
+      v == null ||
+      (typeof v === "string" && !v.trim()) ||
+      (Array.isArray(v) && v.length === 0);
+    if (q.required && empty) {
+      return `Заповни поле: ${q.label}`;
+    }
+    if (empty) continue;
+    if (q.type === "email" && typeof v === "string" && !isEmail(v)) {
+      return `Некоректний email: ${q.label}`;
     }
     if (
-      field.key === "age" &&
-      (!/^\d{1,3}$/.test(v) || Number(v) < 8 || Number(v) > 99)
+      q.type === "number" &&
+      typeof v === "string" &&
+      !/^\d{1,6}$/.test(v)
     ) {
-      return "Вкажи вік числом (повних років).";
+      return `Вкажи число для: ${q.label}`;
     }
   }
   return null;
@@ -115,45 +139,34 @@ export async function POST(req: Request) {
     );
   }
 
-  const raw: Record<ApplyFieldKey, string> = {
-    email: trimStr(b.email, MAX.email).toLowerCase(),
-    nickname: trimStr(b.nickname, MAX.nickname),
-    birthday: trimStr(b.birthday, MAX.birthday),
-    age: trimStr(b.age, MAX.age),
-    contacts: trimStr(b.contacts, MAX.contacts),
-    experience: trimStr(b.experience, MAX.experience),
-    previousProjects: trimStr(b.previousProjects, MAX.previousProjects),
-    whyServer: trimStr(b.whyServer, MAX.whyServer),
-    howFound: trimStr(b.howFound, MAX.howFound),
-  };
+  const rawAnswers =
+    b.answers && typeof b.answers === "object" && !Array.isArray(b.answers)
+      ? (b.answers as Record<string, unknown>)
+      : b;
 
-  // Вимкнені поля не зберігаємо
-  for (const field of config.fields) {
-    if (!field.enabled) raw[field.key] = "";
+  const answers: ApplicationAnswers = {};
+  for (const q of config.questions) {
+    if (!q.enabled) continue;
+    const normalized = normalizeAnswerForQuestion(q, rawAnswers[q.id]);
+    if (
+      (typeof normalized === "string" && normalized) ||
+      (Array.isArray(normalized) && normalized.length > 0)
+    ) {
+      answers[q.id] = normalized;
+    }
   }
 
-  const err = validateAgainstConfig(config, raw);
+  const err = validateAnswers(config, answers);
   if (err) {
     return NextResponse.json({ error: err }, { status: 400 });
   }
 
-  const birthday = raw.birthday ? formatBirthdayUk(raw.birthday) : "";
-
-  const payload = {
-    email: raw.email,
-    nickname: raw.nickname,
-    birthday,
-    age: raw.age,
-    contacts: raw.contacts,
-    experience: raw.experience,
-    previousProjects: raw.previousProjects,
-    whyServer: raw.whyServer,
-    howFound: raw.howFound,
-  };
-
   let id: number | undefined;
   try {
-    const row = await createApplication(payload);
+    const row = await createApplication({
+      answers,
+      questions: config.questions,
+    });
     id = row.id;
   } catch (e) {
     console.error("[apply] DB insert failed:", e);
@@ -163,7 +176,11 @@ export async function POST(req: Request) {
     );
   }
 
-  const notified = await notifyApplicationTelegram({ ...payload, id });
+  const notified = await notifyApplicationTelegram({
+    id,
+    answers,
+    questions: config.questions,
+  });
   if (!notified) {
     console.error("[apply] saved id=%s but Telegram notify failed", id);
   }

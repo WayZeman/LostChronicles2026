@@ -1,33 +1,21 @@
 /**
  * Нові анкети → Telegram.
  * Бот/чат як у scripts/google-form-all-answers-to-telegram.gs
- * (@serveranketbot → «Адміністрація серверу підвальна»).
- *
- * Env (пріоритет):
- *   TELEGRAM_ANKETA_BOT_TOKEN + TELEGRAM_ANKETA_CHAT_ID
- * fallback: TELEGRAM_ORDERS_BOT_TOKEN + TELEGRAM_ORDERS_CHAT_ID
  */
 
+import type { ApplyQuestion } from "@/lib/application-form-config";
 import {
-  APPLY_TELEGRAM_LABELS,
-  APPLY_TELEGRAM_ORDER,
-  type ApplyFieldKey,
-} from "@/lib/application-form-config";
+  answersToTelegramLines,
+  type ApplicationAnswers,
+} from "@/lib/applications";
 
 export type ApplicationNotifyPayload = {
   id?: number;
-  email: string;
-  nickname: string;
-  birthday: string;
-  age: string;
-  contacts: string;
-  experience: string;
-  previousProjects: string;
-  whyServer: string;
-  howFound: string;
+  answers: ApplicationAnswers;
+  questions: ApplyQuestion[];
+  nickname?: string;
 };
 
-/** Ті самі значення, що BOT_TOKEN / CHAT_ID у google-form-all-answers-to-telegram.gs */
 function anketaBotConfig(): { token: string; chatId: string } | null {
   const token =
     process.env.TELEGRAM_ANKETA_BOT_TOKEN?.trim() ||
@@ -39,51 +27,14 @@ function anketaBotConfig(): { token: string; chatId: string } | null {
   return { token, chatId };
 }
 
-function dash(s: string): string {
-  const t = s.trim();
-  return t || "—";
-}
-
-function valueForKey(
-  a: ApplicationNotifyPayload,
-  key: ApplyFieldKey,
-): string {
-  switch (key) {
-    case "email":
-      return a.email;
-    case "nickname":
-      return a.nickname;
-    case "birthday":
-      return a.birthday;
-    case "age":
-      return a.age;
-    case "contacts":
-      return a.contacts;
-    case "experience":
-      return a.experience;
-    case "previousProjects":
-      return a.previousProjects;
-    case "whyServer":
-      return a.whyServer;
-    case "howFound":
-      return a.howFound;
-  }
-}
-
-/** Компактний формат як у старих сповіщеннях з Google Form. */
 export function formatApplicationTelegramText(
   a: ApplicationNotifyPayload,
 ): string {
   const head = a.id
     ? `📩 Нова анкета!  ·  #${a.id}`
     : "📩 Нова анкета!";
-  const lines = [head];
-  for (const key of APPLY_TELEGRAM_ORDER) {
-    const val = valueForKey(a, key).trim();
-    if (!val && key === "birthday") continue;
-    lines.push(`${APPLY_TELEGRAM_LABELS[key]}: ${dash(val)}`);
-  }
-  return lines.join("\n");
+  const lines = answersToTelegramLines(a.questions, a.answers);
+  return [head, ...lines].join("\n");
 }
 
 export async function notifyApplicationTelegram(

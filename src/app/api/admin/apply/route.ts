@@ -26,9 +26,9 @@ export async function GET() {
     if (!userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    const [config, applications, total] = await Promise.all([
-      getApplyFormConfig(),
-      listApplications(100),
+    const config = await getApplyFormConfig();
+    const [applications, total] = await Promise.all([
+      listApplications(100, config.questions),
       countApplications(),
     ]);
     return NextResponse.json({ config, applications, total });
@@ -56,7 +56,7 @@ export async function PUT(req: Request) {
 
     const configRaw =
       body && typeof body === "object"
-        ? (body as { config?: unknown }).config ?? body
+        ? ((body as { config?: unknown }).config ?? body)
         : body;
 
     const config = await saveApplyFormConfig(configRaw);
@@ -95,7 +95,6 @@ export async function DELETE(req: Request) {
   }
 }
 
-/** Повторно надіслати анкету в Telegram: POST { action: "resend", id } */
 export async function POST(req: Request) {
   try {
     const userId = await requireAdmin();
@@ -119,12 +118,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Невірний id" }, { status: 400 });
     }
 
-    const row = await getApplicationById(id);
+    const config = await getApplyFormConfig();
+    const row = await getApplicationById(id, config.questions);
     if (!row) {
       return NextResponse.json({ error: "Не знайдено" }, { status: 404 });
     }
 
-    const telegram = await notifyApplicationTelegram(row);
+    const telegram = await notifyApplicationTelegram({
+      id: row.id,
+      answers: row.answers,
+      questions: config.questions,
+      nickname: row.nickname,
+    });
     return NextResponse.json({ ok: telegram, telegram });
   } catch {
     return NextResponse.json(

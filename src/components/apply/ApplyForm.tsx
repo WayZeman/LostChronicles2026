@@ -1,15 +1,14 @@
 "use client";
 
-import { useEffect, useState, type ChangeEvent, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import {
   LC_DEFAULT_DISCORD_URL,
   LC_DEFAULT_TELEGRAM_URL,
 } from "@/data/lc-social-defaults";
 import {
   DEFAULT_APPLY_FORM_CONFIG,
-  type ApplyFieldConfig,
-  type ApplyFieldKey,
   type ApplyFormConfig,
+  type ApplyQuestion,
 } from "@/lib/application-form-config";
 import { cn } from "@/lib/utils";
 
@@ -19,83 +18,133 @@ const labelClass =
   "mb-1.5 block text-left text-sm font-bold text-[var(--mc-text)]";
 const hintClass = "mt-1 text-left text-xs text-[var(--mc-text-muted)]";
 
-type FormState = Record<ApplyFieldKey, string> & { website: string };
+type AnswersState = Record<string, string | string[]>;
 
-function emptyState(): FormState {
-  return {
-    email: "",
-    nickname: "",
-    birthday: "",
-    age: "",
-    contacts: "",
-    experience: "",
-    previousProjects: "",
-    whyServer: "",
-    howFound: "",
-    website: "",
-  };
+function emptyAnswers(questions: ApplyQuestion[]): AnswersState {
+  const out: AnswersState = {};
+  for (const q of questions) {
+    out[q.id] = q.type === "multi_choice" ? [] : "";
+  }
+  return out;
 }
 
-function FieldControl({
-  field,
+function QuestionControl({
+  q,
   value,
   onChange,
 }: {
-  field: ApplyFieldConfig;
-  value: string;
-  onChange: (v: string) => void;
+  q: ApplyQuestion;
+  value: string | string[];
+  onChange: (v: string | string[]) => void;
 }) {
-  const id = `apply-${field.key}`;
-  const common = {
-    id,
-    required: field.required,
-    className: fieldClass,
-    value,
-    placeholder: field.placeholder || undefined,
-    onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
-      onChange(e.target.value),
-  };
+  const id = `apply-${q.id}`;
 
-  if (field.kind === "textarea") {
+  if (q.type === "long_text") {
     return (
       <textarea
-        {...common}
+        id={id}
+        required={q.required}
         rows={3}
         maxLength={2000}
         className={cn(fieldClass, "min-h-20 resize-y")}
+        value={typeof value === "string" ? value : ""}
+        placeholder={q.placeholder || undefined}
+        onChange={(e) => onChange(e.target.value)}
       />
+    );
+  }
+
+  if (q.type === "single_choice") {
+    return (
+      <div className="space-y-2" role="radiogroup" aria-labelledby={`${id}-label`}>
+        {q.options.map((opt) => (
+          <label
+            key={opt}
+            className="flex cursor-pointer items-center gap-2 text-sm text-[var(--mc-text)]"
+          >
+            <input
+              type="radio"
+              name={id}
+              required={q.required}
+              checked={value === opt}
+              onChange={() => onChange(opt)}
+              className="size-4 accent-[var(--mc-net-green)]"
+            />
+            {opt}
+          </label>
+        ))}
+      </div>
+    );
+  }
+
+  if (q.type === "multi_choice") {
+    const selected = Array.isArray(value) ? value : [];
+    return (
+      <div className="space-y-2">
+        {q.options.map((opt) => {
+          const checked = selected.includes(opt);
+          return (
+            <label
+              key={opt}
+              className="flex cursor-pointer items-center gap-2 text-sm text-[var(--mc-text)]"
+            >
+              <input
+                type="checkbox"
+                checked={checked}
+                onChange={() => {
+                  if (checked) onChange(selected.filter((x) => x !== opt));
+                  else onChange([...selected, opt]);
+                }}
+                className="size-4 accent-[var(--mc-net-green)]"
+              />
+              {opt}
+            </label>
+          );
+        })}
+      </div>
+    );
+  }
+
+  if (q.type === "dropdown") {
+    return (
+      <select
+        id={id}
+        required={q.required}
+        className={fieldClass}
+        value={typeof value === "string" ? value : ""}
+        onChange={(e) => onChange(e.target.value)}
+      >
+        <option value="">Обери варіант…</option>
+        {q.options.map((opt) => (
+          <option key={opt} value={opt}>
+            {opt}
+          </option>
+        ))}
+      </select>
     );
   }
 
   return (
     <input
-      {...common}
+      id={id}
+      required={q.required}
+      className={fieldClass}
+      value={typeof value === "string" ? value : ""}
+      placeholder={q.placeholder || undefined}
       type={
-        field.kind === "email"
+        q.type === "email"
           ? "email"
-          : field.kind === "date"
+          : q.type === "date"
             ? "date"
-            : field.kind === "number"
+            : q.type === "number"
               ? "number"
               : "text"
       }
-      min={field.kind === "number" ? 8 : undefined}
-      max={field.kind === "number" ? 99 : undefined}
-      inputMode={field.kind === "number" ? "numeric" : undefined}
-      autoComplete={
-        field.key === "email"
-          ? "email"
-          : field.key === "nickname"
-            ? "nickname"
-            : undefined
-      }
-      maxLength={
-        field.key === "howFound"
-          ? 500
-          : field.key === "contacts"
-            ? 200
-            : 120
-      }
+      min={q.type === "number" ? 0 : undefined}
+      inputMode={q.type === "number" ? "numeric" : undefined}
+      autoComplete={q.type === "email" ? "email" : undefined}
+      maxLength={q.type === "email" ? 120 : 500}
+      onChange={(e) => onChange(e.target.value)}
     />
   );
 }
@@ -108,7 +157,10 @@ export function ApplyForm({
   const [config, setConfig] = useState<ApplyFormConfig>(
     initialConfig ?? DEFAULT_APPLY_FORM_CONFIG,
   );
-  const [form, setForm] = useState<FormState>(emptyState);
+  const [answers, setAnswers] = useState<AnswersState>(() =>
+    emptyAnswers((initialConfig ?? DEFAULT_APPLY_FORM_CONFIG).questions),
+  );
+  const [website, setWebsite] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [doneId, setDoneId] = useState<number | null>(null);
@@ -119,14 +171,21 @@ export function ApplyForm({
     process.env.NEXT_PUBLIC_TELEGRAM_URL?.trim() || LC_DEFAULT_TELEGRAM_URL;
 
   useEffect(() => {
-    if (initialConfig) return;
+    if (initialConfig) {
+      setConfig(initialConfig);
+      setAnswers(emptyAnswers(initialConfig.questions));
+      return;
+    }
     let cancelled = false;
     void (async () => {
       try {
         const res = await fetch("/api/apply/config");
         if (!res.ok) return;
         const data = (await res.json()) as { config?: ApplyFormConfig };
-        if (!cancelled && data.config) setConfig(data.config);
+        if (!cancelled && data.config) {
+          setConfig(data.config);
+          setAnswers(emptyAnswers(data.config.questions));
+        }
       } catch {
         /* defaults */
       }
@@ -136,10 +195,6 @@ export function ApplyForm({
     };
   }, [initialConfig]);
 
-  function setField(key: ApplyFieldKey, value: string) {
-    setForm((prev) => ({ ...prev, [key]: value }));
-  }
-
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
     setError(null);
@@ -148,7 +203,7 @@ export function ApplyForm({
       const res = await fetch("/api/apply", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({ answers, website }),
       });
       const data = (await res.json().catch(() => ({}))) as {
         error?: string;
@@ -159,7 +214,7 @@ export function ApplyForm({
         return;
       }
       setDoneId(typeof data.id === "number" ? data.id : 0);
-      setForm(emptyState());
+      setAnswers(emptyAnswers(config.questions));
     } catch {
       setError("Мережева помилка. Спробуй ще раз.");
     } finally {
@@ -211,7 +266,7 @@ export function ApplyForm({
     );
   }
 
-  const enabled = config.fields.filter((f) => f.enabled);
+  const enabled = config.questions.filter((q) => q.enabled);
 
   return (
     <form onSubmit={onSubmit} className="space-y-5" noValidate>
@@ -224,30 +279,60 @@ export function ApplyForm({
           <input
             tabIndex={-1}
             autoComplete="off"
-            value={form.website}
-            onChange={(e) =>
-              setForm((prev) => ({ ...prev, website: e.target.value }))
-            }
+            value={website}
+            onChange={(e) => setWebsite(e.target.value)}
           />
         </label>
       </div>
 
-      {enabled.map((field) => (
-        <div key={field.key}>
-          <label className={labelClass} htmlFor={`apply-${field.key}`}>
-            {field.label}
-            {field.required ? (
-              <span className="text-rose-300"> *</span>
-            ) : null}
+      {enabled.map((q) => (
+        <div key={q.id}>
+          <label className={labelClass} htmlFor={`apply-${q.id}`} id={`apply-${q.id}-label`}>
+            {q.label}
+            {q.required ? <span className="text-rose-300"> *</span> : null}
           </label>
-          <FieldControl
-            field={field}
-            value={form[field.key]}
-            onChange={(v) => setField(field.key, v)}
+          <QuestionControl
+            q={q}
+            value={answers[q.id] ?? (q.type === "multi_choice" ? [] : "")}
+            onChange={(v) =>
+              setAnswers((prev) => ({
+                ...prev,
+                [q.id]: v,
+              }))
+            }
           />
-          {field.hint ? <p className={hintClass}>{field.hint}</p> : null}
+          {q.hint ? <p className={hintClass}>{q.hint}</p> : null}
         </div>
       ))}
+
+      <div className="rounded-xl border border-white/12 bg-black/25 p-4 text-center sm:p-5">
+        <p className="text-sm font-extrabold text-[var(--mc-text)]">
+          {config.joinTitle}
+        </p>
+        {config.joinBlurb ? (
+          <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-[var(--mc-text-muted)]">
+            {config.joinBlurb}
+          </p>
+        ) : null}
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
+          <a
+            href={telegram}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center justify-center px-5 text-sm font-bold"
+          >
+            Telegram
+          </a>
+          <a
+            href={discord}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center px-5 text-sm font-bold"
+          >
+            Discord
+          </a>
+        </div>
+      </div>
 
       {error ? (
         <p className="text-sm font-bold text-rose-200" role="alert">
