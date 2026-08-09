@@ -74,6 +74,10 @@ async function ensurePollSchema(): Promise<void> {
   await sql`
     CREATE INDEX IF NOT EXISTS idx_votes_option ON votes (option_id)
   `;
+  await sql`
+    ALTER TABLE proposals
+    ADD COLUMN IF NOT EXISTS cancel_reason TEXT
+  `;
   pollSchemaEnsured = true;
 }
 
@@ -84,6 +88,8 @@ export type ProposalRow = {
   description: string;
   kind: ProposalKind;
   status: string;
+  /** Причина скасування адміном; null якщо авто / не скасовано. */
+  cancel_reason: string | null;
   created_at: Date;
   ends_at: Date;
   author_username: string;
@@ -135,6 +141,11 @@ function mapProposalRow(
   const optVotes = options.reduce((s, o) => s + o.votes, 0);
   const total =
     kind === PROPOSAL_KIND_CHOICE ? optVotes : yes + no;
+  const rawReason = r.cancel_reason;
+  const cancelReason =
+    rawReason != null && String(rawReason).trim()
+      ? String(rawReason).trim()
+      : null;
   return {
     id: num(r.id),
     user_id: num(r.user_id),
@@ -142,6 +153,7 @@ function mapProposalRow(
     description: String(r.description ?? ""),
     kind,
     status: String(r.status ?? ""),
+    cancel_reason: cancelReason,
     created_at: asDate(r.created_at),
     ends_at: asDate(r.ends_at),
     author_username: String(r.author_username ?? ""),
@@ -426,6 +438,7 @@ export async function listProposalsForUser(
       p.description,
       COALESCE(p.kind, 'yes_no') AS kind,
       p.status,
+      p.cancel_reason,
       p.created_at,
       p.ends_at,
       COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
@@ -440,7 +453,7 @@ export async function listProposalsForUser(
     FROM proposals p
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
-    GROUP BY p.id, p.user_id, p.title, p.description, p.kind, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
+    GROUP BY p.id, p.user_id, p.title, p.description, p.kind, p.status, p.cancel_reason, p.created_at, p.ends_at, u.username, u.game_nickname
     ORDER BY p.created_at DESC
   `);
   const ids = rows.map((r) => num(r.id));
@@ -470,6 +483,7 @@ export async function getProposalForUser(
       p.description,
       COALESCE(p.kind, 'yes_no') AS kind,
       p.status,
+      p.cancel_reason,
       p.created_at,
       p.ends_at,
       COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
@@ -485,7 +499,7 @@ export async function getProposalForUser(
     INNER JOIN users u ON u.id = p.user_id
     LEFT JOIN votes v ON v.proposal_id = p.id
     WHERE p.id = ${id}
-    GROUP BY p.id, p.user_id, p.title, p.description, p.kind, p.status, p.created_at, p.ends_at, u.username, u.game_nickname
+    GROUP BY p.id, p.user_id, p.title, p.description, p.kind, p.status, p.cancel_reason, p.created_at, p.ends_at, u.username, u.game_nickname
     LIMIT 1
   `);
   if (!rows.length) return null;
@@ -516,6 +530,97 @@ export async function closeProposalByAuthor(
     RETURNING id
   `);
   return rows.length > 0;
+}
+
+export type AdminProposalListItem = {
+  id: number;
+  title: string;
+  description: string;
+  kind: ProposalKind;
+  status: string;
+  cancel_reason: string | null;
+  created_at: Date;
+  ends_at: Date;
+  author_username: string;
+  yes_votes: number;
+  no_votes: number;
+  total_votes: number;
+  options: ProposalOptionPublic[];
+};
+
+/** Список пропозицій для адмін-панелі (активні першими). */
+export async function listProposalsForAdmin(): Promise<AdminProposalListItem[]> {
+  await ensureAuthProviderColumns();
+  await ensurePollSchema();
+  await syncProposalLifecycle();
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT
+      p.id,
+      p.user_id,
+      p.title,
+      p.description,
+      COALESCE(p.kind, 'yes_no') AS kind,
+      p.status,
+      p.cancel_reason,
+      p.created_at,
+      p.ends_at,
+      COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS author_username,
+      COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes
+    FROM proposals p
+    INNER JOIN users u ON u.id = p.user_id
+    LEFT JOIN votes v ON v.proposal_id = p.id
+    GROUP BY p.id, p.user_id, p.title, p.description, p.kind, p.status, p.cancel_reason, p.created_at, p.ends_at, u.username, u.game_nickname
+    ORDER BY
+      CASE WHEN p.status = 'active' THEN 0 ELSE 1 END,
+      p.created_at DESC
+  `);
+  const ids = rows.map((r) => num(r.id));
+  const optionsMap = await loadOptionsByProposalIds(ids);
+  return rows.map((r) => {
+    const mapped = mapProposalRow(r, optionsMap.get(num(r.id)) ?? []);
+    return {
+      id: mapped.id,
+      title: mapped.title,
+      description: mapped.description,
+      kind: mapped.kind,
+      status: mapped.status,
+      cancel_reason: mapped.cancel_reason,
+      created_at: mapped.created_at,
+      ends_at: mapped.ends_at,
+      author_username: mapped.author_username,
+      yes_votes: mapped.yes_votes,
+      no_votes: mapped.no_votes,
+      total_votes: mapped.total_votes,
+      options: mapped.options,
+    };
+  });
+}
+
+/** Скасування активної пропозиції адміністрацією з причиною. */
+export async function cancelProposalByAdmin(
+  proposalId: number,
+  reason: string,
+): Promise<{ id: number; title: string; cancel_reason: string } | null> {
+  await ensurePollSchema();
+  const trimmed = reason.trim();
+  if (!trimmed) return null;
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    UPDATE proposals
+    SET status = 'cancelled',
+        cancel_reason = ${trimmed}
+    WHERE id = ${proposalId}
+      AND status = 'active'
+    RETURNING id, title, cancel_reason
+  `);
+  if (!rows.length) return null;
+  return {
+    id: num(rows[0]!.id),
+    title: String(rows[0]!.title ?? ""),
+    cancel_reason: String(rows[0]!.cancel_reason ?? trimmed).trim(),
+  };
 }
 
 /** Видалення пропозиції лише автором (голоси зникають через ON DELETE CASCADE). */

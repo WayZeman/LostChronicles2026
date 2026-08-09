@@ -282,6 +282,51 @@ export async function notifyProposalClosedTelegram(params: {
   return postTelegramHtml(html);
 }
 
+/** Скасування пропозиції адміністрацією серверу. */
+export async function notifyProposalAdminCancelledDiscord(params: {
+  title: string;
+  proposalId: number;
+  reason: string;
+}): Promise<boolean> {
+  const link = proposalUrl(params.proposalId);
+  const title = escapeDiscordBoldFragment(truncateTitle(params.title));
+  const reason = escapeDiscordBoldFragment(params.reason.trim());
+  return postDiscordWebhook({
+    embeds: [
+      {
+        title: "Пропозицію скасовано",
+        description:
+          `**${title}**\n\n` +
+          `Скасовано адміністрацією серверу.\n` +
+          `**Причина:** ${reason}\n\n` +
+          `[Відкрити пропозицію ↗](${link})`,
+        color: 0xed4245,
+        footer: { text: "Lost Chronicles" },
+      },
+    ],
+  });
+}
+
+export async function notifyProposalAdminCancelledTelegram(params: {
+  title: string;
+  proposalId: number;
+  reason: string;
+}): Promise<boolean> {
+  const link = proposalUrl(params.proposalId);
+  const title = escapeTelegramHtml(truncateTitle(params.title));
+  const reason = escapeTelegramHtml(params.reason.trim());
+  const safeLink = escapeTelegramHtml(link);
+
+  const html =
+    `<b>Пропозицію скасовано адміністрацією серверу</b>\n\n` +
+    `<b>${title}</b>\n\n` +
+    `<b>Причина:</b> ${reason}\n\n` +
+    `<a href="${safeLink}">Відкрити пропозицію ↗</a>\n\n` +
+    `<i>Lost Chronicles</i>`;
+
+  return postTelegramHtml(html);
+}
+
 /** Нічия з кворумом — голосування продовжено на N діб. */
 export async function notifyProposalTieExtendedDiscord(params: {
   title: string;

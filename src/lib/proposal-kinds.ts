@@ -30,8 +30,13 @@ export function choiceVerdictPlain(
   options: ProposalOptionPublic[],
   status: string,
   minVotes: number,
+  cancelReason?: string | null,
 ): string {
   if (status === "cancelled") {
+    const reason = cancelReason?.trim();
+    if (reason) {
+      return `Скасовано адміністрацією · ${reason}`;
+    }
     return `Голосування скасовано · менше ${minVotes} голосів`;
   }
   const total = options.reduce((s, o) => s + o.votes, 0);

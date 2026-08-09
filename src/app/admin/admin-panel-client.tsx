@@ -15,7 +15,7 @@ import {
 } from "@/lib/support-price-tiers";
 import { cn } from "@/lib/utils";
 
-type Tab = "faq" | "connect" | "support" | "voting" | "admins";
+type Tab = "faq" | "connect" | "support" | "voting" | "proposals" | "admins";
 
 type FaqDraft = { key: string; question: string; answer_html: string };
 
@@ -51,6 +51,22 @@ type AdminUser = {
   role: "user" | "admin";
 };
 
+type AdminProposal = {
+  id: number;
+  title: string;
+  description: string;
+  kind: string;
+  status: string;
+  cancel_reason: string | null;
+  created_at: string;
+  ends_at: string;
+  author_username: string;
+  yes_votes: number;
+  no_votes: number;
+  total_votes: number;
+  voting_open: boolean;
+};
+
 function newFaqKey(): string {
   return `faq-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
@@ -80,6 +96,11 @@ export function AdminPanelClient() {
   });
   const [supportCards, setSupportCards] = useState<SupportCardDraft[]>([]);
   const [users, setUsers] = useState<AdminUser[]>([]);
+  const [proposals, setProposals] = useState<AdminProposal[]>([]);
+  const [cancelReasons, setCancelReasons] = useState<Record<number, string>>(
+    {},
+  );
+  const [cancellingId, setCancellingId] = useState<number | null>(null);
 
   const loadAll = useCallback(async () => {
     try {
@@ -93,12 +114,14 @@ export function AdminPanelClient() {
       }
       setAllowed(true);
 
-      const [faqRes, settingsRes, cardsRes, usersRes] = await Promise.all([
-        fetch("/api/admin/faq", { credentials: "include" }),
-        fetch("/api/admin/settings", { credentials: "include" }),
-        fetch("/api/admin/support-cards", { credentials: "include" }),
-        fetch("/api/admin/users", { credentials: "include" }),
-      ]);
+      const [faqRes, settingsRes, cardsRes, usersRes, proposalsRes] =
+        await Promise.all([
+          fetch("/api/admin/faq", { credentials: "include" }),
+          fetch("/api/admin/settings", { credentials: "include" }),
+          fetch("/api/admin/support-cards", { credentials: "include" }),
+          fetch("/api/admin/users", { credentials: "include" }),
+          fetch("/api/admin/proposals", { credentials: "include" }),
+        ]);
 
       if (faqRes.ok) {
         const d = (await faqRes.json()) as {
@@ -155,6 +178,12 @@ export function AdminPanelClient() {
       if (usersRes.ok) {
         const d = (await usersRes.json()) as { users: AdminUser[] };
         setUsers(d.users ?? []);
+      }
+      if (proposalsRes.ok) {
+        const d = (await proposalsRes.json()) as {
+          proposals: AdminProposal[];
+        };
+        setProposals(d.proposals ?? []);
       }
     } catch {
       setAllowed(false);
@@ -382,6 +411,56 @@ export function AdminPanelClient() {
     setBusy(false);
   }
 
+  async function cancelProposal(proposalId: number) {
+    const reason = (cancelReasons[proposalId] ?? "").trim();
+    if (!reason) {
+      setErr("Вкажи причину скасування в полі примітки.");
+      setMsg(null);
+      return;
+    }
+    setCancellingId(proposalId);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/proposals/${proposalId}/cancel`, {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      const d = (await res.json()) as {
+        error?: string;
+        cancel_reason?: string;
+      };
+      if (!res.ok) {
+        setErr(d.error || "Не вдалося скасувати пропозицію");
+        setCancellingId(null);
+        return;
+      }
+      setProposals((prev) =>
+        prev.map((p) =>
+          p.id === proposalId
+            ? {
+                ...p,
+                status: "cancelled",
+                voting_open: false,
+                cancel_reason: d.cancel_reason ?? reason,
+              }
+            : p,
+        ),
+      );
+      setCancelReasons((prev) => {
+        const next = { ...prev };
+        delete next[proposalId];
+        return next;
+      });
+      setMsg("Пропозицію скасовано. Сповіщення надіслано в Telegram.");
+    } catch {
+      setErr("Мережа недоступна");
+    }
+    setCancellingId(null);
+  }
+
   if (allowed === null) {
     return (
       <main className={lcPageMainClass}>
@@ -415,6 +494,7 @@ export function AdminPanelClient() {
     { id: "connect", label: "Підключення" },
     { id: "support", label: "Підтримка" },
     { id: "voting", label: "Голосування" },
+    { id: "proposals", label: "Пропозиції" },
     { id: "admins", label: "Адміни" },
   ];
 
@@ -449,7 +529,7 @@ export function AdminPanelClient() {
               Керування сайтом
             </h1>
             <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
-              FAQ, підключення, підтримка та призначення адмінів.
+              FAQ, підключення, підтримка, пропозиції та призначення адмінів.
             </p>
           </header>
 
@@ -1103,6 +1183,106 @@ export function AdminPanelClient() {
                     Зберегти голосування
                   </button>
                 </div>
+              </div>
+            ) : null}
+
+            {tab === "proposals" ? (
+              <div className="space-y-3">
+                <p className="text-xs text-[var(--mc-text-muted)]">
+                  Активні пропозиції можна скасувати з причиною — у Telegram
+                  прийде сповіщення з текстом примітки.
+                </p>
+                {proposals.filter((p) => p.voting_open || p.status === "active")
+                  .length === 0 ? (
+                  <p className="text-sm text-[var(--mc-text-muted)]">
+                    Немає активних пропозицій.
+                  </p>
+                ) : (
+                  proposals
+                    .filter((p) => p.voting_open || p.status === "active")
+                    .map((p) => (
+                      <div
+                        key={p.id}
+                        className="space-y-2 rounded-lg border border-white/10 p-3"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-bold text-[var(--mc-text)]">
+                              {p.title}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-[var(--mc-text-muted)]">
+                              {p.author_username} · голосів: {p.total_votes} ·{" "}
+                              <Link
+                                href={`/proposals/${p.id}`}
+                                className="text-[var(--mc-net-green)] hover:underline"
+                              >
+                                відкрити
+                              </Link>
+                            </p>
+                          </div>
+                        </div>
+                        <label className="block space-y-1">
+                          <span className="text-[11px] font-semibold text-[var(--mc-text-muted)]">
+                            Примітка (причина скасування)
+                          </span>
+                          <textarea
+                            value={cancelReasons[p.id] ?? ""}
+                            onChange={(e) =>
+                              setCancelReasons((prev) => ({
+                                ...prev,
+                                [p.id]: e.target.value,
+                              }))
+                            }
+                            rows={2}
+                            maxLength={500}
+                            placeholder="Чому скасовуємо…"
+                            className="lc-focus-ring mc-input w-full resize-y px-2 py-1.5 text-sm"
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          disabled={busy || cancellingId === p.id}
+                          onClick={() => void cancelProposal(p.id)}
+                          className="lc-focus-ring inline-flex items-center gap-1 rounded-lg border border-rose-500/40 px-3 py-2 text-xs font-bold text-rose-100 disabled:opacity-50"
+                        >
+                          <Trash2 className="size-3.5" />
+                          {cancellingId === p.id
+                            ? "Скасовуємо…"
+                            : "Скасувати пропозицію"}
+                        </button>
+                      </div>
+                    ))
+                )}
+
+                {proposals.some(
+                  (p) =>
+                    p.status === "cancelled" && Boolean(p.cancel_reason),
+                ) ? (
+                  <div className="space-y-2 border-t border-white/10 pt-3">
+                    <p className="text-xs font-semibold text-[var(--mc-text-muted)]">
+                      Нещодавно скасовані адміном
+                    </p>
+                    {proposals
+                      .filter(
+                        (p) =>
+                          p.status === "cancelled" && Boolean(p.cancel_reason),
+                      )
+                      .slice(0, 8)
+                      .map((p) => (
+                        <div
+                          key={`cancelled-${p.id}`}
+                          className="rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2"
+                        >
+                          <p className="text-sm font-semibold text-[var(--mc-text)]">
+                            {p.title}
+                          </p>
+                          <p className="mt-0.5 text-[11px] text-rose-100/80">
+                            Причина: {p.cancel_reason}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                ) : null}
               </div>
             ) : null}
 

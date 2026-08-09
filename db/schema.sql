@@ -32,7 +32,9 @@ CREATE TABLE IF NOT EXISTS proposals (
     -- yes_no | choice
     kind VARCHAR(20) NOT NULL DEFAULT 'yes_no',
     status VARCHAR(50) NOT NULL DEFAULT 'active',
-    -- active | closed (результат) | cancelled (замало голосів після ends_at)
+    -- active | closed (результат) | cancelled (замало голосів або адмін)
+    -- Причина скасування адміном; NULL якщо авто через низьку явку
+    cancel_reason TEXT,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     ends_at TIMESTAMPTZ NOT NULL
 );

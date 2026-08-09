@@ -33,6 +33,7 @@ type ProposalDetail = {
   description: string;
   kind: ProposalKind;
   status: string;
+  cancel_reason: string | null;
   ends_at: string;
   author_username: string;
   yes_votes: number;
@@ -70,22 +71,32 @@ function VerdictBanner({
   no,
   kind,
   options,
+  cancelReason,
 }: {
   status: string;
   yes: number;
   no: number;
   kind: ProposalKind;
   options: ProposalOptionPublic[];
+  cancelReason?: string | null;
 }) {
   if (status === "cancelled") {
+    const reason = cancelReason?.trim();
     return (
       <div
         className="rounded-lg border border-rose-500/25 bg-rose-500/10 px-4 py-3 text-center"
         role="status"
       >
         <p className="text-sm font-semibold text-rose-100">
-          Скасовано · менше {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів
+          {reason
+            ? "Скасовано адміністрацією серверу"
+            : `Скасовано · менше ${PROPOSAL_MIN_VOTES_FOR_RESULT} голосів`}
         </p>
+        {reason ? (
+          <p className="mt-1.5 text-sm text-rose-100/85">
+            Причина: {reason}
+          </p>
+        ) : null}
       </div>
     );
   }
@@ -99,7 +110,12 @@ function VerdictBanner({
         role="status"
       >
         <p className="text-sm font-semibold text-emerald-100">
-          {choiceVerdictPlain(options, status, PROPOSAL_MIN_VOTES_FOR_RESULT)}
+          {choiceVerdictPlain(
+            options,
+            status,
+            PROPOSAL_MIN_VOTES_FOR_RESULT,
+            cancelReason,
+          )}
         </p>
       </div>
     );
@@ -690,6 +706,7 @@ export default function ProposalDetailPage() {
                 no={proposal.no_votes}
                 kind={proposal.kind ?? "yes_no"}
                 options={proposal.options ?? []}
+                cancelReason={proposal.cancel_reason}
               />
             ) : null}
 

@@ -81,6 +81,7 @@ export async function GET(
         user_vote: p.user_vote,
         user_option_id: p.user_option_id,
         options: p.options,
+        cancel_reason: p.cancel_reason,
         voting_open: isProposalVotingOpen(p),
         is_author: userId != null && userId === p.user_id,
         ...voters,

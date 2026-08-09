@@ -31,6 +31,7 @@ function serializeProposal(p: Awaited<ReturnType<typeof listProposalsForUser>>[n
     description: p.description,
     kind: p.kind,
     status: p.status,
+    cancel_reason: p.cancel_reason,
     created_at: p.created_at.toISOString(),
     ends_at: p.ends_at.toISOString(),
     author_username: p.author_username,
