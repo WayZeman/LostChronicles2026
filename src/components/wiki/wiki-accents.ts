@@ -109,7 +109,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва (Домініон Земана)",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Державні_Утворення":
       return {
@@ -118,7 +118,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва утворення",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Мегаполіси":
       return {
@@ -127,7 +127,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва мегаполіса",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Міста":
       return {
@@ -136,7 +136,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва міста",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Поселення":
       return {
@@ -145,7 +145,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва поселення",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Гравці":
       return {
@@ -154,7 +154,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Нікнейм / імʼя",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Лор_серверу":
       return {
@@ -163,7 +163,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва розділу лору",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Історія_проєкту":
       return {
@@ -172,7 +172,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     case "Довідник_цін":
       return {
@@ -181,7 +181,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
     default:
       return {
@@ -190,7 +190,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         titlePlaceholder: "Назва",
         blurbPlaceholder: "Короткий опис на картці — опційно",
         createLabel: "Створити картку і сторінку",
-        successHint: "Картку додано, відкрито сторінку для редагування.",
+        successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };
   }
 }

@@ -23,6 +23,8 @@ type Props = {
   onBack?: () => void;
   onOpenPage?: (page: WikiCategoryPageRow) => void;
   headerActions?: ReactNode;
+  /** Форма створення / редагування картки — зверху, під шапкою. */
+  topSlot?: ReactNode;
   footer?: ReactNode;
   pageActions?: (page: WikiCategoryPageRow) => ReactNode;
 };
@@ -42,6 +44,7 @@ export function WikiCategoryView({
   onBack,
   onOpenPage,
   headerActions,
+  topSlot,
   footer,
   pageActions,
 }: Props) {
@@ -101,14 +104,25 @@ export function WikiCategoryView({
                   {category.description}
                 </p>
               ) : null}
+              {editMode ? (
+                <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-[var(--mc-text-subtle)]">
+                  Клік по обкладинці — текст сторінки. Кнопка «Редагувати» —
+                  фото, код і опис картки.
+                </p>
+              ) : null}
             </div>
           </div>
         </header>
       </SoftAppear>
 
+      {topSlot ? <div className="relative z-10">{topSlot}</div> : null}
+
       {category.pages.length === 0 ? (
         <p className="border border-dashed border-white/15 px-4 py-10 text-center text-sm text-[var(--mc-text-muted)]">
           У цьому розділі ще немає записів.
+          {editMode
+            ? " Додай першу картку формою зверху."
+            : null}
         </p>
       ) : (
         <SoftAppear slow>
@@ -176,7 +190,7 @@ export function WikiCategoryView({
                     <span className="flex-1" />
                   )}
                   <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#ffd54f]">
-                    Читати
+                    {editMode ? "Відкрити сторінку" : "Читати"}
                     <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" />
                   </span>
                 </>

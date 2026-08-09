@@ -46,6 +46,12 @@ export function AdminWikiCms() {
   const [newPageBlurb, setNewPageBlurb] = useState("");
   const [newPageImageUrl, setNewPageImageUrl] = useState("");
 
+  const [editingCardId, setEditingCardId] = useState<number | null>(null);
+  const [editCardTitle, setEditCardTitle] = useState("");
+  const [editCardCode, setEditCardCode] = useState("");
+  const [editCardBlurb, setEditCardBlurb] = useState("");
+  const [editCardImageUrl, setEditCardImageUrl] = useState("");
+
   const [pageTitle, setPageTitle] = useState("");
   const [pageHtml, setPageHtml] = useState("");
   const [pageSummary, setPageSummary] = useState("");
@@ -54,6 +60,33 @@ export function AdminWikiCms() {
   const [editingPage, setEditingPage] = useState(false);
   const cardPhotoInputRef = useRef<HTMLInputElement>(null);
   const cardPhotoLinkIdRef = useRef<number | null>(null);
+
+  function resetCreateForm() {
+    setNewPageTitle("");
+    setNewPageCode("");
+    setNewPageBlurb("");
+    setNewPageImageUrl("");
+  }
+
+  function closeCardEditor() {
+    setEditingCardId(null);
+    setEditCardTitle("");
+    setEditCardCode("");
+    setEditCardBlurb("");
+    setEditCardImageUrl("");
+  }
+
+  function openCardEditor(page: WikiCategoryPageRow) {
+    setAddingPage(false);
+    resetCreateForm();
+    setEditingCardId(page.id);
+    setEditCardTitle(page.page_title);
+    setEditCardCode(page.short_code ?? "");
+    setEditCardBlurb(page.card_blurb ?? "");
+    setEditCardImageUrl(page.image_url ?? "");
+    setMsg(null);
+    setErr(null);
+  }
 
   const loadTree = useCallback(async () => {
     const res = await fetch("/api/admin/wiki/structure", {
@@ -94,6 +127,8 @@ export function AdminWikiCms() {
       setCategory(d.category);
       setView({ kind: "category", categoryId: cat.id, slug: cat.slug });
       setAddingPage(false);
+      closeCardEditor();
+      resetCreateForm();
     } catch {
       setErr("Мережа недоступна");
     }
@@ -291,25 +326,62 @@ export function AdminWikiCms() {
         return;
       }
       if (d.category) setCategory(d.category);
-      setNewPageTitle("");
-      setNewPageCode("");
-      setNewPageBlurb("");
-      setNewPageImageUrl("");
+      resetCreateForm();
       setAddingPage(false);
       setMsg(copy.successHint);
 
       const linkRow = d.category?.pages.find((p) => p.id === d.linkId);
       if (linkRow) {
-        await openPage(linkRow);
-      } else {
-        setPageSlug(d.page.slug);
-        setPageTitle(d.page.title);
-        setPageHtml(d.page.content_html ?? `<h2>${d.page.title}</h2><p></p>`);
-        setPageSummary(d.page.summary ?? "");
-        setPageSocial(d.page.social_links ?? []);
-        setEditingPage(true);
-        setView({ kind: "page", slug: d.page.slug, fromCategory: true });
+        openCardEditor(linkRow);
       }
+    } catch {
+      setErr("Мережа недоступна");
+    }
+    setBusy(false);
+  }
+
+  async function saveCardEditor() {
+    if (editingCardId == null) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(
+        `/api/admin/wiki/category-pages/${editingCardId}`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            short_code: editCardCode.trim(),
+            card_blurb: editCardBlurb.trim(),
+            image_url: editCardImageUrl.trim(),
+          }),
+        },
+      );
+      if (!res.ok) {
+        setErr("Не вдалося зберегти картку");
+        setBusy(false);
+        return;
+      }
+      setCategory((prev) =>
+        prev
+          ? {
+              ...prev,
+              pages: prev.pages.map((p) =>
+                p.id === editingCardId
+                  ? {
+                      ...p,
+                      short_code: editCardCode.trim(),
+                      card_blurb: editCardBlurb.trim(),
+                      image_url: editCardImageUrl.trim(),
+                    }
+                  : p,
+              ),
+            }
+          : prev,
+      );
+      setMsg("Картку збережено. Щоб змінити текст статті — клікніть на обкладинку.");
+      closeCardEditor();
     } catch {
       setErr("Мережа недоступна");
     }
@@ -345,6 +417,35 @@ export function AdminWikiCms() {
     setBusy(false);
   }
 
+  async function onEditCardPhotoFile(file: File | null) {
+    if (!file) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const dataUrl = await compressImageFile(file, {
+        maxEdge: 1200,
+        quality: 0.8,
+      });
+      const up = await fetch("/api/admin/media", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ dataUrl }),
+      });
+      const d = (await up.json()) as { url?: string; error?: string };
+      if (!up.ok || !d.url) {
+        setErr(d.error || "Не вдалося завантажити фото");
+        setBusy(false);
+        return;
+      }
+      setEditCardImageUrl(d.url);
+      setMsg("Фото готове — натисни «Зберегти картку».");
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "Не вдалося завантажити фото");
+    }
+    setBusy(false);
+  }
+
   async function removePageLink(linkId: number) {
     if (!window.confirm("Прибрати сторінку з цього блоку?")) return;
     setBusy(true);
@@ -359,6 +460,7 @@ export function AdminWikiCms() {
         return;
       }
       if (view.kind === "category" && category) {
+        if (editingCardId === linkId) closeCardEditor();
         await openCategory({
           id: category.id,
           section_id: category.section_id,
@@ -400,6 +502,9 @@ export function AdminWikiCms() {
             }
           : prev,
       );
+      if (editingCardId === linkId) {
+        setEditCardImageUrl(image_url);
+      }
       setMsg(image_url ? "Фото картки збережено." : "Повернено стандартну обкладинку.");
     } catch {
       setErr("Мережа недоступна");
@@ -667,6 +772,8 @@ export function AdminWikiCms() {
           onBack={() => {
             setView({ kind: "home" });
             setCategory(null);
+            closeCardEditor();
+            setAddingPage(false);
             void loadTree();
           }}
           onOpenPage={(p) => void openPage(p)}
@@ -677,11 +784,11 @@ export function AdminWikiCms() {
                 type="button"
                 disabled={busy}
                 onClick={() => {
-                  setAddingPage((v) => !v);
-                  setNewPageTitle("");
-                  setNewPageCode("");
-                  setNewPageBlurb("");
-                  setNewPageImageUrl("");
+                  closeCardEditor();
+                  setAddingPage((v) => {
+                    if (v) resetCreateForm();
+                    return !v;
+                  });
                 }}
                 className={cn(
                   btnSm,
@@ -700,48 +807,17 @@ export function AdminWikiCms() {
                 disabled={busy}
                 onClick={(e) => {
                   e.stopPropagation();
-                  void openPage(p);
-                }}
-                className={cn(
-                  btnSm,
-                  "inline-flex items-center gap-1 border-white/15 text-[var(--mc-text)]",
-                )}
-              >
-                <Pencil className="size-3" />
-                Редагувати
-              </button>
-              <button
-                type="button"
-                disabled={busy}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  cardPhotoLinkIdRef.current = p.id;
-                  cardPhotoInputRef.current?.click();
+                  openCardEditor(p);
                 }}
                 className={cn(
                   btnSm,
                   "inline-flex items-center gap-1 border-sky-400/30 text-sky-100",
+                  editingCardId === p.id && "bg-sky-400/15",
                 )}
               >
-                <ImagePlus className="size-3" />
-                {p.image_url ? "Змінити фото" : "Своє фото"}
+                <Pencil className="size-3" />
+                {editingCardId === p.id ? "Картка…" : "Редагувати картку"}
               </button>
-              {p.image_url ? (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    void setCardImage(p.id, "");
-                  }}
-                  className={cn(
-                    btnSm,
-                    "border-white/15 text-[var(--mc-text-muted)]",
-                  )}
-                >
-                  Стандартне
-                </button>
-              ) : null}
               <button
                 type="button"
                 disabled={busy}
@@ -755,8 +831,15 @@ export function AdminWikiCms() {
               </button>
             </>
           )}
-          footer={(() => {
+          topSlot={(() => {
             const copy = wikiCategoryCreateCopy(category.slug);
+            const showCreate =
+              addingPage || (category.pages.length === 0 && editingCardId == null);
+            const editingPageRow =
+              editingCardId != null
+                ? category.pages.find((p) => p.id === editingCardId)
+                : null;
+
             return (
               <>
                 <input
@@ -771,20 +854,126 @@ export function AdminWikiCms() {
                     e.target.value = "";
                     if (linkId != null) {
                       void onCardPhotoFile(linkId, file);
-                    } else if (addingPage) {
+                    } else if (showCreate) {
                       void onNewCardPhotoFile(file);
+                    } else if (editingCardId != null) {
+                      void onEditCardPhotoFile(file);
                     }
                   }}
                 />
-                {addingPage || category.pages.length === 0 ? (
-                  <div className="mt-4 space-y-3 rounded-xl border border-[var(--mc-net-green)]/30 bg-black/30 p-3 sm:p-4">
+
+                {editingPageRow ? (
+                  <div className="mb-2 space-y-3 rounded-xl border border-sky-400/35 bg-black/35 p-3 sm:p-4">
+                    <div>
+                      <p className="text-xs font-bold text-sky-200">
+                        Редагування картки · {editCardTitle || editingPageRow.page_title}
+                      </p>
+                      <p className="mt-1 text-[11px] text-[var(--mc-text-subtle)]">
+                        Тут лише обкладинка, код і короткий текст на картці.
+                        Текст статті — клік по обкладинці в списку нижче.
+                      </p>
+                    </div>
+                    <input
+                      value={editCardCode}
+                      onChange={(e) => setEditCardCode(e.target.value)}
+                      placeholder="Код на картці (ДЗ) — опційно"
+                      className="lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]"
+                    />
+                    <input
+                      value={editCardBlurb}
+                      onChange={(e) => setEditCardBlurb(e.target.value)}
+                      placeholder={copy.blurbPlaceholder}
+                      className="lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]"
+                    />
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => {
+                          cardPhotoLinkIdRef.current = null;
+                          cardPhotoInputRef.current?.click();
+                        }}
+                        className={cn(
+                          btnSm,
+                          "inline-flex items-center gap-1 border-sky-400/30 text-sky-100",
+                        )}
+                      >
+                        <ImagePlus className="size-3" />
+                        {editCardImageUrl ? "Змінити фото" : "Своє фото"}
+                      </button>
+                      {editCardImageUrl ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => setEditCardImageUrl("")}
+                          className={cn(
+                            btnSm,
+                            "border-white/15 text-[var(--mc-text-muted)]",
+                          )}
+                        >
+                          Стандартна обкладинка
+                        </button>
+                      ) : (
+                        <span className="text-[10px] text-[var(--mc-text-subtle)]">
+                          Без фото — стандартна обкладинка розділу
+                        </span>
+                      )}
+                    </div>
+                    {editCardImageUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={editCardImageUrl}
+                        alt=""
+                        className="max-h-28 rounded-md border border-white/10 object-cover"
+                      />
+                    ) : null}
+                    <div className="flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void saveCardEditor()}
+                        className={cn(
+                          btnSm,
+                          "border-sky-400/40 bg-sky-400/10 px-3 py-1.5 text-sky-100",
+                        )}
+                      >
+                        {busy ? "Збереження…" : "Зберегти картку"}
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => closeCardEditor()}
+                        className={cn(
+                          btnSm,
+                          "border-white/15 text-[var(--mc-text-muted)]",
+                        )}
+                      >
+                        Скасувати
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => void openPage(editingPageRow)}
+                        className={cn(
+                          btnSm,
+                          "border-[var(--mc-net-green)]/35 text-[var(--mc-net-green)]",
+                        )}
+                      >
+                        Відкрити сторінку
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
+
+                {showCreate ? (
+                  <div className="mb-2 space-y-3 rounded-xl border border-[var(--mc-net-green)]/30 bg-black/30 p-3 sm:p-4">
                     <div>
                       <p className="text-xs font-bold text-[var(--mc-net-green)]">
                         {copy.formTitle}
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--mc-text-subtle)]">
-                        Спочатку зʼявляється картка в реєстрі «{category.title}»,
-                        одразу створюється сторінка з тією ж назвою.
+                        Зʼявляється картка в «{category.title}» і порожня сторінка
+                        з тією ж назвою. Далі можна одразу підправити обкладинку.
                       </p>
                     </div>
                     <input
@@ -864,7 +1053,7 @@ export function AdminWikiCms() {
                           type="button"
                           onClick={() => {
                             setAddingPage(false);
-                            setNewPageImageUrl("");
+                            resetCreateForm();
                           }}
                           className={cn(
                             btnSm,
