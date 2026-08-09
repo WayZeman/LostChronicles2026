@@ -40,6 +40,7 @@ export type WikiCategoryRow = {
   title: string;
   description: string;
   sort_order: number;
+  page_count?: number;
 };
 
 export type WikiCategoryPageRow = {
@@ -48,6 +49,7 @@ export type WikiCategoryPageRow = {
   page_id: number;
   short_code: string;
   card_blurb: string;
+  image_url: string;
   sort_order: number;
   page_slug: string;
   page_title: string;
@@ -105,9 +107,14 @@ export async function ensureWikiStructureTables(): Promise<void> {
       page_id INT NOT NULL REFERENCES wiki_pages (id) ON DELETE CASCADE,
       short_code VARCHAR(32) NOT NULL DEFAULT '',
       card_blurb TEXT NOT NULL DEFAULT '',
+      image_url TEXT NOT NULL DEFAULT '',
       sort_order INT NOT NULL DEFAULT 0,
       CONSTRAINT wiki_category_pages_uidx UNIQUE (category_id, page_id)
     )
+  `;
+  await sql`
+    ALTER TABLE wiki_category_pages
+    ADD COLUMN IF NOT EXISTS image_url TEXT NOT NULL DEFAULT ''
   `;
   await sql`
     CREATE INDEX IF NOT EXISTS wiki_category_pages_cat_idx
@@ -184,6 +191,10 @@ function mapCategory(r: Record<string, unknown>): WikiCategoryRow {
     title: String(r.title ?? ""),
     description: String(r.description ?? ""),
     sort_order: num(r.sort_order),
+    page_count:
+      r.page_count === undefined || r.page_count === null
+        ? undefined
+        : num(r.page_count),
   };
 }
 
@@ -197,9 +208,14 @@ export async function getWikiHomeTree(): Promise<WikiHomeTree> {
   `).map(mapSection);
 
   const categories = rowsOf(await sql`
-    SELECT id, section_id, slug, title, description, sort_order
-    FROM wiki_categories
-    ORDER BY sort_order ASC, id ASC
+    SELECT
+      c.id, c.section_id, c.slug, c.title, c.description, c.sort_order,
+      (
+        SELECT count(*)::int FROM wiki_category_pages cp
+        WHERE cp.category_id = c.id
+      ) AS page_count
+    FROM wiki_categories c
+    ORDER BY c.sort_order ASC, c.id ASC
   `).map(mapCategory);
 
   return {
@@ -230,7 +246,8 @@ export async function getWikiCategoryBySlug(
 
   const pages = rowsOf(await sql`
     SELECT
-      cp.id, cp.category_id, cp.page_id, cp.short_code, cp.card_blurb, cp.sort_order,
+      cp.id, cp.category_id, cp.page_id, cp.short_code, cp.card_blurb,
+      coalesce(cp.image_url, '') AS image_url, cp.sort_order,
       p.slug AS page_slug, p.title AS page_title, p.summary AS page_summary
     FROM wiki_category_pages cp
     JOIN wiki_pages p ON p.id = cp.page_id
@@ -242,6 +259,7 @@ export async function getWikiCategoryBySlug(
     page_id: num(r.page_id),
     short_code: String(r.short_code ?? ""),
     card_blurb: String(r.card_blurb ?? ""),
+    image_url: String(r.image_url ?? ""),
     sort_order: num(r.sort_order),
     page_slug: String(r.page_slug ?? ""),
     page_title: String(r.page_title ?? ""),
@@ -496,12 +514,18 @@ export async function linkExistingPageToCategory(input: {
 
 export async function updateCategoryPageLink(
   linkId: number,
-  input: { short_code?: string; card_blurb?: string; sort_order?: number },
+  input: {
+    short_code?: string;
+    card_blurb?: string;
+    image_url?: string;
+    sort_order?: number;
+  },
 ): Promise<boolean> {
   await ensureWikiStructureTables();
   const sql = getSql();
   const existing = rowsOf(await sql`
-    SELECT id, short_code, card_blurb, sort_order FROM wiki_category_pages WHERE id = ${linkId} LIMIT 1
+    SELECT id, short_code, card_blurb, image_url, sort_order
+    FROM wiki_category_pages WHERE id = ${linkId} LIMIT 1
   `)[0];
   if (!existing) return false;
   await sql`
@@ -515,6 +539,11 @@ export async function updateCategoryPageLink(
         input.card_blurb !== undefined
           ? input.card_blurb.trim()
           : String(existing.card_blurb)
+      },
+      image_url = ${
+        input.image_url !== undefined
+          ? input.image_url.trim()
+          : String(existing.image_url ?? "")
       },
       sort_order = ${
         input.sort_order !== undefined

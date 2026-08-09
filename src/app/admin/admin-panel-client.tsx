@@ -128,18 +128,26 @@ export function AdminPanelClient() {
     {},
   );
   const [cancellingId, setCancellingId] = useState<number | null>(null);
+  const [isFullAdmin, setIsFullAdmin] = useState(false);
 
   const loadAll = useCallback(async () => {
     try {
       const meRes = await fetch("/api/auth/me", { credentials: "include" });
       const me = (await meRes.json()) as {
-        user: { isAdmin?: boolean } | null;
+        user: { isAdmin?: boolean; canEditWiki?: boolean } | null;
       };
-      if (!me.user?.isAdmin) {
+      const fullAdmin = Boolean(me.user?.isAdmin);
+      const wikiAccess = Boolean(me.user?.canEditWiki || me.user?.isAdmin);
+      if (!wikiAccess) {
         setAllowed(false);
         return;
       }
+      setIsFullAdmin(fullAdmin);
       setAllowed(true);
+      if (!fullAdmin) {
+        setTab("wiki");
+        return;
+      }
 
       const [faqRes, settingsRes, cardsRes, usersRes, proposalsRes] =
         await Promise.all([
@@ -219,6 +227,10 @@ export function AdminPanelClient() {
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
+      if (!isFullAdmin) {
+        setTab("wiki");
+        return;
+      }
       const t = searchParams.get("tab");
       if (
         t === "faq" ||
@@ -233,7 +245,7 @@ export function AdminPanelClient() {
       }
     });
     return () => cancelAnimationFrame(id);
-  }, [searchParams]);
+  }, [searchParams, isFullAdmin]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -530,7 +542,7 @@ export function AdminPanelClient() {
       <main className={lcPageMainClass}>
         <div className="site-container mx-auto max-w-lg px-3 py-12 text-center">
           <p className="text-[var(--mc-text-muted)]">
-            Доступ лише для адміністраторів.
+            Доступ лише для адміністраторів та вікі-редакторів.
           </p>
           <Link
             href="/"
@@ -543,15 +555,17 @@ export function AdminPanelClient() {
     );
   }
 
-  const tabs: { id: Tab; label: string }[] = [
-    { id: "faq", label: "FAQ" },
-    { id: "connect", label: "Підключення" },
-    { id: "support", label: "Підтримка" },
-    { id: "voting", label: "Голосування" },
-    { id: "proposals", label: "Пропозиції" },
-    { id: "wiki", label: "Вікі" },
-    { id: "admins", label: "Ролі" },
-  ];
+  const tabs: { id: Tab; label: string }[] = isFullAdmin
+    ? [
+        { id: "faq", label: "FAQ" },
+        { id: "connect", label: "Підключення" },
+        { id: "support", label: "Підтримка" },
+        { id: "voting", label: "Голосування" },
+        { id: "proposals", label: "Пропозиції" },
+        { id: "wiki", label: "Вікі" },
+        { id: "admins", label: "Ролі" },
+      ]
+    : [{ id: "wiki", label: "Вікі" }];
 
   async function onCardImageFile(idx: number, file: File | null) {
     if (!file) return;
@@ -571,21 +585,23 @@ export function AdminPanelClient() {
 
   return (
     <main className={lcPageMainClass}>
-      <div className="site-container mx-auto w-full max-w-3xl px-3 py-8 sm:px-4 sm:py-12">
+      <div className="mx-auto w-full max-w-none px-3 py-6 sm:px-6 sm:py-8 lg:px-8">
         <SoftAppear>
-          <header className="mb-6 text-center sm:mb-8 sm:text-left">
-            <Link
-              href="/"
-              className="text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
-            >
-              ← На головну
-            </Link>
-            <h1 className="lc-hero-title mt-3 text-2xl font-extrabold text-[var(--mc-text)] sm:text-3xl">
-              Керування сайтом
-            </h1>
-            <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
-              FAQ, підключення, підтримка, пропозиції та призначення адмінів.
-            </p>
+          <header className="mb-5 flex flex-wrap items-end justify-between gap-3 sm:mb-6">
+            <div>
+              <Link
+                href="/"
+                className="text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
+              >
+                ← На головну
+              </Link>
+              <h1 className="lc-hero-title mt-2 text-2xl font-extrabold text-[var(--mc-text)] sm:text-3xl">
+                Керування сайтом
+              </h1>
+              <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
+                FAQ, підключення, підтримка, вікі, пропозиції та ролі.
+              </p>
+            </div>
           </header>
 
           <div className="mb-4 flex flex-wrap gap-2">
@@ -621,7 +637,12 @@ export function AdminPanelClient() {
             </p>
           ) : null}
 
-          <div className={cn(lcGlassPanelClass, "!p-4 sm:!p-6")}>
+          <div
+            className={cn(
+              lcGlassPanelClass,
+              tab === "wiki" ? "!p-3 sm:!p-5 lg:!p-6 min-h-[70vh]" : "!p-4 sm:!p-6",
+            )}
+          >
             {tab === "faq" ? (
               <div className="space-y-4">
                 <p className="text-xs text-[var(--mc-text-muted)]">

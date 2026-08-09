@@ -1,19 +1,17 @@
 import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
+import { ArrowLeft } from "lucide-react";
 import { isWikiHomeSlug } from "@/lib/wiki-home";
 import {
   fetchRpNewsWikiContent,
   isRpNewsWikiSlug,
 } from "@/lib/telegram-rp-news";
-import {
-  getWikiPageBySlug,
-  requireWikiEditorUserId,
-} from "@/lib/wiki-pages";
+import { getWikiPageBySlug } from "@/lib/wiki-pages";
 import {
   getWikiCategoryBySlug,
   parseSocialLinks,
   seedWikiStructureIfEmpty,
 } from "@/lib/wiki-structure";
-import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import {
   lcPageContainerClass,
   lcPageMainClass,
@@ -22,8 +20,6 @@ import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { WikiCategoryView } from "@/components/wiki/WikiCategoryView";
 import { WikiArticleView } from "@/components/wiki/WikiArticleView";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 
 export const dynamic = "force-dynamic";
 
@@ -39,10 +35,6 @@ export default async function WikiArticlePage({
 
   await seedWikiStructureIfEmpty();
 
-  const canEdit = Boolean(
-    await requireWikiEditorUserId(await getSessionUserIdFromCookies()),
-  );
-
   if (isRpNewsWikiSlug(slug)) {
     const rp = await fetchRpNewsWikiContent();
     if (!rp) return notFound();
@@ -50,7 +42,7 @@ export default async function WikiArticlePage({
     return (
       <main className={lcPageMainClass}>
         <div className={lcPageContainerClass}>
-          <div className="mb-5 flex flex-wrap items-center justify-between gap-3 sm:mb-8">
+          <div className="mb-5 sm:mb-8">
             <Link
               href="/wiki"
               className="lc-focus-ring inline-flex items-center gap-2 text-sm font-bold text-[var(--mc-text-muted)] transition-colors hover:text-[var(--mc-net-green)]"
@@ -73,11 +65,36 @@ export default async function WikiArticlePage({
 
   const category = await getWikiCategoryBySlug(slug);
   if (category) {
+    // Якщо в блоці лише сама індексна сторінка (напр. Довідник цін) — показуємо статтю одразу
+    const onlySelf =
+      category.pages.length === 1 &&
+      category.pages[0]!.page_slug.toLowerCase() === category.slug.toLowerCase();
+    if (onlySelf) {
+      const page = await getWikiPageBySlug(category.slug);
+      if (page) {
+        return (
+          <main className={lcPageMainClass}>
+            <div className={lcPageContainerClass}>
+              <WikiContentFrame>
+                <WikiArticleView
+                  title={page.title}
+                  slug={page.slug}
+                  html={page.content_html}
+                  summary={page.summary}
+                  socialLinks={parseSocialLinks(page.social_links_raw)}
+                />
+              </WikiContentFrame>
+            </div>
+          </main>
+        );
+      }
+    }
+
     return (
       <main className={lcPageMainClass}>
         <div className={lcPageContainerClass}>
           <WikiContentFrame>
-            <WikiCategoryView category={category} canEdit={canEdit} />
+            <WikiCategoryView category={category} />
           </WikiContentFrame>
         </div>
       </main>
@@ -97,7 +114,6 @@ export default async function WikiArticlePage({
             html={page.content_html}
             summary={page.summary}
             socialLinks={parseSocialLinks(page.social_links_raw)}
-            canEdit={canEdit}
           />
         </WikiContentFrame>
       </div>

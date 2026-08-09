@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { requireAdminUserId } from "@/lib/site-content";
+import { requireWikiEditorUserId } from "@/lib/wiki-pages";
 import {
   removePageFromCategory,
   updateCategoryPageLink,
@@ -12,7 +12,7 @@ type Ctx = { params: Promise<{ linkId: string }> };
 
 export async function PATCH(req: Request, ctx: Ctx) {
   try {
-    const userId = await requireAdminUserId(
+    const userId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!userId) {
@@ -22,6 +22,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     const body = (await req.json()) as {
       short_code?: string;
       card_blurb?: string;
+      image_url?: string;
       sort_order?: number;
     };
     const ok = await updateCategoryPageLink(linkId, body);
@@ -36,7 +37,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   try {
-    const userId = await requireAdminUserId(
+    const userId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!userId) {

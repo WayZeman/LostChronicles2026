@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { requireAdminUserId } from "@/lib/site-content";
+import { requireWikiEditorUserId } from "@/lib/wiki-pages";
 import {
   createWikiCategory,
   createWikiSection,
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export async function GET() {
   try {
-    const adminId = await requireAdminUserId(
+    const adminId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!adminId) {
@@ -31,7 +31,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
-    const userId = await requireAdminUserId(
+    const userId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!userId) {

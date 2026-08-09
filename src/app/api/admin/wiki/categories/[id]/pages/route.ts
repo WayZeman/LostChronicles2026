@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { requireAdminUserId } from "@/lib/site-content";
+import { requireWikiEditorUserId } from "@/lib/wiki-pages";
 import {
   addPageToCategory,
   getWikiCategoryBySlug,
@@ -14,7 +14,7 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function POST(req: Request, ctx: Ctx) {
   try {
-    const userId = await requireAdminUserId(
+    const userId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!userId) {

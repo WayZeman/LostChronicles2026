@@ -94,7 +94,7 @@ export function WikiSearchBox({
             setTouched(true);
           }}
           placeholder={placeholder}
-          className="mc-input w-full py-2.5 pl-9 pr-3 text-sm"
+          className="mc-input w-full border-[#ecaf2d]/25 py-2.5 pl-9 pr-3 text-sm focus:border-[#ecaf2d]/55"
           autoComplete="off"
         />
       </div>
@@ -104,14 +104,14 @@ export function WikiSearchBox({
       ) : null}
 
       {results.length > 0 ? (
-        <ul className="mt-2 divide-y divide-[var(--mc-border-card)] border border-[var(--mc-border-card)]">
+        <ul className="mt-2 divide-y divide-white/10 border border-white/12 bg-black/40">
           {results.map((result) => (
             <li key={result.href}>
               <Link
                 href={`${result.href}?q=${encodeURIComponent(query.trim())}`}
                 className={cn(
                   "lc-focus-ring block px-3 py-2.5 transition-colors",
-                  "hover:bg-[color-mix(in_srgb,#fff_4%,transparent)]",
+                  "hover:bg-[color-mix(in_srgb,var(--mc-net-green)_8%,transparent)]",
                 )}
               >
                 <div className="text-sm font-semibold text-[var(--mc-text)]">

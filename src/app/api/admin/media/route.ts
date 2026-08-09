@@ -1,13 +1,13 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { requireAdminUserId } from "@/lib/site-content";
 import { storeDataUrlAsMedia } from "@/lib/site-media";
+import { requireWikiEditorUserId } from "@/lib/wiki-pages";
 
 export const dynamic = "force-dynamic";
 
 export async function POST(req: Request) {
   try {
-    const userId = await requireAdminUserId(
+    const userId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!userId) {

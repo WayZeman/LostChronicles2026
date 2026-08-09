@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { requireAdminUserId } from "@/lib/site-content";
+import { requireWikiEditorUserId } from "@/lib/wiki-pages";
 import {
   deleteWikiCategory,
   getWikiCategoryBySlug,
@@ -35,7 +35,7 @@ export async function GET(_req: Request, ctx: Ctx) {
 
 export async function PATCH(req: Request, ctx: Ctx) {
   try {
-    const userId = await requireAdminUserId(
+    const userId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!userId) {
@@ -63,7 +63,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
 
 export async function DELETE(_req: Request, ctx: Ctx) {
   try {
-    const userId = await requireAdminUserId(
+    const userId = await requireWikiEditorUserId(
       await getSessionUserIdFromCookies(),
     );
     if (!userId) {
