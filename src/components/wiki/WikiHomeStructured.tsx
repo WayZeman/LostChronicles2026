@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import type { WikiCategoryRow, WikiHomeTree } from "@/lib/wiki-structure";
 import { SoftAppear } from "@/components/site/SoftAppear";
@@ -104,11 +105,12 @@ export function WikiHomeStructured({
                 const body = (
                   <>
                     <div className="relative -mx-4 -mt-4 mb-3 aspect-[16/10] overflow-hidden border-b border-white/10 bg-black/50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
+                      <Image
                         src={wikiDefaultCoverForSlug(cat.slug)}
                         alt=""
-                        className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                        fill
+                        sizes="(max-width: 640px) 100vw, 50vw"
+                        className="object-cover transition duration-300 group-hover:scale-[1.03]"
                       />
                       <span
                         className={cn(

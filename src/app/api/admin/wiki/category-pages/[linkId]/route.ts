@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { requireWikiEditorUserId } from "@/lib/wiki-pages";
+import { revalidateWikiPublic } from "@/lib/public-content-cache";
 import {
   removePageFromCategory,
   updateCategoryPageLink,
@@ -29,6 +30,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     if (!ok) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });
     }
+    revalidateWikiPublic();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
@@ -45,6 +47,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     }
     const linkId = Number((await ctx.params).linkId);
     await removePageFromCategory(linkId);
+    revalidateWikiPublic();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });

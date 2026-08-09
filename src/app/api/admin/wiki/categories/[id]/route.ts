@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { requireWikiEditorUserId } from "@/lib/wiki-pages";
+import { revalidateWikiPublic } from "@/lib/public-content-cache";
 import {
   deleteWikiCategory,
   getWikiCategoryBySlug,
@@ -53,6 +54,7 @@ export async function PATCH(req: Request, ctx: Ctx) {
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+    revalidateWikiPublic();
     const tree = await getWikiHomeTree();
     const detail = await getWikiCategoryBySlug(result.category.slug);
     return NextResponse.json({ ok: true, category: detail, tree });
@@ -71,6 +73,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     }
     const id = Number((await ctx.params).id);
     await deleteWikiCategory(id);
+    revalidateWikiPublic();
     const tree = await getWikiHomeTree();
     return NextResponse.json({ ok: true, tree });
   } catch {

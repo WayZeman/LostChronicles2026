@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { requireWikiEditorUserId } from "@/lib/wiki-pages";
+import { revalidateWikiPublic } from "@/lib/public-content-cache";
 import {
   createWikiCategory,
   createWikiSection,
@@ -64,6 +65,7 @@ export async function POST(req: Request) {
         title: String(b.title),
         description: String(b.description ?? ""),
       });
+      revalidateWikiPublic();
       const tree = await getWikiHomeTree();
       return NextResponse.json({ ok: true, section, tree });
     }
@@ -85,12 +87,14 @@ export async function POST(req: Request) {
       if (!result.ok) {
         return NextResponse.json({ error: result.error }, { status: 400 });
       }
+      revalidateWikiPublic();
       const tree = await getWikiHomeTree();
       return NextResponse.json({ ok: true, category: result.category, tree });
     }
 
     if (b.action === "seed") {
       const result = await seedWikiStructureIfEmpty();
+      revalidateWikiPublic();
       const tree = await getWikiHomeTree();
       return NextResponse.json({ ok: true, ...result, tree });
     }

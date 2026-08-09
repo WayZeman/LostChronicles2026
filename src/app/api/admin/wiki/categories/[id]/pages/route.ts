@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { requireWikiEditorUserId } from "@/lib/wiki-pages";
+import { revalidateWikiPublic } from "@/lib/public-content-cache";
 import {
   addPageToCategory,
   getWikiCategoryBySlug,
@@ -72,6 +73,7 @@ export async function POST(req: Request, ctx: Ctx) {
     const category = catMeta
       ? await getWikiCategoryBySlug(catMeta.slug)
       : null;
+    revalidateWikiPublic();
     return NextResponse.json({ ok: true, category, tree });
   } catch {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });

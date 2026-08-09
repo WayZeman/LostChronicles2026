@@ -7,10 +7,10 @@ import {
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
-import { listFaqItems } from "@/lib/site-content";
+import { getCachedFaqItems } from "@/lib/public-content-cache";
 import { cn } from "@/lib/utils";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 120;
 
 export default async function FAQPage() {
   let faqs = LOST_CHRONICLES_FAQ.map((item) => ({
@@ -21,7 +21,7 @@ export default async function FAQPage() {
   }));
 
   try {
-    const dbItems = await listFaqItems();
+    const dbItems = await getCachedFaqItems();
     if (dbItems.length > 0) {
       faqs = dbItems.map((item) => ({
         id: `lc-faq-${item.id}`,

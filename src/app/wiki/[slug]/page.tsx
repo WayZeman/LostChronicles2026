@@ -6,9 +6,11 @@ import {
   fetchRpNewsWikiContent,
   isRpNewsWikiSlug,
 } from "@/lib/telegram-rp-news";
-import { getWikiPageBySlug } from "@/lib/wiki-pages";
 import {
-  getWikiCategoryBySlug,
+  getCachedWikiCategoryBySlug,
+  getCachedWikiPageBySlug,
+} from "@/lib/public-content-cache";
+import {
   parseSocialLinks,
   seedWikiStructureIfEmpty,
 } from "@/lib/wiki-structure";
@@ -21,7 +23,7 @@ import { WikiCategoryView } from "@/components/wiki/WikiCategoryView";
 import { WikiArticleView } from "@/components/wiki/WikiArticleView";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export default async function WikiArticlePage({
   params,
@@ -63,14 +65,13 @@ export default async function WikiArticlePage({
     );
   }
 
-  const category = await getWikiCategoryBySlug(slug);
+  const category = await getCachedWikiCategoryBySlug(slug);
   if (category) {
-    // Якщо в блоці лише сама індексна сторінка (напр. Довідник цін) — показуємо статтю одразу
     const onlySelf =
       category.pages.length === 1 &&
       category.pages[0]!.page_slug.toLowerCase() === category.slug.toLowerCase();
     if (onlySelf) {
-      const page = await getWikiPageBySlug(category.slug);
+      const page = await getCachedWikiPageBySlug(category.slug);
       if (page) {
         return (
           <main className={lcPageMainClass}>
@@ -101,7 +102,7 @@ export default async function WikiArticlePage({
     );
   }
 
-  const page = await getWikiPageBySlug(slug);
+  const page = await getCachedWikiPageBySlug(slug);
   if (!page) return notFound();
 
   return (

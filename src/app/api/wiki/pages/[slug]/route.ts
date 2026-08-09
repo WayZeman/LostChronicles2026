@@ -5,6 +5,7 @@ import {
   getWikiPageBySlug,
   requireWikiEditorUserId,
 } from "@/lib/wiki-pages";
+import { revalidateWikiPublic } from "@/lib/public-content-cache";
 import {
   parseSocialLinks,
   updateWikiPageMeta,
@@ -83,6 +84,7 @@ export async function PUT(req: Request, ctx: Ctx) {
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+    revalidateWikiPublic();
     return NextResponse.json({
       ok: true,
       page: {
@@ -113,6 +115,7 @@ export async function DELETE(_req: Request, ctx: Ctx) {
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 404 });
     }
+    revalidateWikiPublic();
     return NextResponse.json({ ok: true });
   } catch {
     return NextResponse.json(

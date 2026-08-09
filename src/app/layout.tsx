@@ -4,10 +4,9 @@ import { Noto_Sans } from "next/font/google";
 import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
-import { AtmosphereParticles } from "@/components/site/AtmosphereParticles";
-import { AnniversaryAtmosphere } from "@/components/site/AnniversaryAtmosphere";
+import { DeferredSiteCursor } from "@/components/site/DeferredSiteCursor";
 import { RouteEnter } from "@/components/site/RouteEnter";
-import { SiteCursor } from "@/components/site/SiteCursor";
+import { SiteAtmosphere } from "@/components/site/SiteAtmosphere";
 import { SiteIntroCurtain } from "@/components/site/SiteIntroCurtain";
 import { SiteJsonLd } from "@/components/site/SiteJsonLd";
 import {
@@ -123,21 +122,9 @@ export default function RootLayout({
         <link rel="preconnect" href="https://mc-heads.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://ely.by" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
-        <link rel="preload" as="image" href="/lc-logo-hero-v2.png" />
-        <link rel="preload" as="image" href="/bg-ivy-stone.jpg" />
-        <link
-          rel="preload"
-          as="image"
-          href="/server-status-online.png?v=8"
-        />
-        <link
-          rel="preload"
-          as="image"
-          href="/server-status-offline.png?v=8"
-        />
         <script
           dangerouslySetInnerHTML={{
-            __html: `document.documentElement.classList.add('lc-intro-pending');`,
+            __html: `(function(){var p=location.pathname;if(p==="/"||p===""){document.documentElement.classList.add("lc-intro-pending");}else{document.documentElement.classList.add("lc-intro-skip");}})();`,
           }}
         />
       </head>
@@ -147,7 +134,6 @@ export default function RootLayout({
         <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />
         <SiteIntroCurtain />
-        <AnniversaryAtmosphere />
         <div className="mc-net-backdrop" aria-hidden>
           <div className="mc-bg-blob-layer">
             <span className="mc-bg-blob mc-bg-blob-1" />
@@ -157,14 +143,13 @@ export default function RootLayout({
             <span className="mc-bg-blob mc-bg-blob-5" />
           </div>
         </div>
-        <AtmosphereParticles />
+        <SiteAtmosphere />
         <Navbar />
         <div className="lc-page-enter relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] [&>*:only-child]:flex [&>*:only-child]:min-h-0 [&>*:only-child]:w-full [&>*:only-child]:flex-1 [&>*:only-child]:flex-col [&>*:only-child]:pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
           <RouteEnter>{children}</RouteEnter>
         </div>
         <DeferVercelMetrics />
-        {/* Курсор в кінці DOM + portal у body — завжди поверх шарів */}
-        <SiteCursor />
+        <DeferredSiteCursor />
       </body>
     </html>
   );

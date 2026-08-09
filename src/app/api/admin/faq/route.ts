@@ -5,6 +5,7 @@ import {
   replaceFaqItems,
   requireAdminUserId,
 } from "@/lib/site-content";
+import { revalidateFaqPublic } from "@/lib/public-content-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -81,6 +82,7 @@ export async function PUT(req: Request) {
     }
 
     const saved = await replaceFaqItems(items);
+    revalidateFaqPublic();
     return NextResponse.json({ items: saved });
   } catch {
     return NextResponse.json(

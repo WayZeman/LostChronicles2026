@@ -1,8 +1,8 @@
 import {
-  getWikiHomeTree,
-  seedWikiStructureIfEmpty,
-} from "@/lib/wiki-structure";
-import { resolveWikiHomeContent } from "@/lib/wiki-home";
+  getCachedWikiHomeContent,
+  getCachedWikiHomeTree,
+} from "@/lib/public-content-cache";
+import { seedWikiStructureIfEmpty } from "@/lib/wiki-structure";
 import {
   lcPageContainerClass,
   lcPageMainClass,
@@ -13,13 +13,14 @@ import { WikiSearchBox } from "@/components/wiki/WikiSearchBox";
 import { WikiHomeStructured } from "@/components/wiki/WikiHomeStructured";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 
-export const dynamic = "force-dynamic";
+/** Публічна вікі: ISR ~1 хв + data cache (див. public-content-cache). */
+export const revalidate = 60;
 
 export default async function WikiIndexPage() {
   await seedWikiStructureIfEmpty();
   const [tree, home] = await Promise.all([
-    getWikiHomeTree(),
-    resolveWikiHomeContent(),
+    getCachedWikiHomeTree(),
+    getCachedWikiHomeContent(),
   ]);
   const homeHtml = home?.html?.trim() ?? "";
   const hasHomeHtml = homeHtml.length > 0;

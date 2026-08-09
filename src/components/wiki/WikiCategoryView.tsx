@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 import type {
   WikiCategoryDetail,
@@ -9,7 +10,10 @@ import {
   wikiAccentForSlug,
   wikiPagesChip,
 } from "@/components/wiki/wiki-accents";
-import { wikiCardImageUrl } from "@/components/wiki/wiki-covers";
+import {
+  isLocalWikiCover,
+  wikiCardImageUrl,
+} from "@/components/wiki/wiki-covers";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -122,12 +126,24 @@ export function WikiCategoryView({
               const body = (
                 <>
                   <div className="relative -mx-4 -mt-4 mb-3 aspect-[16/10] overflow-hidden border-b border-white/10 bg-black/50">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={cover}
-                      alt=""
-                      className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                    />
+                    {isLocalWikiCover(cover) ? (
+                      <Image
+                        src={cover}
+                        alt=""
+                        fill
+                        sizes="(max-width: 640px) 100vw, 50vw"
+                        className="object-cover transition duration-300 group-hover:scale-[1.03]"
+                      />
+                    ) : (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={cover}
+                        alt=""
+                        loading="lazy"
+                        decoding="async"
+                        className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                      />
+                    )}
                     <span
                       className={cn(
                         "pointer-events-none absolute left-3 top-3 inline-flex size-9 items-center justify-center border bg-black/60 font-mono text-[10px] font-black tracking-wider backdrop-blur-[2px]",

@@ -6,6 +6,7 @@ import {
   upsertWikiPage,
   wikiSlugFromTitle,
 } from "@/lib/wiki-pages";
+import { revalidateWikiPublic } from "@/lib/public-content-cache";
 
 export const dynamic = "force-dynamic";
 
@@ -59,6 +60,7 @@ export async function POST(req: Request) {
     if (!result.ok) {
       return NextResponse.json({ error: result.error }, { status: 400 });
     }
+    revalidateWikiPublic();
     return NextResponse.json({ ok: true, page: result.page });
   } catch {
     return NextResponse.json(

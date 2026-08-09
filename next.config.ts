@@ -24,6 +24,7 @@ const noStoreDevHeaders = isDev
 
 const nextConfig: NextConfig = {
   images: {
+    formats: ["image/avif", "image/webp"],
     remotePatterns: [
       {
         protocol: "https",
@@ -52,6 +53,39 @@ const nextConfig: NextConfig = {
       {
         source: "/:path*",
         headers: [...securityHeaders, ...noStoreDevHeaders],
+      },
+      {
+        source: "/wiki-covers/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: isDev
+              ? "no-store"
+              : "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/fonts/:path*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: isDev
+              ? "no-store"
+              : "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        source: "/:file(logo.png|lc-logo-hero-v2.png|bg-ivy-stone.jpg|bg-ivy-stone-portrait.jpg|map-hero.png|social-mascot.png|server-status-online.png|server-status-offline.png|server-online-zombie.png)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: isDev
+              ? "no-store"
+              : "public, max-age=86400, stale-while-revalidate=604800",
+          },
+        ],
       },
     ];
   },

@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import {
   getServerAgeParts,
@@ -12,6 +13,7 @@ import { cn } from "@/lib/utils";
 const MIN_VISIBLE_MS = 720;
 const MAX_WAIT_MS = 9000;
 
+/** Лише активи головної — не тягнемо їх на вікі/FAQ. */
 const CRITICAL_ASSETS = [
   "/logo.png",
   "/lc-logo-hero-v2.png",
@@ -72,10 +74,12 @@ async function waitUntilSiteReady(): Promise<void> {
 }
 
 /**
- * Інтро-шторка; у день річниці — тепліша, зі святковим підписом.
+ * Інтро-шторка лише на головній; у день річниці — тепліша.
  */
 export function SiteIntroCurtain() {
-  const [phase, setPhase] = useState<Phase>("shown");
+  const pathname = usePathname();
+  const isHome = pathname === "/";
+  const [phase, setPhase] = useState<Phase>(isHome ? "shown" : "gone");
   const anniversary = useMemo(() => {
     if (!isServerAnniversary()) return null;
     const years = getServerAgeParts().years;
@@ -84,6 +88,13 @@ export function SiteIntroCurtain() {
   }, []);
 
   useEffect(() => {
+    if (!isHome) {
+      document.documentElement.classList.remove("lc-intro-pending");
+      document.documentElement.classList.add("lc-intro-skip");
+      setPhase("gone");
+      return;
+    }
+
     let cancelled = false;
 
     document.documentElement.classList.add("lc-intro-pending");
@@ -110,9 +121,9 @@ export function SiteIntroCurtain() {
     return () => {
       cancelled = true;
     };
-  }, [anniversary]);
+  }, [anniversary, isHome]);
 
-  if (phase === "gone") return null;
+  if (!isHome || phase === "gone") return null;
 
   return (
     <div
