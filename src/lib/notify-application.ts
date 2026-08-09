@@ -1,5 +1,11 @@
 /**
- * Нові анкети → Telegram (@serveranketbot / TELEGRAM_ORDERS_*).
+ * Нові анкети → Telegram.
+ * Бот/чат як у scripts/google-form-all-answers-to-telegram.gs
+ * (@serveranketbot → «Адміністрація серверу підвальна»).
+ *
+ * Env (пріоритет):
+ *   TELEGRAM_ANKETA_BOT_TOKEN + TELEGRAM_ANKETA_CHAT_ID
+ * fallback: TELEGRAM_ORDERS_BOT_TOKEN + TELEGRAM_ORDERS_CHAT_ID
  */
 
 import {
@@ -21,9 +27,14 @@ export type ApplicationNotifyPayload = {
   howFound: string;
 };
 
-function ordersBotConfig(): { token: string; chatId: string } | null {
-  const token = process.env.TELEGRAM_ORDERS_BOT_TOKEN?.trim();
-  const chatId = process.env.TELEGRAM_ORDERS_CHAT_ID?.trim();
+/** Ті самі значення, що BOT_TOKEN / CHAT_ID у google-form-all-answers-to-telegram.gs */
+function anketaBotConfig(): { token: string; chatId: string } | null {
+  const token =
+    process.env.TELEGRAM_ANKETA_BOT_TOKEN?.trim() ||
+    process.env.TELEGRAM_ORDERS_BOT_TOKEN?.trim();
+  const chatId =
+    process.env.TELEGRAM_ANKETA_CHAT_ID?.trim() ||
+    process.env.TELEGRAM_ORDERS_CHAT_ID?.trim();
   if (!token || !chatId) return null;
   return { token, chatId };
 }
@@ -78,10 +89,10 @@ export function formatApplicationTelegramText(
 export async function notifyApplicationTelegram(
   a: ApplicationNotifyPayload,
 ): Promise<boolean> {
-  const cfg = ordersBotConfig();
+  const cfg = anketaBotConfig();
   if (!cfg) {
     console.error(
-      "[apply] TELEGRAM_ORDERS_BOT_TOKEN / TELEGRAM_ORDERS_CHAT_ID missing",
+      "[apply] TELEGRAM_ANKETA_* / TELEGRAM_ORDERS_* missing (див. google-form-all-answers-to-telegram.gs)",
     );
     return false;
   }
