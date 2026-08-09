@@ -17,6 +17,10 @@ export type ApplicationRow = ApplicationInput & {
   createdAt: string;
 };
 
+function rowsOf(r: unknown): Record<string, unknown>[] {
+  return r as Record<string, unknown>[];
+}
+
 let ensured = false;
 
 async function ensureApplicationsTable(): Promise<void> {
@@ -65,7 +69,7 @@ export async function createApplication(
 ): Promise<ApplicationRow> {
   await ensureApplicationsTable();
   const sql = getSql();
-  const rows = await sql`
+  const rows = rowsOf(await sql`
     INSERT INTO applications (
       email,
       nickname,
@@ -100,8 +104,8 @@ export async function createApplication(
       why_server AS "whyServer",
       how_found AS "howFound",
       created_at AS "createdAt"
-  `;
-  const row = rows[0] as Record<string, unknown> | undefined;
+  `);
+  const row = rows[0];
   if (!row) throw new Error("Failed to insert application");
   return mapRow(row);
 }
@@ -110,7 +114,7 @@ export async function listApplications(limit = 50): Promise<ApplicationRow[]> {
   await ensureApplicationsTable();
   const sql = getSql();
   const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
-  const rows = await sql`
+  const rows = rowsOf(await sql`
     SELECT
       id,
       email,
@@ -126,8 +130,8 @@ export async function listApplications(limit = 50): Promise<ApplicationRow[]> {
     FROM applications
     ORDER BY id DESC
     LIMIT ${safeLimit}
-  `;
-  return (rows as Record<string, unknown>[]).map(mapRow);
+  `);
+  return rows.map(mapRow);
 }
 
 export async function getApplicationById(
@@ -135,7 +139,7 @@ export async function getApplicationById(
 ): Promise<ApplicationRow | null> {
   await ensureApplicationsTable();
   const sql = getSql();
-  const rows = await sql`
+  const rows = rowsOf(await sql`
     SELECT
       id,
       email,
@@ -151,23 +155,23 @@ export async function getApplicationById(
     FROM applications
     WHERE id = ${id}
     LIMIT 1
-  `;
-  const row = rows[0] as Record<string, unknown> | undefined;
+  `);
+  const row = rows[0];
   return row ? mapRow(row) : null;
 }
 
 export async function deleteApplication(id: number): Promise<boolean> {
   await ensureApplicationsTable();
   const sql = getSql();
-  const rows = await sql`
+  const rows = rowsOf(await sql`
     DELETE FROM applications WHERE id = ${id} RETURNING id
-  `;
+  `);
   return rows.length > 0;
 }
 
 export async function countApplications(): Promise<number> {
   await ensureApplicationsTable();
   const sql = getSql();
-  const rows = await sql`SELECT COUNT(*)::int AS c FROM applications`;
+  const rows = rowsOf(await sql`SELECT COUNT(*)::int AS c FROM applications`);
   return Number(rows[0]?.c ?? 0);
 }

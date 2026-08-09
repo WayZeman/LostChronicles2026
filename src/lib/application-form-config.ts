@@ -38,6 +38,10 @@ export type ApplyFormConfig = {
 
 const SETTINGS_KEY = "apply_form";
 
+function rowsOf(r: unknown): Record<string, unknown>[] {
+  return r as Record<string, unknown>[];
+}
+
 const DEFAULT_KIND: Record<ApplyFieldKey, ApplyFieldKind> = {
   email: "email",
   nickname: "text",
@@ -229,9 +233,9 @@ async function ensureSettingsTable(): Promise<void> {
 export async function getApplyFormConfig(): Promise<ApplyFormConfig> {
   await ensureSettingsTable();
   const sql = getSql();
-  const rows = await sql`
+  const rows = rowsOf(await sql`
     SELECT value FROM site_settings WHERE key = ${SETTINGS_KEY} LIMIT 1
-  `;
+  `);
   const raw = rows[0]?.value;
   if (typeof raw !== "string" || !raw.trim()) {
     return normalizeApplyFormConfig(null);
