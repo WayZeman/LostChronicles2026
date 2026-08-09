@@ -32,7 +32,7 @@ export function SoftAppear({ children, className, slow }: Props) {
     <div
       className={cn(
         "will-change-[opacity,transform]",
-        !show && "opacity-0",
+        !show && "pointer-events-none opacity-0",
         show && cn("lc-stream-in", slow && "lc-stream-in-slow"),
         className,
       )}

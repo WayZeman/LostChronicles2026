@@ -51,7 +51,7 @@ export function WikiCategoryView({
 
   return (
     <div className="space-y-7">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-3">
         {editMode && onBack ? (
           <button
             type="button"
@@ -117,13 +117,18 @@ export function WikiCategoryView({
               const seal = monogram(p.page_title, p.short_code);
               const cover = wikiCardImageUrl(category.slug, p.image_url);
               const cardClass = cn(
-                "lc-focus-ring group relative flex w-full flex-col overflow-hidden",
+                "group relative flex w-full flex-col overflow-hidden",
                 "border border-white/10 bg-black/35 p-4 transition duration-200",
                 "sm:w-[calc(50%-0.375rem)]",
                 "hover:-translate-y-0.5 hover:bg-black/45",
                 accent.glow,
               );
-              const body = (
+              const mainClass = cn(
+                "lc-focus-ring flex flex-1 flex-col text-left outline-none",
+                "-m-1 rounded-sm p-1",
+              );
+
+              const mainBody = (
                 <>
                   <div className="relative -mx-4 -mt-4 mb-3 aspect-[16/10] overflow-hidden border-b border-white/10 bg-black/50">
                     {isLocalWikiCover(cover) ? (
@@ -174,46 +179,40 @@ export function WikiCategoryView({
                     Читати
                     <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" />
                   </span>
-                  {pageActions ? (
-                    <div
-                      className="mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-3"
-                      onClick={(e) => e.stopPropagation()}
-                      onKeyDown={(e) => e.stopPropagation()}
-                    >
-                      {pageActions(p)}
-                    </div>
-                  ) : null}
                 </>
               );
 
-              if (editMode && onOpenPage) {
-                return (
-                  <button
-                    key={p.id}
-                    type="button"
-                    onClick={() => onOpenPage(p)}
-                    className={cn(cardClass, "text-left")}
-                  >
-                    {body}
-                  </button>
-                );
-              }
-
               return (
-                <Link
-                  key={p.id}
-                  href={`/wiki/${encodeURIComponent(p.page_slug)}`}
-                  className={cardClass}
-                >
-                  {body}
-                </Link>
+                <article key={p.id} className={cardClass}>
+                  {editMode && onOpenPage ? (
+                    <button
+                      type="button"
+                      onClick={() => onOpenPage(p)}
+                      className={mainClass}
+                    >
+                      {mainBody}
+                    </button>
+                  ) : (
+                    <Link
+                      href={`/wiki/${encodeURIComponent(p.page_slug)}`}
+                      className={mainClass}
+                    >
+                      {mainBody}
+                    </Link>
+                  )}
+                  {pageActions ? (
+                    <div className="relative z-10 mt-3 flex flex-wrap items-center gap-1.5 border-t border-white/10 pt-3">
+                      {pageActions(p)}
+                    </div>
+                  ) : null}
+                </article>
               );
             })}
           </div>
         </SoftAppear>
       )}
 
-      {footer}
+      <div className="relative z-10">{footer}</div>
     </div>
   );
 }

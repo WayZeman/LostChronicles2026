@@ -96,13 +96,17 @@ export function WikiHomeStructured({
                     ? "стрічка"
                     : wikiPagesChip(cat.page_count);
                 const cardClass = cn(
-                  "lc-focus-ring group relative flex w-full flex-col overflow-hidden",
+                  "group relative flex w-full flex-col overflow-hidden",
                   "border border-white/10 bg-black/35 p-4 transition duration-200",
                   "sm:w-[calc(50%-0.45rem)]",
                   "hover:-translate-y-0.5 hover:bg-black/45",
                   accent.glow,
                 );
-                const body = (
+                const mainClass = cn(
+                  "lc-focus-ring flex flex-1 flex-col text-left outline-none",
+                  "-m-1 rounded-sm p-1",
+                );
+                const mainBody = (
                   <>
                     <div className="relative -mx-4 -mt-4 mb-3 aspect-[16/10] overflow-hidden border-b border-white/10 bg-black/50">
                       <Image
@@ -151,39 +155,33 @@ export function WikiHomeStructured({
                       Відкрити
                       <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" />
                     </span>
-                    {categoryActions ? (
-                      <div
-                        className="mt-3 flex flex-wrap gap-1.5 border-t border-white/10 pt-3"
-                        onClick={(e) => e.stopPropagation()}
-                        onKeyDown={(e) => e.stopPropagation()}
-                      >
-                        {categoryActions(cat)}
-                      </div>
-                    ) : null}
                   </>
                 );
 
-                if (editMode && onOpenCategory) {
-                  return (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => onOpenCategory(cat)}
-                      className={cn(cardClass, "text-left")}
-                    >
-                      {body}
-                    </button>
-                  );
-                }
-
                 return (
-                  <Link
-                    key={cat.id}
-                    href={`/wiki/${encodeURIComponent(cat.slug)}`}
-                    className={cardClass}
-                  >
-                    {body}
-                  </Link>
+                  <article key={cat.id} className={cardClass}>
+                    {editMode && onOpenCategory ? (
+                      <button
+                        type="button"
+                        onClick={() => onOpenCategory(cat)}
+                        className={mainClass}
+                      >
+                        {mainBody}
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/wiki/${encodeURIComponent(cat.slug)}`}
+                        className={mainClass}
+                      >
+                        {mainBody}
+                      </Link>
+                    )}
+                    {categoryActions ? (
+                      <div className="relative z-10 mt-3 flex flex-wrap gap-1.5 border-t border-white/10 pt-3">
+                        {categoryActions(cat)}
+                      </div>
+                    ) : null}
+                  </article>
                 );
               })}
             </div>
