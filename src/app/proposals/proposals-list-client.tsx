@@ -4,46 +4,25 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlusCircle } from "lucide-react";
-import { ProposalChoiceBar } from "@/components/proposals/ProposalChoiceBar";
-import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
-import { ProposalVoteBar } from "@/components/proposals/ProposalVoteBar";
+import {
+  ProposalListCard,
+  type ProposalListCardData,
+} from "@/components/proposals/ProposalListCard";
 import { SoftAppear } from "@/components/site/SoftAppear";
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
-  PROPOSAL_KIND_CHOICE,
-  proposalKindLabelUk,
-  type ProposalKind,
-  type ProposalOptionPublic,
-} from "@/lib/proposal-kinds";
-import {
-  formatTimeRemainingUk,
   isProposalVotingOpenClient,
   PROPOSAL_MIN_VOTES_FOR_RESULT,
 } from "@/lib/proposal-ui";
 import { cn } from "@/lib/utils";
 import "@/components/proposals/proposal-vote.css";
 
-type ProposalItem = {
-  id: number;
-  title: string;
-  description: string;
-  kind: ProposalKind;
-  status: string;
-  ends_at: string;
-  author_username: string;
-  yes_votes: number;
-  no_votes: number;
-  total_votes: number;
-  options: ProposalOptionPublic[];
-};
-
 type TabId = "active" | "done";
 
 export function ProposalsListClient() {
   const searchParams = useSearchParams();
   const err = searchParams.get("error");
-  const [list, setList] = useState<ProposalItem[] | null>(null);
+  const [list, setList] = useState<ProposalListCardData[] | null>(null);
   const [failed, setFailed] = useState(false);
   const [tab, setTab] = useState<TabId>("active");
 
@@ -55,7 +34,7 @@ export function ProposalsListClient() {
         setList([]);
         return;
       }
-      const data = (await res.json()) as { proposals: ProposalItem[] };
+      const data = (await res.json()) as { proposals: ProposalListCardData[] };
       setList(data.proposals);
       setFailed(false);
     } catch {
@@ -77,8 +56,8 @@ export function ProposalsListClient() {
 
   const { active, done } = useMemo(() => {
     const all = list ?? [];
-    const activeList: ProposalItem[] = [];
-    const doneList: ProposalItem[] = [];
+    const activeList: ProposalListCardData[] = [];
+    const doneList: ProposalListCardData[] = [];
     for (const p of all) {
       if (isProposalVotingOpenClient(p.status, p.ends_at)) activeList.push(p);
       else doneList.push(p);
@@ -93,40 +72,47 @@ export function ProposalsListClient() {
       <div
         className={cn(
           "site-container relative z-10 mx-auto w-full max-w-3xl",
-          "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-6",
+          "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(5.5rem,env(safe-area-inset-bottom,0px))] pt-4",
           "pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-4 sm:pb-12 sm:pt-10 md:py-14",
         )}
       >
         <SoftAppear>
-          <header className="mb-6 border-b border-white/[0.08] pb-5 sm:mb-8 sm:pb-6">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between sm:gap-8">
-              <div className="max-w-xl text-center sm:text-left">
-                <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
-                  Пропозиції та голосування
+          <header className="mb-4 sm:mb-7">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
+              <div className="min-w-0 text-center sm:text-left">
+                <h1 className="lc-hero-title text-balance text-[1.75rem] font-black leading-tight tracking-tight text-[var(--mc-text)] sm:text-4xl">
+                  Пропозиції
                 </h1>
-                <p className="mt-2 text-sm text-[var(--mc-text-muted)]">
-                  За/проти або вибір варіантів · від{" "}
-                  {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів
+                <p className="mt-1 text-xs text-[var(--mc-text-muted)] sm:mt-1.5 sm:text-sm">
+                  Від {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів для результату
                 </p>
               </div>
               <Link
                 href="/proposals/new"
-                className="lc-focus-ring lc-btn-accent mx-auto inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 px-5 text-sm sm:mx-0 sm:w-auto sm:max-w-none"
+                className="lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full items-center justify-center gap-2 px-5 text-sm font-bold touch-manipulation sm:mx-0 sm:w-auto"
               >
-                <PlusCircle className="size-4 opacity-80" aria-hidden />
+                <PlusCircle className="size-4 opacity-90" aria-hidden />
                 Створити
               </Link>
             </div>
 
             <div
-              className="mt-5 grid grid-cols-2 gap-1 rounded-lg border border-white/10 bg-black/25 p-1"
+              className="mt-3 grid grid-cols-2 border-2 border-black bg-black/35 sm:mt-4"
               role="tablist"
               aria-label="Фільтр голосувань"
             >
               {(
                 [
-                  { id: "active" as const, label: "Активні", count: active.length },
-                  { id: "done" as const, label: "Завершені", count: done.length },
+                  {
+                    id: "active" as const,
+                    label: "Активні",
+                    count: active.length,
+                  },
+                  {
+                    id: "done" as const,
+                    label: "Завершені",
+                    count: done.length,
+                  },
                 ] as const
               ).map((t) => {
                 const selected = tab === t.id;
@@ -138,15 +124,21 @@ export function ProposalsListClient() {
                     aria-selected={selected}
                     onClick={() => setTab(t.id)}
                     className={cn(
-                      "lc-focus-ring min-h-10 rounded-md px-3 text-sm font-bold transition-colors",
+                      "lc-focus-ring min-h-11 touch-manipulation px-2 text-sm font-bold transition-colors sm:min-h-10 sm:px-3",
+                      t.id === "done" && "border-l-2 border-black",
                       selected
-                        ? "bg-[var(--mc-net-green)]/20 text-[var(--mc-grass-bright)]"
-                        : "text-[var(--mc-text-muted)] hover:text-[var(--mc-text)]",
+                        ? "bg-[var(--mc-net-green)] text-black"
+                        : "text-[var(--mc-text-muted)] hover:bg-white/[0.04] hover:text-[var(--mc-text)]",
                     )}
                   >
                     {t.label}
                     {list ? (
-                      <span className="ml-1.5 tabular-nums opacity-80">
+                      <span
+                        className={cn(
+                          "ml-1 tabular-nums sm:ml-1.5",
+                          selected ? "text-black/70" : "opacity-70",
+                        )}
+                      >
                         {t.count}
                       </span>
                     ) : null}
@@ -159,7 +151,7 @@ export function ProposalsListClient() {
 
         {err === "discord_config" ? (
           <div
-            className="mb-4 space-y-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-3 text-left text-sm text-amber-100"
+            className="mb-4 space-y-2 border-2 border-amber-500/50 bg-amber-500/10 px-3 py-3 text-left text-sm text-amber-100"
             role="alert"
           >
             <p className="font-bold text-amber-50">
@@ -171,21 +163,16 @@ export function ProposalsListClient() {
             </p>
             <ul className="list-inside list-disc space-y-1 text-amber-100/90">
               <li>
-                <code className="rounded bg-black/30 px-1">DISCORD_CLIENT_ID</code>{" "}
-                або{" "}
-                <code className="rounded bg-black/30 px-1">
+                <code className="bg-black/30 px-1">DISCORD_CLIENT_ID</code> або{" "}
+                <code className="bg-black/30 px-1">
                   NEXT_PUBLIC_DISCORD_CLIENT_ID
                 </code>
               </li>
               <li>
-                <code className="rounded bg-black/30 px-1">
-                  DISCORD_CLIENT_SECRET
-                </code>
+                <code className="bg-black/30 px-1">DISCORD_CLIENT_SECRET</code>
               </li>
               <li>
-                <code className="rounded bg-black/30 px-1">
-                  NEXT_PUBLIC_SITE_URL
-                </code>
+                <code className="bg-black/30 px-1">NEXT_PUBLIC_SITE_URL</code>
               </li>
             </ul>
           </div>
@@ -193,7 +180,7 @@ export function ProposalsListClient() {
 
         {err === "oauth" ? (
           <p
-            className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-100"
+            className="mb-4 border-2 border-amber-500/50 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-100"
             role="alert"
           >
             Сесія логіну не збіглась. Спробуй увійти знову з того ж домену.
@@ -202,7 +189,7 @@ export function ProposalsListClient() {
 
         {err === "discord" ? (
           <p
-            className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-100"
+            className="mb-4 border-2 border-amber-500/50 bg-amber-500/10 px-3 py-2 text-center text-sm text-amber-100"
             role="alert"
           >
             Discord відхилив вхід. Перевір OAuth-налаштування на Vercel.
@@ -210,53 +197,40 @@ export function ProposalsListClient() {
         ) : null}
 
         {failed ? (
-          <p className="rounded-lg border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-center text-sm text-rose-100">
+          <p className="border-2 border-rose-500/40 bg-rose-500/10 px-4 py-3 text-center text-sm text-rose-100">
             База даних недоступна. Перевір DATABASE_URL (Neon) та змінні
             середовища на Vercel.
           </p>
         ) : null}
 
         {list === null ? (
-          <div className="grid gap-4">
+          <div className="grid gap-3 sm:gap-4">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className={cn(
-                  lcGlassPanelClass,
-                  "lc-skeleton-breathe h-36 !rounded-[var(--radius)]",
-                )}
+                className="lc-skeleton-breathe h-36 border-2 border-black bg-black/30 shadow-[3px_3px_0_rgba(0,0,0,0.4)] sm:h-44 sm:shadow-[4px_4px_0_rgba(0,0,0,0.4)]"
               />
             ))}
           </div>
         ) : list.length === 0 ? (
           <SoftAppear>
-            <div
-              className={cn(
-                lcGlassPanelClass,
-                "lc-interactive-panel-static py-12 text-center",
-              )}
-            >
-              <p className="text-[var(--mc-text-muted)]">
+            <div className="border-2 border-black bg-black/30 px-3 py-12 text-center shadow-[3px_3px_0_rgba(0,0,0,0.4)] sm:py-14 sm:shadow-[4px_4px_0_rgba(0,0,0,0.4)]">
+              <p className="text-sm text-[var(--mc-text-muted)]">
                 Голосувань ще немає.
               </p>
               <Link
                 href="/proposals/new"
-                className="lc-focus-ring lc-btn-accent mt-4 inline-flex min-h-11 items-center gap-2 px-5 text-sm"
+                className="lc-focus-ring lc-btn-accent mt-4 inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 px-5 text-sm font-bold touch-manipulation"
               >
-                <PlusCircle className="size-4 opacity-80" aria-hidden />
+                <PlusCircle className="size-4 opacity-90" aria-hidden />
                 Створити перше
               </Link>
             </div>
           </SoftAppear>
         ) : visible.length === 0 ? (
           <SoftAppear>
-            <div
-              className={cn(
-                lcGlassPanelClass,
-                "lc-interactive-panel-static py-10 text-center",
-              )}
-            >
-              <p className="text-[var(--mc-text-muted)]">
+            <div className="border-2 border-black bg-black/30 px-3 py-10 text-center shadow-[3px_3px_0_rgba(0,0,0,0.4)] sm:py-12 sm:shadow-[4px_4px_0_rgba(0,0,0,0.4)]">
+              <p className="text-sm text-[var(--mc-text-muted)]">
                 {tab === "active"
                   ? "Немає активних голосувань."
                   : "Ще немає завершених голосувань."}
@@ -264,61 +238,12 @@ export function ProposalsListClient() {
             </div>
           </SoftAppear>
         ) : (
-          <ul className="lc-stagger grid gap-2.5 sm:gap-3">
-            {visible.map((p) => {
-              const open = isProposalVotingOpenClient(p.status, p.ends_at);
-              const isChoice = p.kind === PROPOSAL_KIND_CHOICE;
-              return (
-                <li key={p.id}>
-                  <Link
-                    href={`/proposals/${p.id}`}
-                    className={cn(
-                      lcGlassPanelClass,
-                      "lc-interactive-panel-static lc-proposal-match-card group block !rounded-[var(--radius)] !p-3.5 sm:!p-4",
-                      "lc-focus-ring transition-[border-color,background-color] hover:border-[var(--mc-net-green)]/35",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      <h2 className="min-w-0 flex-1 text-base font-semibold leading-snug tracking-tight text-[var(--mc-text)] transition-colors group-hover:text-[var(--mc-net-green)] [overflow-wrap:anywhere] sm:text-lg">
-                        {p.title}
-                      </h2>
-                      <ProposalStatusBadge
-                        status={p.status}
-                        votingOpen={open}
-                        className="mt-0.5"
-                      />
-                    </div>
-
-                    <p className="mt-1.5 text-xs text-[var(--mc-text-muted)]">
-                      <span>{proposalKindLabelUk(p.kind ?? "yes_no")}</span>
-                      <span className="mx-1.5 opacity-50" aria-hidden>
-                        ·
-                      </span>
-                      <span className="tabular-nums">
-                        {open
-                          ? formatTimeRemainingUk(p.ends_at)
-                          : "завершено"}
-                      </span>
-                    </p>
-
-                    <div className="mt-3">
-                      {isChoice ? (
-                        <ProposalChoiceBar
-                          options={p.options ?? []}
-                          compact
-                        />
-                      ) : (
-                        <ProposalVoteBar
-                          yes={p.yes_votes}
-                          no={p.no_votes}
-                          compact
-                        />
-                      )}
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
+          <ul className="lc-stagger grid gap-3 sm:gap-4">
+            {visible.map((p) => (
+              <li key={p.id} className="min-w-0">
+                <ProposalListCard proposal={p} />
+              </li>
+            ))}
           </ul>
         )}
       </div>

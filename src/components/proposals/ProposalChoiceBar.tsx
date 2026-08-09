@@ -34,7 +34,7 @@ export function ProposalChoiceBar({
             <div className="mb-1 flex items-baseline justify-between gap-2">
               <span
                 className={cn(
-                  "min-w-0 truncate text-sm font-semibold",
+                  "min-w-0 truncate text-xs font-semibold sm:text-sm",
                   isLead
                     ? "text-[var(--mc-grass-bright)]"
                     : "text-[var(--mc-text)]",
@@ -48,16 +48,16 @@ export function ProposalChoiceBar({
             </div>
             <div
               className={cn(
-                "overflow-hidden rounded-[2px] bg-black/50",
-                compact ? "h-1.5" : "h-2",
+                "overflow-hidden border border-black bg-black/70",
+                compact ? "h-2" : "h-2.5",
               )}
             >
               <div
                 className={cn(
-                  "h-full rounded-[2px] transition-[width] duration-500",
+                  "h-full transition-[width] duration-500",
                   isLead
                     ? "bg-[var(--mc-grass-bright)]"
-                    : "bg-[var(--mc-net-green)]/70",
+                    : "bg-[var(--mc-net-green)]/75",
                 )}
                 style={{ width: `${total === 0 ? 0 : Math.max(pct, 2)}%` }}
               />

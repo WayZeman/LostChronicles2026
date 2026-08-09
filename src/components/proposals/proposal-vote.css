@@ -97,30 +97,259 @@
 .lc-proposal-match-card {
   transition:
     border-color 0.15s ease,
-    background-color 0.15s ease;
+    background-color 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
 }
 
 .lc-proposal-match-card:hover {
   border-color: rgba(84, 197, 48, 0.45);
-  background: color-mix(in srgb, var(--mc-surface-elevated) 70%, transparent);
+  background: color-mix(in srgb, var(--mc-surface-elevated) 78%, transparent);
+}
+
+/* Картка пропозиції — Minecraft scoreboard / inventory tile */
+.lc-proposal-board {
+  border: 2px solid #000;
+  border-radius: 0;
+  background: #1a1a1a;
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+@media (min-width: 640px) {
+  .lc-proposal-board {
+    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
+  }
+}
+
+.lc-proposal-board:hover {
+  transform: translateY(-2px);
+  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.5);
+}
+
+@media (min-width: 640px) {
+  .lc-proposal-board:hover {
+    transform: translateY(-3px);
+    box-shadow: 6px 7px 0 rgba(0, 0, 0, 0.55);
+  }
+}
+
+.lc-proposal-board--live {
+  box-shadow:
+    3px 3px 0 rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(84, 197, 48, 0.3);
+}
+
+@media (min-width: 640px) {
+  .lc-proposal-board--live {
+    box-shadow:
+      4px 4px 0 rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(84, 197, 48, 0.35);
+  }
+}
+
+.lc-proposal-board--live:hover {
+  box-shadow:
+    4px 5px 0 rgba(0, 0, 0, 0.5),
+    0 0 0 1px rgba(122, 224, 74, 0.5);
+}
+
+@media (min-width: 640px) {
+  .lc-proposal-board--live:hover {
+    box-shadow:
+      6px 7px 0 rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(122, 224, 74, 0.55),
+      0 0 18px rgba(84, 197, 48, 0.12);
+  }
+}
+
+.lc-proposal-board--cancelled {
+  box-shadow:
+    3px 3px 0 rgba(0, 0, 0, 0.45),
+    0 0 0 1px rgba(239, 68, 68, 0.28);
+}
+
+@media (min-width: 640px) {
+  .lc-proposal-board--cancelled {
+    box-shadow:
+      4px 4px 0 rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(239, 68, 68, 0.28);
+  }
+}
+
+.lc-proposal-board--done:hover {
+  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.5);
+}
+
+@media (min-width: 640px) {
+  .lc-proposal-board--done:hover {
+    box-shadow: 6px 7px 0 rgba(0, 0, 0, 0.55);
+  }
+}
+
+/* Touch: без hover-підйому */
+@media (hover: none) {
+  .lc-proposal-board:hover,
+  .lc-proposal-board--live:hover,
+  .lc-proposal-board--done:hover {
+    transform: none;
+  }
+
+  .lc-proposal-board:active {
+    transform: scale(0.995);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-proposal-match-card:hover,
+  .lc-proposal-board:hover {
+    transform: none !important;
+  }
+
+  .lc-vote-status-live::before {
+    animation: none !important;
+  }
 }
 
 .lc-vote-status-live {
   position: relative;
-  padding-left: 1.15rem;
+  padding-left: 1.2rem;
 }
 
 .lc-vote-status-live::before {
   content: "";
   position: absolute;
-  left: 0.45rem;
+  left: 0.4rem;
   top: 50%;
-  width: 0.4rem;
-  height: 0.4rem;
-  margin-top: -0.2rem;
-  border-radius: 999px;
+  width: 0.42rem;
+  height: 0.42rem;
+  margin-top: -0.21rem;
+  border-radius: 0;
   background: #7dff5a;
-  box-shadow: 0 0 8px rgba(125, 255, 90, 0.85);
+  box-shadow: 0 0 0 1px #000, 0 0 8px rgba(125, 255, 90, 0.85);
+  animation: lc-vote-live-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes lc-vote-live-pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(0.85);
+  }
+}
+
+/* Minecraft HUD timer — Monocraft + classic MC text shadow */
+.lc-mc-timer {
+  font-family: var(--font-mc);
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: 0.04em;
+  -webkit-font-smoothing: none;
+  text-rendering: geometricPrecision;
+}
+
+@media (min-width: 640px) {
+  .lc-mc-timer {
+    font-size: 1.15rem;
+    letter-spacing: 0.06em;
+  }
+}
+
+.lc-mc-timer:not(.lc-mc-timer--live) {
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  max-width: 100%;
+  padding-inline: 0.15rem;
+}
+
+@media (min-width: 640px) {
+  .lc-mc-timer:not(.lc-mc-timer--live) {
+    font-size: 0.9rem;
+    letter-spacing: 0.03em;
+    padding-inline: 0.25rem;
+  }
+}
+
+.lc-mc-timer--live {
+  color: #c6c6c6;
+  text-shadow: 2px 2px 0 #2a2a2a;
+}
+
+.lc-mc-timer--done {
+  color: #a0a0a0;
+  text-shadow: 2px 2px 0 #1f1f1f;
+}
+
+.lc-mc-timer--accepted {
+  color: #55ff55;
+  text-shadow: 2px 2px 0 #153f15;
+}
+
+.lc-mc-timer--rejected {
+  color: #ff5555;
+  text-shadow: 2px 2px 0 #3f1515;
+}
+
+.lc-mc-timer--cancelled {
+  color: #ff5555;
+  text-shadow: 2px 2px 0 #3f1515;
+}
+
+.lc-mc-timer--quorum {
+  color: #ffaa00;
+  text-shadow: 2px 2px 0 #3f2a00;
+}
+
+.lc-mc-timer--tie {
+  color: #ffff55;
+  text-shadow: 2px 2px 0 #3f3f00;
+}
+
+.lc-mc-timer-bar {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
+    #121212;
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -2px 0 rgba(0, 0, 0, 0.55);
+}
+
+.lc-mc-timer-bar--live {
+  background:
+    linear-gradient(180deg, rgba(198, 198, 198, 0.06) 0%, transparent 50%),
+    #141414;
+}
+
+.lc-mc-timer-bar--accepted {
+  background:
+    linear-gradient(180deg, rgba(85, 255, 85, 0.08) 0%, transparent 50%),
+    #0a1a08;
+}
+
+.lc-mc-timer-bar--rejected,
+.lc-mc-timer-bar--cancelled {
+  background:
+    linear-gradient(180deg, rgba(255, 85, 85, 0.08) 0%, transparent 50%),
+    #1a0808;
+}
+
+.lc-mc-timer-bar--quorum {
+  background:
+    linear-gradient(180deg, rgba(255, 170, 0, 0.08) 0%, transparent 50%),
+    #1a1408;
+}
+
+.lc-mc-timer-bar--tie {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 85, 0.06) 0%, transparent 50%),
+    #1a1a08;
 }
 
 @media (prefers-reduced-motion: reduce) {

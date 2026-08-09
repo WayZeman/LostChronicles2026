@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import localFont from "next/font/local";
 import { Noto_Sans } from "next/font/google";
 import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
@@ -23,6 +24,21 @@ const notoSans = Noto_Sans({
   display: "swap",
   adjustFontFallback: true,
   weight: ["400", "500", "600", "700", "800"],
+});
+
+/** Піксельний шрифт у стилі Minecraft (Monocraft, OFL) — таймери / HUD. */
+const monocraft = localFont({
+  src: [
+    { path: "../../public/fonts/Monocraft.ttf", weight: "400", style: "normal" },
+    {
+      path: "../../public/fonts/Monocraft-Bold.ttf",
+      weight: "700",
+      style: "normal",
+    },
+  ],
+  variable: "--font-minecraft",
+  display: "swap",
+  adjustFontFallback: false,
 });
 
 /** Канонічний URL (SEO, OG). Перевизначення: NEXT_PUBLIC_SITE_URL у продакшені. */
@@ -126,7 +142,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`${notoSans.variable} am-bg relative flex min-h-screen flex-col antialiased`}
+        className={`${notoSans.variable} ${monocraft.variable} am-bg relative flex min-h-screen flex-col antialiased`}
       >
         <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />

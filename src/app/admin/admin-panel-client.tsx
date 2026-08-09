@@ -2,18 +2,24 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { ArrowDown, ArrowUp, Plus, Trash2, Upload } from "lucide-react";
+import { ArrowDown, ArrowUp, Ban, Clock, ExternalLink, Plus, Trash2, Upload } from "lucide-react";
 import { FaqRichEditor } from "@/components/admin/FaqRichEditor";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { compressImageFile } from "@/lib/compress-image";
+import { proposalKindLabelUk, type ProposalKind } from "@/lib/proposal-kinds";
+import {
+  formatTimeRemainingUk,
+  isProposalVotingOpenClient,
+} from "@/lib/proposal-ui";
 import {
   normalizePriceTiers,
   summarizePriceLabel,
   type SupportPriceTier,
 } from "@/lib/support-price-tiers";
 import { cn } from "@/lib/utils";
+import "@/components/proposals/proposal-vote.css";
 
 type Tab = "faq" | "connect" | "support" | "voting" | "proposals" | "admins";
 
@@ -1187,102 +1193,238 @@ export function AdminPanelClient() {
             ) : null}
 
             {tab === "proposals" ? (
-              <div className="space-y-3">
-                <p className="text-xs text-[var(--mc-text-muted)]">
-                  Активні пропозиції можна скасувати з причиною — у Telegram і
-                  Discord прийде сповіщення з текстом примітки.
-                </p>
-                {proposals.filter((p) => p.voting_open || p.status === "active")
-                  .length === 0 ? (
-                  <p className="text-sm text-[var(--mc-text-muted)]">
-                    Немає активних пропозицій.
-                  </p>
-                ) : (
-                  proposals
-                    .filter((p) => p.voting_open || p.status === "active")
-                    .map((p) => (
-                      <div
-                        key={p.id}
-                        className="space-y-2 rounded-lg border border-white/10 p-3"
-                      >
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0 flex-1">
-                            <p className="text-sm font-bold text-[var(--mc-text)]">
-                              {p.title}
-                            </p>
-                            <p className="mt-0.5 text-[11px] text-[var(--mc-text-muted)]">
-                              {p.author_username} · голосів: {p.total_votes} ·{" "}
-                              <Link
-                                href={`/proposals/${p.id}`}
-                                className="text-[var(--mc-net-green)] hover:underline"
-                              >
-                                відкрити
-                              </Link>
+              <div className="space-y-4">
+                {(() => {
+                  const activeList = proposals.filter(
+                    (p) =>
+                      p.status === "active" ||
+                      isProposalVotingOpenClient(p.status, p.ends_at),
+                  );
+                  const cancelledAdmin = proposals.filter(
+                    (p) =>
+                      p.status === "cancelled" && Boolean(p.cancel_reason),
+                  );
+                  return (
+                    <>
+                      <div className="border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,0.45)]">
+                        <div className="border-b-2 border-black bg-[#143d10] px-3.5 py-2">
+                          <p className="text-[11px] font-black uppercase tracking-[0.16em] text-[var(--mc-grass-bright)]">
+                            Модерація голосувань
+                          </p>
+                        </div>
+                        <div className="flex flex-col gap-3 bg-[color-mix(in_srgb,var(--mc-surface)_92%,#000)] p-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:p-4">
+                          <div className="min-w-0">
+                            <h2 className="text-base font-black tracking-tight text-[var(--mc-text)] sm:text-xl">
+                              Пропозиції гравців
+                            </h2>
+                            <p className="mt-1 max-w-md text-xs leading-relaxed text-[var(--mc-text-muted)]">
+                              Скасування з причиною → Telegram і Discord.
                             </p>
                           </div>
+                          <div className="flex gap-2">
+                            <div className="min-w-0 flex-1 border-2 border-black bg-black/40 px-2 py-1.5 text-center sm:min-w-[4.5rem] sm:flex-none sm:px-2.5">
+                              <p className="text-lg font-black tabular-nums text-[var(--mc-grass-bright)] sm:text-xl">
+                                {activeList.length}
+                              </p>
+                              <p className="text-[9px] font-black uppercase tracking-wide text-[var(--mc-text-muted)]">
+                                активні
+                              </p>
+                            </div>
+                            <div className="min-w-0 flex-1 border-2 border-black bg-black/40 px-2 py-1.5 text-center sm:min-w-[4.5rem] sm:flex-none sm:px-2.5">
+                              <p className="text-lg font-black tabular-nums text-[#f87171] sm:text-xl">
+                                {cancelledAdmin.length}
+                              </p>
+                              <p className="text-[9px] font-black uppercase tracking-wide text-[var(--mc-text-muted)]">
+                                скасовані
+                              </p>
+                            </div>
+                          </div>
                         </div>
-                        <label className="block space-y-1">
-                          <span className="text-[11px] font-semibold text-[var(--mc-text-muted)]">
-                            Примітка (причина скасування)
-                          </span>
-                          <textarea
-                            value={cancelReasons[p.id] ?? ""}
-                            onChange={(e) =>
-                              setCancelReasons((prev) => ({
-                                ...prev,
-                                [p.id]: e.target.value,
-                              }))
-                            }
-                            rows={2}
-                            maxLength={500}
-                            placeholder="Чому скасовуємо…"
-                            className="lc-focus-ring mc-input w-full resize-y px-2 py-1.5 text-sm"
-                          />
-                        </label>
-                        <button
-                          type="button"
-                          disabled={busy || cancellingId === p.id}
-                          onClick={() => void cancelProposal(p.id)}
-                          className="lc-focus-ring inline-flex items-center gap-1 rounded-lg border border-rose-500/40 px-3 py-2 text-xs font-bold text-rose-100 disabled:opacity-50"
-                        >
-                          <Trash2 className="size-3.5" />
-                          {cancellingId === p.id
-                            ? "Скасовуємо…"
-                            : "Скасувати пропозицію"}
-                        </button>
                       </div>
-                    ))
-                )}
 
-                {proposals.some(
-                  (p) =>
-                    p.status === "cancelled" && Boolean(p.cancel_reason),
-                ) ? (
-                  <div className="space-y-2 border-t border-white/10 pt-3">
-                    <p className="text-xs font-semibold text-[var(--mc-text-muted)]">
-                      Нещодавно скасовані адміном
-                    </p>
-                    {proposals
-                      .filter(
-                        (p) =>
-                          p.status === "cancelled" && Boolean(p.cancel_reason),
-                      )
-                      .slice(0, 8)
-                      .map((p) => (
-                        <div
-                          key={`cancelled-${p.id}`}
-                          className="rounded-lg border border-rose-500/20 bg-rose-500/5 px-3 py-2"
-                        >
-                          <p className="text-sm font-semibold text-[var(--mc-text)]">
-                            {p.title}
-                          </p>
-                          <p className="mt-0.5 text-[11px] text-rose-100/80">
-                            Причина: {p.cancel_reason}
+                      {activeList.length === 0 ? (
+                        <div className="border-2 border-dashed border-black/70 bg-black/25 px-4 py-10 text-center">
+                          <Ban
+                            className="mx-auto size-8 text-[var(--mc-text-muted)] opacity-40"
+                            aria-hidden
+                          />
+                          <p className="mt-3 text-sm text-[var(--mc-text-muted)]">
+                            Немає активних пропозицій для модерації.
                           </p>
                         </div>
-                      ))}
-                  </div>
-                ) : null}
+                      ) : (
+                        <ul className="space-y-4">
+                          {activeList.map((p) => {
+                            const open = isProposalVotingOpenClient(
+                              p.status,
+                              p.ends_at,
+                            );
+                            const kindLabel = proposalKindLabelUk(
+                              (p.kind === "choice"
+                                ? "choice"
+                                : "yes_no") as ProposalKind,
+                            );
+                            const reason = cancelReasons[p.id] ?? "";
+                            const busyThis = cancellingId === p.id;
+                            return (
+                              <li
+                                key={p.id}
+                                className="overflow-hidden border-2 border-black shadow-[4px_4px_0_rgba(0,0,0,0.45)]"
+                              >
+                                <div
+                                  className={cn(
+                                    "flex flex-wrap items-center justify-between gap-2 border-b-2 border-black px-3.5 py-2",
+                                    open ? "bg-[#143d10]" : "bg-black/55",
+                                  )}
+                                >
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <span
+                                      className={cn(
+                                        "inline-flex items-center border-2 border-black px-2 py-0.5 text-[10px] font-black uppercase tracking-wide",
+                                        open
+                                          ? "lc-vote-status-live bg-[#1a5c12] text-[#e8ffe0]"
+                                          : "bg-[#2a2a2a] text-[var(--mc-text-muted)]",
+                                      )}
+                                    >
+                                      {open ? "Триває" : "Активна"}
+                                    </span>
+                                    <span className="border border-black/60 bg-black/40 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
+                                      {kindLabel}
+                                    </span>
+                                  </div>
+                                  <Link
+                                    href={`/proposals/${p.id}`}
+                                    className="lc-focus-ring inline-flex items-center gap-1 border-2 border-black bg-black/35 px-2 py-1 text-[11px] font-black text-[var(--mc-net-green)] hover:bg-black/55"
+                                  >
+                                    На сайті
+                                    <ExternalLink
+                                      className="size-3 opacity-80"
+                                      aria-hidden
+                                    />
+                                  </Link>
+                                </div>
+
+                                <div className="bg-[color-mix(in_srgb,var(--mc-surface)_92%,#000)] p-3.5 sm:p-4">
+                                  <h3 className="text-base font-black leading-snug text-[var(--mc-text)] [overflow-wrap:anywhere] sm:text-lg">
+                                    {p.title}
+                                  </h3>
+                                  <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-[var(--mc-text-muted)]">
+                                    <span className="font-semibold text-[var(--mc-text)]/85">
+                                      {p.author_username}
+                                    </span>
+                                    <span className="inline-flex items-center gap-1 tabular-nums font-semibold">
+                                      <Clock
+                                        className="size-3 opacity-70"
+                                        aria-hidden
+                                      />
+                                      {open
+                                        ? formatTimeRemainingUk(p.ends_at)
+                                        : "термін вийшов"}
+                                    </span>
+                                    <span className="tabular-nums font-semibold text-[var(--mc-net-green)]">
+                                      {p.total_votes} голосів
+                                    </span>
+                                  </div>
+
+                                  {p.description.trim() ? (
+                                    <p className="mt-2.5 line-clamp-2 text-xs leading-relaxed text-[var(--mc-text-muted)] [overflow-wrap:anywhere]">
+                                      {p.description}
+                                    </p>
+                                  ) : null}
+
+                                  <div className="mt-3.5 border-2 border-[#7f1d1d] bg-[#2a0f0f] p-3">
+                                    <label className="block space-y-1.5">
+                                      <span className="flex items-center gap-1.5 text-[11px] font-black uppercase tracking-wide text-[#fecaca]">
+                                        <Ban
+                                          className="size-3.5 opacity-90"
+                                          aria-hidden
+                                        />
+                                        Причина скасування
+                                      </span>
+                                      <textarea
+                                        value={reason}
+                                        onChange={(e) =>
+                                          setCancelReasons((prev) => ({
+                                            ...prev,
+                                            [p.id]: e.target.value,
+                                          }))
+                                        }
+                                        rows={2}
+                                        maxLength={500}
+                                        placeholder="Чому скасовуємо цю пропозицію…"
+                                        className="lc-focus-ring w-full resize-y border-2 border-black bg-black/50 px-3 py-2 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]/60"
+                                      />
+                                    </label>
+                                    <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                                      <p className="text-[10px] font-semibold text-[var(--mc-text-muted)]">
+                                        {reason.trim().length}/500 · Telegram +
+                                        Discord
+                                      </p>
+                                      <button
+                                        type="button"
+                                        disabled={
+                                          busy || busyThis || !reason.trim()
+                                        }
+                                        onClick={() =>
+                                          void cancelProposal(p.id)
+                                        }
+                                        className="lc-focus-ring inline-flex min-h-11 w-full items-center justify-center gap-1.5 border-2 border-black bg-[#7f1d1d] px-3.5 py-2 text-xs font-black text-[#fecaca] touch-manipulation hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-40 sm:min-h-0 sm:w-auto"
+                                      >
+                                        <Trash2
+                                          className="size-3.5"
+                                          aria-hidden
+                                        />
+                                        {busyThis
+                                          ? "Скасовуємо…"
+                                          : "Скасувати"}
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+
+                      {cancelledAdmin.length > 0 ? (
+                        <div className="space-y-3 pt-2">
+                          <div className="border-2 border-black bg-[#4a1515] px-3 py-2">
+                            <p className="text-[11px] font-black uppercase tracking-[0.14em] text-[#fecaca]">
+                              Скасовані адміном
+                            </p>
+                          </div>
+                          <ul className="space-y-2">
+                            {cancelledAdmin.slice(0, 8).map((p) => (
+                              <li
+                                key={`cancelled-${p.id}`}
+                                className="border-2 border-black bg-[#2a0f0f] px-3.5 py-3 shadow-[3px_3px_0_rgba(0,0,0,0.4)]"
+                              >
+                                <div className="flex flex-wrap items-start justify-between gap-2">
+                                  <p className="min-w-0 flex-1 text-sm font-black text-[var(--mc-text)] [overflow-wrap:anywhere]">
+                                    {p.title}
+                                  </p>
+                                  <Link
+                                    href={`/proposals/${p.id}`}
+                                    className="shrink-0 text-[11px] font-bold text-[#f87171] hover:underline"
+                                  >
+                                    відкрити
+                                  </Link>
+                                </div>
+                                <p className="mt-1.5 text-xs leading-relaxed text-[#fecaca]/80">
+                                  <span className="font-black text-[#fecaca]">
+                                    Причина:
+                                  </span>{" "}
+                                  {p.cancel_reason}
+                                </p>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+                    </>
+                  );
+                })()}
               </div>
             ) : null}
 
