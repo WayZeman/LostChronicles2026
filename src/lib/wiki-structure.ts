@@ -430,6 +430,7 @@ export async function addPageToCategory(input: {
   slug?: string;
   short_code?: string;
   card_blurb?: string;
+  image_url?: string;
   content_html?: string;
   userId?: number | null;
 }): Promise<
@@ -438,14 +439,18 @@ export async function addPageToCategory(input: {
 > {
   await ensureWikiStructureTables();
   const title = input.title.trim();
-  if (!title) return { ok: false, error: "Потрібна назва сторінки." };
+  if (!title) return { ok: false, error: "Потрібна назва." };
+
+  const starterHtml =
+    input.content_html?.trim() ||
+    `<h2>${title.replace(/</g, "&lt;")}</h2><p></p>`;
 
   const created = await upsertWikiPage({
     slug: input.slug || wikiSlugFromTitle(title),
     title,
-    content_html: input.content_html ?? "<p></p>",
+    content_html: starterHtml,
     userId: input.userId ?? null,
-    createOnly: false,
+    createOnly: true,
   });
   if (!created.ok) return created;
 
@@ -459,23 +464,28 @@ export async function addPageToCategory(input: {
   try {
     const rows = rowsOf(await sql`
       INSERT INTO wiki_category_pages (
-        category_id, page_id, short_code, card_blurb, sort_order
+        category_id, page_id, short_code, card_blurb, image_url, sort_order
       )
       VALUES (
         ${input.category_id},
         ${created.page.id},
         ${(input.short_code ?? "").trim()},
         ${(input.card_blurb ?? "").trim()},
+        ${(input.image_url ?? "").trim()},
         ${sort_order}
       )
       ON CONFLICT (category_id, page_id) DO UPDATE SET
         short_code = EXCLUDED.short_code,
-        card_blurb = EXCLUDED.card_blurb
+        card_blurb = EXCLUDED.card_blurb,
+        image_url = CASE
+          WHEN EXCLUDED.image_url <> '' THEN EXCLUDED.image_url
+          ELSE wiki_category_pages.image_url
+        END
       RETURNING id
     `);
     return { ok: true, page: created.page, linkId: num(rows[0]?.id) };
   } catch {
-    return { ok: false, error: "Не вдалося додати сторінку до блоку." };
+    return { ok: false, error: "Не вдалося додати картку до блоку." };
   }
 }
 

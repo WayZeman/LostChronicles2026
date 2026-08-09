@@ -92,6 +92,109 @@ export function wikiAccentForSlug(slug: string): WikiAccent {
   return BY_SLUG[slug] ?? DEFAULT_ACCENT;
 }
 
+/** Підписи для створення картки+сторінки в реєстрі. */
+export function wikiCategoryCreateCopy(slug: string): {
+  addLabel: string;
+  formTitle: string;
+  titlePlaceholder: string;
+  blurbPlaceholder: string;
+  createLabel: string;
+  successHint: string;
+} {
+  switch (slug) {
+    case "Держави":
+      return {
+        addLabel: "Нова держава",
+        formTitle: "Нова картка держави",
+        titlePlaceholder: "Назва (Домініон Земана)",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Державні_Утворення":
+      return {
+        addLabel: "Нове утворення",
+        formTitle: "Нова картка державного утворення",
+        titlePlaceholder: "Назва утворення",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Мегаполіси":
+      return {
+        addLabel: "Новий мегаполіс",
+        formTitle: "Нова картка мегаполіса",
+        titlePlaceholder: "Назва мегаполіса",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Міста":
+      return {
+        addLabel: "Нове місто",
+        formTitle: "Нова картка міста",
+        titlePlaceholder: "Назва міста",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Поселення":
+      return {
+        addLabel: "Нове поселення",
+        formTitle: "Нова картка поселення",
+        titlePlaceholder: "Назва поселення",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Гравці":
+      return {
+        addLabel: "Новий гравець",
+        formTitle: "Нова картка гравця",
+        titlePlaceholder: "Нікнейм / імʼя",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Лор_серверу":
+      return {
+        addLabel: "Нова сторінка лору",
+        formTitle: "Нова картка лору",
+        titlePlaceholder: "Назва розділу лору",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Історія_проєкту":
+      return {
+        addLabel: "Нова сторінка історії",
+        formTitle: "Нова картка історії",
+        titlePlaceholder: "Назва",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    case "Довідник_цін":
+      return {
+        addLabel: "Нова сторінка цін",
+        formTitle: "Нова картка довідника",
+        titlePlaceholder: "Назва",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+    default:
+      return {
+        addLabel: "Нова картка",
+        formTitle: "Нова картка в реєстрі",
+        titlePlaceholder: "Назва",
+        blurbPlaceholder: "Короткий опис на картці — опційно",
+        createLabel: "Створити картку і сторінку",
+        successHint: "Картку додано, відкрито сторінку для редагування.",
+      };
+  }
+}
+
 /** Простий підрахунок для бейджа. */
 export function wikiPagesChip(n: number | undefined): string | null {
   if (n === undefined || n < 0) return null;

@@ -33,6 +33,7 @@ export async function POST(req: Request, ctx: Ctx) {
       slug?: string;
       short_code?: string;
       card_blurb?: string;
+      image_url?: string;
       content_html?: string;
       page_id?: number;
     };
@@ -51,19 +52,29 @@ export async function POST(req: Request, ctx: Ctx) {
       if (!linked.ok) {
         return NextResponse.json({ error: linked.error }, { status: 400 });
       }
-    } else {
-      const created = await addPageToCategory({
-        category_id: categoryId,
-        title: String(body.title ?? ""),
-        slug: body.slug,
-        short_code: body.short_code,
-        card_blurb: body.card_blurb,
-        content_html: body.content_html,
-        userId,
-      });
-      if (!created.ok) {
-        return NextResponse.json({ error: created.error }, { status: 400 });
-      }
+      const tree = await getWikiHomeTree();
+      const catMeta = tree.sections
+        .flatMap((s) => s.categories)
+        .find((c) => c.id === categoryId);
+      const category = catMeta
+        ? await getWikiCategoryBySlug(catMeta.slug)
+        : null;
+      revalidateWikiPublic();
+      return NextResponse.json({ ok: true, category, tree });
+    }
+
+    const created = await addPageToCategory({
+      category_id: categoryId,
+      title: String(body.title ?? ""),
+      slug: body.slug,
+      short_code: body.short_code,
+      card_blurb: body.card_blurb,
+      image_url: body.image_url,
+      content_html: body.content_html,
+      userId,
+    });
+    if (!created.ok) {
+      return NextResponse.json({ error: created.error }, { status: 400 });
     }
 
     const tree = await getWikiHomeTree();
@@ -74,7 +85,13 @@ export async function POST(req: Request, ctx: Ctx) {
       ? await getWikiCategoryBySlug(catMeta.slug)
       : null;
     revalidateWikiPublic();
-    return NextResponse.json({ ok: true, category, tree });
+    return NextResponse.json({
+      ok: true,
+      category,
+      tree,
+      page: created.page,
+      linkId: created.linkId,
+    });
   } catch {
     return NextResponse.json({ error: "Database unavailable" }, { status: 503 });
   }
