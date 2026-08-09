@@ -2,9 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { authRequiredPath, buildOAuthNextFromPath } from "@/lib/auth-paths";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth-session";
 
-/** Створення пропозиції / адмінка — лише для авторизованих. */
+/** Створення пропозиції / адмінка / редагування вікі — лише для авторизованих. */
 function isAuthRequiredPath(pathname: string): boolean {
-  return pathname === "/proposals/new" || pathname === "/admin" || pathname.startsWith("/admin/");
+  if (pathname === "/proposals/new") return true;
+  if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  if (pathname === "/wiki/new") return true;
+  if (/^\/wiki\/.+\/edit\/?$/.test(pathname)) return true;
+  return false;
 }
 
 /** У local — без кешу, щоб UI-правки видно одразу після refresh. */

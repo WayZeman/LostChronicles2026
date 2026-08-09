@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { ArrowDown, ArrowUp, Ban, Clock, ExternalLink, Plus, Trash2, Upload } from "lucide-react";
 import { FaqRichEditor } from "@/components/admin/FaqRichEditor";
+import { AdminWikiCms } from "@/components/admin/AdminWikiCms";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -21,7 +23,14 @@ import {
 import { cn } from "@/lib/utils";
 import "@/components/proposals/proposal-vote.css";
 
-type Tab = "faq" | "connect" | "support" | "voting" | "proposals" | "admins";
+type Tab =
+  | "faq"
+  | "connect"
+  | "support"
+  | "voting"
+  | "proposals"
+  | "admins"
+  | "wiki";
 
 type FaqDraft = { key: string; question: string; answer_html: string };
 
@@ -54,7 +63,7 @@ type AdminUser = {
   id: number;
   username: string;
   game_nickname: string | null;
-  role: "user" | "admin";
+  role: "user" | "wiki_editor" | "admin";
 };
 
 type AdminProposal = {
@@ -82,7 +91,19 @@ function newCardKey(): string {
 }
 
 export function AdminPanelClient() {
-  const [tab, setTab] = useState<Tab>("faq");
+  const searchParams = useSearchParams();
+  const tabParam = searchParams.get("tab");
+  const initialTab: Tab =
+    tabParam === "faq" ||
+    tabParam === "connect" ||
+    tabParam === "support" ||
+    tabParam === "voting" ||
+    tabParam === "proposals" ||
+    tabParam === "admins" ||
+    tabParam === "wiki"
+      ? tabParam
+      : "faq";
+  const [tab, setTab] = useState<Tab>(initialTab);
   const [allowed, setAllowed] = useState<boolean | null>(null);
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
@@ -195,6 +216,24 @@ export function AdminPanelClient() {
       setAllowed(false);
     }
   }, []);
+
+  useEffect(() => {
+    const id = requestAnimationFrame(() => {
+      const t = searchParams.get("tab");
+      if (
+        t === "faq" ||
+        t === "connect" ||
+        t === "support" ||
+        t === "voting" ||
+        t === "proposals" ||
+        t === "admins" ||
+        t === "wiki"
+      ) {
+        setTab(t);
+      }
+    });
+    return () => cancelAnimationFrame(id);
+  }, [searchParams]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -389,7 +428,10 @@ export function AdminPanelClient() {
     });
   }
 
-  async function setRole(userId: number, role: "user" | "admin") {
+  async function setRole(
+    userId: number,
+    role: "user" | "wiki_editor" | "admin",
+  ) {
     setBusy(true);
     setErr(null);
     setMsg(null);
@@ -410,7 +452,13 @@ export function AdminPanelClient() {
         return;
       }
       if (d.users) setUsers(d.users);
-      setMsg(role === "admin" ? "Адміна призначено." : "Роль знято.");
+      setMsg(
+        role === "admin"
+          ? "Адміна призначено."
+          : role === "wiki_editor"
+            ? "Вікі-редактора призначено."
+            : "Роль знято (гравець).",
+      );
     } catch {
       setErr("Мережа недоступна");
     }
@@ -501,7 +549,8 @@ export function AdminPanelClient() {
     { id: "support", label: "Підтримка" },
     { id: "voting", label: "Голосування" },
     { id: "proposals", label: "Пропозиції" },
-    { id: "admins", label: "Адміни" },
+    { id: "wiki", label: "Вікі" },
+    { id: "admins", label: "Ролі" },
   ];
 
   async function onCardImageFile(idx: number, file: File | null) {
@@ -1428,10 +1477,18 @@ export function AdminPanelClient() {
               </div>
             ) : null}
 
+            {tab === "wiki" ? <AdminWikiCms /> : null}
+
             {tab === "admins" ? (
               <ul className="space-y-2">
                 {users.map((u) => {
                   const label = u.game_nickname || u.username;
+                  const roleLabel =
+                    u.role === "admin"
+                      ? "Адмін"
+                      : u.role === "wiki_editor"
+                        ? "Вікі редактор"
+                        : "Гравець";
                   return (
                     <li
                       key={u.id}
@@ -1442,31 +1499,44 @@ export function AdminPanelClient() {
                           {label}
                         </p>
                         <p className="text-[11px] text-[var(--mc-text-muted)]">
-                          {u.role === "admin" ? "Адмін" : "Гравець"}
+                          {roleLabel}
                           {u.game_nickname
                             ? ` · oauth: ${u.username}`
                             : null}
                         </p>
                       </div>
-                      {u.role === "admin" ? (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void setRole(u.id, "user")}
-                          className="lc-focus-ring rounded-lg border border-rose-500/30 px-2.5 py-1.5 text-xs font-bold text-rose-100 disabled:opacity-50"
-                        >
-                          Зняти адміна
-                        </button>
-                      ) : (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => void setRole(u.id, "admin")}
-                          className="lc-focus-ring rounded-lg border border-[var(--mc-net-green)]/40 px-2.5 py-1.5 text-xs font-bold text-[var(--mc-net-green)] disabled:opacity-50"
-                        >
-                          Зробити адміном
-                        </button>
-                      )}
+                      <div className="flex flex-wrap gap-1.5">
+                        {u.role !== "admin" ? (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void setRole(u.id, "admin")}
+                            className="lc-focus-ring rounded-lg border border-[var(--mc-net-green)]/40 px-2.5 py-1.5 text-xs font-bold text-[var(--mc-net-green)] disabled:opacity-50"
+                          >
+                            Адмін
+                          </button>
+                        ) : null}
+                        {u.role !== "wiki_editor" ? (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void setRole(u.id, "wiki_editor")}
+                            className="lc-focus-ring rounded-lg border border-sky-400/40 px-2.5 py-1.5 text-xs font-bold text-sky-200 disabled:opacity-50"
+                          >
+                            Вікі редактор
+                          </button>
+                        ) : null}
+                        {u.role !== "user" ? (
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => void setRole(u.id, "user")}
+                            className="lc-focus-ring rounded-lg border border-rose-500/30 px-2.5 py-1.5 text-xs font-bold text-rose-100 disabled:opacity-50"
+                          >
+                            Зняти роль
+                          </button>
+                        ) : null}
+                      </div>
                     </li>
                   );
                 })}

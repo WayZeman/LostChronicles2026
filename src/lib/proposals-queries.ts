@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { normalizeRole, type UserRole } from "@/lib/admin-role";
 import {
   notifyProposalResultsBatch,
   notifyProposalTieExtendedBatch,
@@ -691,7 +692,7 @@ export async function getUserPublicById(id: number): Promise<{
   google_id: string | null;
   game_nickname: string | null;
   custom_avatar: string | null;
-  role: "user" | "admin";
+  role: UserRole;
 } | null> {
   await ensureAuthProviderColumns();
   const sql = getSql();
@@ -708,8 +709,7 @@ export async function getUserPublicById(id: number): Promise<{
       ? null
       : String(r.game_nickname);
   const username = String(r.username ?? "");
-  let role: "user" | "admin" =
-    String(r.role ?? "").toLowerCase() === "admin" ? "admin" : "user";
+  let role = normalizeRole(r.role);
   const nickLower = (gameNickname ?? username).trim().toLowerCase();
   if (nickLower === "way_zeman" && role !== "admin") {
     await sql`UPDATE users SET role = 'admin' WHERE id = ${id}`;

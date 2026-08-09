@@ -1,6 +1,6 @@
-import { fetchFandomPageHtml } from "@/lib/fandom";
+import { getWikiPageBySlug } from "@/lib/wiki-pages";
 
-/** Slug головної сторінки (як у Fandom URL /wiki/Main_Page). */
+/** Slug головної сторінки (як у колишньому Fandom URL /wiki/Main_Page). */
 export const WIKI_HOME_SLUG = "Main_Page";
 
 const HOME_SLUG_ALIASES = [WIKI_HOME_SLUG, "main_page"] as const;
@@ -16,11 +16,10 @@ export type WikiHomeResolved = {
 };
 
 export async function resolveWikiHomeContent(): Promise<WikiHomeResolved | null> {
-  const parsed = await fetchFandomPageHtml("Main Page");
-  if (!parsed) return null;
-
+  const page = await getWikiPageBySlug(WIKI_HOME_SLUG);
+  if (!page) return null;
   return {
-    title: parsed.title,
-    html: parsed.html,
+    title: page.title,
+    html: page.content_html,
   };
 }

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { canEditWiki, isAdminRole } from "@/lib/admin-role";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import {
   gameNicknameError,
@@ -117,7 +118,8 @@ export async function PATCH(req: Request) {
         }),
         hasCustomAvatar: Boolean(u.custom_avatar?.trim()),
         role: u.role,
-        isAdmin: u.role === "admin",
+        isAdmin: isAdminRole(u.role),
+        canEditWiki: canEditWiki(u.role),
       },
     });
   } catch {

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { normalizeRole } from "@/lib/admin-role";
+import { assertAssignableRole } from "@/lib/wiki-pages";
 import {
   listUsersForAdmin,
   requireAdminUserId,
@@ -48,10 +48,10 @@ export async function PATCH(req: Request) {
     if (!Number.isFinite(targetId) || targetId < 1) {
       return NextResponse.json({ error: "Некоректний userId." }, { status: 400 });
     }
-    const role = normalizeRole(b.role);
-    if (b.role !== "admin" && b.role !== "user") {
+    const role = assertAssignableRole(b.role);
+    if (!role) {
       return NextResponse.json(
-        { error: "role має бути admin або user." },
+        { error: "role має бути admin, wiki_editor або user." },
         { status: 400 },
       );
     }

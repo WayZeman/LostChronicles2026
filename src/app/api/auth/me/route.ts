@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { isAdminRole } from "@/lib/admin-role";
+import { canEditWiki, isAdminRole } from "@/lib/admin-role";
 import { userDisplayName } from "@/lib/game-nickname";
 import { getUserPublicById } from "@/lib/proposals-queries";
 import { promoteSuperAdmins } from "@/lib/site-content";
@@ -37,6 +37,7 @@ export async function GET() {
         hasCustomAvatar: Boolean(u.custom_avatar?.trim()),
         role: u.role,
         isAdmin: isAdminRole(u.role),
+        canEditWiki: canEditWiki(u.role),
       },
     });
   } catch {

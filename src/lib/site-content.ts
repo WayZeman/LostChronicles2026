@@ -611,7 +611,11 @@ export async function listUsersForAdmin(): Promise<AdminUserRow[]> {
     SELECT id, username, game_nickname, role
     FROM users
     ORDER BY
-      CASE WHEN role = 'admin' THEN 0 ELSE 1 END,
+      CASE
+        WHEN role = 'admin' THEN 0
+        WHEN role = 'wiki_editor' THEN 1
+        ELSE 2
+      END,
       lower(coalesce(nullif(trim(game_nickname), ''), username)) ASC
     LIMIT 200
   `);

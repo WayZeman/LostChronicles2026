@@ -9,7 +9,7 @@ type SearchResult = {
   title: string;
   snippet: string;
   href: string;
-  originalUrl: string;
+  originalUrl?: string;
 };
 
 type SearchResponse = {
