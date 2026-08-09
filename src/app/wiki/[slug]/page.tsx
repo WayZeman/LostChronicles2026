@@ -1,7 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { isWikiHomeSlug } from "@/lib/wiki-home";
+import { isWikiHomeSlug } from "@/lib/wiki-home-slug";
 import {
   fetchRpNewsWikiContent,
   isRpNewsWikiSlug,

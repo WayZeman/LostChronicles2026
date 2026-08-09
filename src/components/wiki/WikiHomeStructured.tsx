@@ -6,27 +6,34 @@ import {
   wikiAccentForSlug,
   wikiPagesChip,
 } from "@/components/wiki/wiki-accents";
+import { wikiDefaultCoverForSlug } from "@/components/wiki/wiki-covers";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
 type Props = {
   tree: WikiHomeTree;
   editMode?: boolean;
+  /** Приховати «Вікі світу», якщо зверху вже є HTML головної. */
+  hideBrandHeader?: boolean;
   onOpenCategory?: (category: WikiCategoryRow) => void;
   sectionActions?: (sectionId: number) => ReactNode;
   categoryActions?: (category: WikiCategoryRow) => ReactNode;
+  /** HTML / інтро над реєстрами. */
+  intro?: ReactNode;
   footer?: ReactNode;
 };
 
 export function WikiHomeStructured({
   tree,
   editMode,
+  hideBrandHeader,
   onOpenCategory,
   sectionActions,
   categoryActions,
+  intro,
   footer,
 }: Props) {
-  if (!tree.sections.length) {
+  if (!tree.sections.length && !intro) {
     return (
       <div className="space-y-4">
         <p className="py-10 text-center text-sm text-[var(--mc-text-muted)]">
@@ -39,21 +46,25 @@ export function WikiHomeStructured({
 
   return (
     <div className="space-y-12 sm:space-y-14">
-      <SoftAppear>
-        <header className="text-center">
-          <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--mc-text-subtle)]">
-            Lost Chronicles
-          </p>
-          <h1 className="lc-hero-title mt-2 text-3xl text-[var(--mc-text)] sm:text-4xl">
-            Вікі світу
-          </h1>
-          <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-[var(--mc-text-muted)]">
-            Лор, держави, міста, гравці та довідник цін — хроніка сервера в одному
-            місці.
-          </p>
-          <div className="mx-auto mt-4 h-px w-[min(70%,18rem)] bg-gradient-to-r from-transparent via-[#ecaf2d]/50 to-transparent" />
-        </header>
-      </SoftAppear>
+      {intro}
+
+      {!hideBrandHeader ? (
+        <SoftAppear>
+          <header className="text-center">
+            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--mc-text-subtle)]">
+              Lost Chronicles
+            </p>
+            <h1 className="lc-hero-title mt-2 text-3xl text-[var(--mc-text)] sm:text-4xl">
+              Вікі світу
+            </h1>
+            <p className="mx-auto mt-2 max-w-lg text-sm leading-relaxed text-[var(--mc-text-muted)]">
+              Лор, держави, міста, гравці та довідник цін — хроніка сервера в
+              одному місці.
+            </p>
+            <div className="mx-auto mt-4 h-px w-[min(70%,18rem)] bg-gradient-to-r from-transparent via-[#ecaf2d]/50 to-transparent" />
+          </header>
+        </SoftAppear>
+      ) : null}
 
       {tree.sections.map((section, sectionIdx) => (
         <SoftAppear key={section.id} slow={sectionIdx > 0}>
@@ -92,54 +103,55 @@ export function WikiHomeStructured({
                 );
                 const body = (
                   <>
-                    <span
-                      className={cn(
-                        "absolute inset-y-0 left-0 w-1",
-                        accent.bar,
-                      )}
-                      aria-hidden
-                    />
-                    <div className="flex items-start justify-between gap-3 pl-2">
-                      <div className="flex min-w-0 items-start gap-2.5">
-                        <span
+                    <div className="relative -mx-4 -mt-4 mb-3 aspect-[16/10] overflow-hidden border-b border-white/10 bg-black/50">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={wikiDefaultCoverForSlug(cat.slug)}
+                        alt=""
+                        className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                      />
+                      <span
+                        className={cn(
+                          "pointer-events-none absolute left-3 top-3 inline-flex size-8 items-center justify-center border bg-black/60 backdrop-blur-[2px]",
+                          accent.chip,
+                        )}
+                      >
+                        <Icon className="size-4" aria-hidden />
+                      </span>
+                      <span
+                        className={cn("absolute inset-y-0 left-0 w-1", accent.bar)}
+                        aria-hidden
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <h3 className="text-base font-extrabold tracking-wide text-[var(--mc-text)] group-hover:text-[var(--mc-net-green)]">
+                        {cat.title}
+                      </h3>
+                      {chip ? (
+                        <p
                           className={cn(
-                            "mt-0.5 inline-flex size-8 shrink-0 items-center justify-center border bg-black/40",
-                            accent.chip,
+                            "mt-0.5 text-[10px] font-bold uppercase tracking-wider",
+                            accent.chip.split(" ").pop(),
                           )}
                         >
-                          <Icon className="size-4" aria-hidden />
-                        </span>
-                        <div className="min-w-0">
-                          <h3 className="text-base font-extrabold tracking-wide text-[var(--mc-text)] group-hover:text-[var(--mc-net-green)]">
-                            {cat.title}
-                          </h3>
-                          {chip ? (
-                            <p
-                              className={cn(
-                                "mt-0.5 text-[10px] font-bold uppercase tracking-wider",
-                                accent.chip.split(" ").pop(),
-                              )}
-                            >
-                              {chip}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
+                          {chip}
+                        </p>
+                      ) : null}
                     </div>
                     {cat.description ? (
-                      <p className="mt-2.5 flex-1 pl-2 text-sm leading-relaxed text-[var(--mc-text-muted)]">
+                      <p className="mt-2.5 flex-1 text-sm leading-relaxed text-[var(--mc-text-muted)]">
                         {cat.description}
                       </p>
                     ) : (
                       <span className="flex-1" />
                     )}
-                    <span className="mt-3 inline-flex items-center gap-1.5 pl-2 text-xs font-bold text-[#ffd54f]">
+                    <span className="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-[#ffd54f]">
                       Відкрити
                       <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" />
                     </span>
                     {categoryActions ? (
                       <div
-                        className="mt-3 flex flex-wrap gap-1.5 border-t border-white/10 pt-3 pl-2"
+                        className="mt-3 flex flex-wrap gap-1.5 border-t border-white/10 pt-3"
                         onClick={(e) => e.stopPropagation()}
                         onKeyDown={(e) => e.stopPropagation()}
                       >

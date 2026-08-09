@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { isWikiHomeSlug } from "@/lib/wiki-home";
+import { isWikiHomeSlug } from "@/lib/wiki-home-slug";
 import { getWikiPageBySlug } from "@/lib/wiki-pages";
 import { isRpNewsWikiSlug } from "@/lib/telegram-rp-news";
 import { WikiEditClient } from "@/components/wiki/WikiEditClient";

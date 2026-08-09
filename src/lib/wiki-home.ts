@@ -1,14 +1,7 @@
 import { getWikiPageBySlug } from "@/lib/wiki-pages";
+import { WIKI_HOME_SLUG, isWikiHomeSlug } from "@/lib/wiki-home-slug";
 
-/** Slug головної сторінки (як у колишньому Fandom URL /wiki/Main_Page). */
-export const WIKI_HOME_SLUG = "Main_Page";
-
-const HOME_SLUG_ALIASES = [WIKI_HOME_SLUG, "main_page"] as const;
-
-export function isWikiHomeSlug(slug: string): boolean {
-  const n = slug.trim();
-  return HOME_SLUG_ALIASES.some((s) => s.toLowerCase() === n.toLowerCase());
-}
+export { WIKI_HOME_SLUG, isWikiHomeSlug };
 
 export type WikiHomeResolved = {
   title: string;

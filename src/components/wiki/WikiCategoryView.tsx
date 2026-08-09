@@ -9,6 +9,7 @@ import {
   wikiAccentForSlug,
   wikiPagesChip,
 } from "@/components/wiki/wiki-accents";
+import { wikiCardImageUrl } from "@/components/wiki/wiki-covers";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -110,6 +111,7 @@ export function WikiCategoryView({
           <div className="flex flex-wrap justify-center gap-3">
             {category.pages.map((p) => {
               const seal = monogram(p.page_title, p.short_code);
+              const cover = wikiCardImageUrl(category.slug, p.image_url);
               const cardClass = cn(
                 "lc-focus-ring group relative flex w-full flex-col overflow-hidden",
                 "border border-white/10 bg-black/35 p-4 transition duration-200",
@@ -117,40 +119,33 @@ export function WikiCategoryView({
                 "hover:-translate-y-0.5 hover:bg-black/45",
                 accent.glow,
               );
-              const hasPhoto = Boolean(p.image_url?.trim());
               const body = (
                 <>
-                  {hasPhoto ? (
-                    <div className="-mx-4 -mt-4 mb-3 aspect-[16/10] overflow-hidden border-b border-white/10 bg-black/50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={p.image_url}
-                        alt=""
-                        className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                      />
-                    </div>
-                  ) : null}
-                  <div className="flex items-start gap-3">
-                    {!hasPhoto ? (
-                      <span
-                        className={cn(
-                          "inline-flex size-10 shrink-0 items-center justify-center border bg-black/50 font-mono text-[11px] font-black tracking-wider",
-                          accent.chip,
-                        )}
-                      >
-                        {seal}
-                      </span>
+                  <div className="relative -mx-4 -mt-4 mb-3 aspect-[16/10] overflow-hidden border-b border-white/10 bg-black/50">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={cover}
+                      alt=""
+                      className="size-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                    />
+                    <span
+                      className={cn(
+                        "pointer-events-none absolute left-3 top-3 inline-flex size-9 items-center justify-center border bg-black/60 font-mono text-[10px] font-black tracking-wider backdrop-blur-[2px]",
+                        accent.chip,
+                      )}
+                    >
+                      {seal}
+                    </span>
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="text-base font-extrabold text-[var(--mc-text)] group-hover:text-[var(--mc-net-green)]">
+                      {p.page_title}
+                    </h2>
+                    {p.short_code ? (
+                      <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--mc-text-subtle)]">
+                        код {p.short_code}
+                      </p>
                     ) : null}
-                    <div className="min-w-0 flex-1">
-                      <h2 className="text-base font-extrabold text-[var(--mc-text)] group-hover:text-[var(--mc-net-green)]">
-                        {p.page_title}
-                      </h2>
-                      {p.short_code ? (
-                        <p className="mt-0.5 text-[10px] font-bold uppercase tracking-wider text-[var(--mc-text-subtle)]">
-                          код {p.short_code}
-                        </p>
-                      ) : null}
-                    </div>
                   </div>
                   {p.card_blurb || p.page_summary ? (
                     <p className="mt-2.5 line-clamp-3 flex-1 text-sm leading-relaxed text-[var(--mc-text-muted)]">

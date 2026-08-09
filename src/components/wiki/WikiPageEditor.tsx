@@ -19,6 +19,8 @@ type Props = {
   onChange: (html: string) => void;
   disabled?: boolean;
   className?: string;
+  /** Початковий режим редактора (візуальний або сирий HTML). */
+  initialMode?: Mode;
 };
 
 function runCmd(command: string, value?: string) {
@@ -28,11 +30,17 @@ function runCmd(command: string, value?: string) {
 /**
  * Редактор вікі: візуальний режим + сирий HTML (як на Fandom — текст і код).
  */
-export function WikiPageEditor({ value, onChange, disabled, className }: Props) {
+export function WikiPageEditor({
+  value,
+  onChange,
+  disabled,
+  className,
+  initialMode = "visual",
+}: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const lastEmitted = useRef(value);
   const primed = useRef(false);
-  const [mode, setMode] = useState<Mode>("visual");
+  const [mode, setMode] = useState<Mode>(initialMode);
 
   useEffect(() => {
     if (mode !== "visual") return;
