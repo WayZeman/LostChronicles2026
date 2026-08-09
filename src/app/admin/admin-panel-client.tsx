@@ -454,7 +454,7 @@ export function AdminPanelClient() {
         delete next[proposalId];
         return next;
       });
-      setMsg("Пропозицію скасовано. Сповіщення надіслано в Telegram.");
+      setMsg("Пропозицію скасовано. Сповіщення надіслано в Telegram і Discord.");
     } catch {
       setErr("Мережа недоступна");
     }
@@ -1189,8 +1189,8 @@ export function AdminPanelClient() {
             {tab === "proposals" ? (
               <div className="space-y-3">
                 <p className="text-xs text-[var(--mc-text-muted)]">
-                  Активні пропозиції можна скасувати з причиною — у Telegram
-                  прийде сповіщення з текстом примітки.
+                  Активні пропозиції можна скасувати з причиною — у Telegram і
+                  Discord прийде сповіщення з текстом примітки.
                 </p>
                 {proposals.filter((p) => p.voting_open || p.status === "active")
                   .length === 0 ? (

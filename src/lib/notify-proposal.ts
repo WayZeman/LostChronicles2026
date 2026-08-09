@@ -294,10 +294,9 @@ export async function notifyProposalAdminCancelledDiscord(params: {
   return postDiscordWebhook({
     embeds: [
       {
-        title: "Пропозицію скасовано",
+        title: "Пропозицію скасовано адміністрацією серверу",
         description:
           `**${title}**\n\n` +
-          `Скасовано адміністрацією серверу.\n` +
           `**Причина:** ${reason}\n\n` +
           `[Відкрити пропозицію ↗](${link})`,
         color: 0xed4245,
