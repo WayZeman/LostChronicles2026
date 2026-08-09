@@ -188,6 +188,24 @@ async function ensureCmsTables(): Promise<void> {
           )
       `;
     }
+    // Кнопка анкети → /apply (замість Google Forms)
+    const joinFaq = LOST_CHRONICLES_FAQ.find(
+      (i) => i.question === "Як потрапити на сервер?",
+    );
+    if (joinFaq) {
+      await sql`
+        UPDATE faq_items
+        SET answer_html = ${joinFaq.answer}, updated_at = NOW()
+        WHERE (
+          answer_html LIKE '%google.com/forms%'
+          OR answer_html LIKE '%forms.gle%'
+          OR (
+            answer_html LIKE '%Пройти анкету%'
+            AND answer_html NOT LIKE '%href="/apply"%'
+          )
+        )
+      `;
+    }
   }
 
   // Каталог підтримки: seed лише якщо таблиця порожня (не затираємо адмін-контент)

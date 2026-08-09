@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowDown, ArrowUp, Ban, Clock, ExternalLink, Plus, Trash2, Upload } from "lucide-react";
 import { FaqRichEditor } from "@/components/admin/FaqRichEditor";
 import { AdminWikiCms } from "@/components/admin/AdminWikiCms";
+import { AdminApplyCms } from "@/components/admin/AdminApplyCms";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -25,6 +26,7 @@ import "@/components/proposals/proposal-vote.css";
 
 type Tab =
   | "faq"
+  | "apply"
   | "connect"
   | "support"
   | "voting"
@@ -95,6 +97,7 @@ export function AdminPanelClient() {
   const tabParam = searchParams.get("tab");
   const initialTab: Tab =
     tabParam === "faq" ||
+    tabParam === "apply" ||
     tabParam === "connect" ||
     tabParam === "support" ||
     tabParam === "voting" ||
@@ -234,6 +237,7 @@ export function AdminPanelClient() {
       const t = searchParams.get("tab");
       if (
         t === "faq" ||
+        t === "apply" ||
         t === "connect" ||
         t === "support" ||
         t === "voting" ||
@@ -558,6 +562,7 @@ export function AdminPanelClient() {
   const tabs: { id: Tab; label: string }[] = isFullAdmin
     ? [
         { id: "faq", label: "FAQ" },
+        { id: "apply", label: "Анкета" },
         { id: "connect", label: "Підключення" },
         { id: "support", label: "Підтримка" },
         { id: "voting", label: "Голосування" },
@@ -599,7 +604,7 @@ export function AdminPanelClient() {
                 Керування сайтом
               </h1>
               <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
-                FAQ, підключення, підтримка, вікі, пропозиції та ролі.
+                FAQ, анкета, підключення, підтримка, вікі, пропозиції та ролі.
               </p>
             </div>
           </header>
@@ -768,6 +773,8 @@ export function AdminPanelClient() {
                 </div>
               </div>
             ) : null}
+
+            {tab === "apply" ? <AdminApplyCms /> : null}
 
             {tab === "connect" ? (
               <div className="grid gap-3 sm:grid-cols-2">

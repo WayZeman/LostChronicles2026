@@ -9,16 +9,15 @@ export type LostChroniclesFaqItem = {
   answer: string;
 };
 
-/** Анкета для заходу на сервер (Google Forms). */
-export const LC_FORM_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLScWada7pzzu4YeWd3cFLQY3Ozr8UBSmaHFn8tFGHLY-towXdw/viewform?usp=header";
+/** Анкета для заходу на сервер (сторінка на сайті). */
+export const LC_FORM_URL = "/apply";
 
 const FAQ_CTA_BTN =
   "lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-5 py-2.5 text-sm sm:min-h-[2.5rem] sm:w-auto sm:shrink-0 sm:self-center sm:px-6";
 
 const FAQ_JOIN = `<div class="not-prose mb-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
 <p class="mb-0 min-w-0 flex-1 text-left text-[0.9375rem] leading-[1.65] text-[var(--mc-text)] sm:text-base sm:leading-relaxed">Для переходу на сервер вам необхідно пройти невелику співбесіду у формі анкети.</p>
-<a href="${LC_FORM_URL}" target="_blank" rel="noopener noreferrer" class="${FAQ_CTA_BTN}">Пройти анкету</a>
+<a href="${LC_FORM_URL}" class="${FAQ_CTA_BTN}">Пройти анкету</a>
 </div>`;
 
 const FAQ_AUTH = `<p>Якщо ви є в білому списку, це означає, що ви вже автоматично зареєстровані на сайті. Для авторизації достатньо просто ввести свій ігровий нікнейм та пароль, яким ви користуєтесь для входу на сервер.</p>`;
