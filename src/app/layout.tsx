@@ -4,7 +4,6 @@ import { Noto_Sans } from "next/font/google";
 import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
-import { DeferredSiteCursor } from "@/components/site/DeferredSiteCursor";
 import { RouteEnter } from "@/components/site/RouteEnter";
 import { SiteAtmosphere } from "@/components/site/SiteAtmosphere";
 import { SiteIntroCurtain } from "@/components/site/SiteIntroCurtain";
@@ -149,7 +148,6 @@ export default function RootLayout({
           <RouteEnter>{children}</RouteEnter>
         </div>
         <DeferVercelMetrics />
-        <DeferredSiteCursor />
       </body>
     </html>
   );

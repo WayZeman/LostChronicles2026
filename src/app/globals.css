@@ -184,11 +184,6 @@
     background-color: var(--mc-net-page);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    scrollbar-width: none; /* Firefox */
-    -ms-overflow-style: none; /* старий Edge */
-  }
-  body::-webkit-scrollbar {
-    display: none; /* Chromium, Safari */
   }
   html {
     @apply font-sans overflow-x-hidden;
@@ -196,86 +191,11 @@
     background-color: var(--mc-net-page);
     scroll-behavior: smooth;
     letter-spacing: 0;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  html::-webkit-scrollbar {
-    display: none;
   }
   @media (prefers-reduced-motion: reduce) {
     html {
       scroll-behavior: auto;
     }
-  }
-}
-
-/* Кастомний курсор (DOM) — маленький, плавно зеленіє на кнопках */
-@media (hover: hover) and (pointer: fine) {
-  html.lc-cursor-on,
-  html.lc-cursor-on body,
-  html.lc-cursor-on a,
-  html.lc-cursor-on button,
-  html.lc-cursor-on [role="button"],
-  html.lc-cursor-on [role="link"],
-  html.lc-cursor-on [role="tab"],
-  html.lc-cursor-on summary,
-  html.lc-cursor-on label[for],
-  html.lc-cursor-on select,
-  html.lc-cursor-on .lc-focus-ring,
-  html.lc-cursor-on .lc-btn-accent,
-  html.lc-cursor-on .mc-btn-primary,
-  html.lc-cursor-on .mc-btn-secondary,
-  html.lc-cursor-on input,
-  html.lc-cursor-on textarea,
-  html.lc-cursor-on [contenteditable="true"] {
-    cursor: none !important;
-  }
-}
-
-.lc-site-cursor {
-  position: fixed;
-  top: 0;
-  left: 0;
-  /* Завжди поверх модалок, навбару, інтро та полів вводу */
-  z-index: 2147483646;
-  width: 16px;
-  height: 16px;
-  margin: 0;
-  pointer-events: none;
-  opacity: 1;
-  will-change: transform;
-  background: linear-gradient(145deg, #ffe056 0%, #f5a428 55%, #e87820 100%);
-  transition:
-    background 0.3s ease,
-    opacity 0.15s ease,
-    width 0.22s ease,
-    height 0.22s ease,
-    filter 0.3s ease;
-  -webkit-mask: url("/cursors/lc-cursor.png") center / contain no-repeat;
-  mask: url("/cursors/lc-cursor.png") center / contain no-repeat;
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.45));
-}
-
-.lc-site-cursor--hover {
-  width: 18px;
-  height: 18px;
-  background: linear-gradient(145deg, #c8ff7a 0%, #55ff55 48%, #2fbf28 100%);
-  filter: drop-shadow(0 0 6px rgba(85, 255, 85, 0.45));
-}
-
-.lc-site-cursor--down {
-  width: 14px;
-  height: 14px;
-  filter: drop-shadow(0 0 4px rgba(85, 255, 85, 0.35)) brightness(0.92);
-}
-
-.lc-site-cursor--hidden {
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lc-site-cursor {
-    transition: none;
   }
 }
 

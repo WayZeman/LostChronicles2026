@@ -116,10 +116,17 @@ export function SiteIntroCurtain() {
       }
 
       setPhase("lifting");
+      // Якщо transitionend не спрацює — все одно знімаємо lock скролу
+      window.setTimeout(() => {
+        if (cancelled) return;
+        document.documentElement.classList.remove("lc-intro-pending");
+        setPhase((p) => (p === "lifting" ? "gone" : p));
+      }, 1200);
     })();
 
     return () => {
       cancelled = true;
+      document.documentElement.classList.remove("lc-intro-pending");
     };
   }, [anniversary, isHome]);
 
