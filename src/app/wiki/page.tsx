@@ -1,29 +1,19 @@
-import {
-  getCachedWikiHomeContent,
-  getCachedWikiHomeTree,
-} from "@/lib/public-content-cache";
+import { getCachedWikiHomeTree } from "@/lib/public-content-cache";
 import { seedWikiStructureIfEmpty } from "@/lib/wiki-structure";
 import {
   lcPageContainerClass,
   lcPageMainClass,
 } from "@/components/site/lc-page-shell";
-import { SoftAppear } from "@/components/site/SoftAppear";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { WikiSearchBox } from "@/components/wiki/WikiSearchBox";
 import { WikiHomeStructured } from "@/components/wiki/WikiHomeStructured";
-import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 
 /** Публічна вікі: ISR ~1 хв + data cache (див. public-content-cache). */
 export const revalidate = 60;
 
 export default async function WikiIndexPage() {
   await seedWikiStructureIfEmpty();
-  const [tree, home] = await Promise.all([
-    getCachedWikiHomeTree(),
-    getCachedWikiHomeContent(),
-  ]);
-  const homeHtml = home?.html?.trim() ?? "";
-  const hasHomeHtml = homeHtml.length > 0;
+  const tree = await getCachedWikiHomeTree();
 
   return (
     <main className={lcPageMainClass}>
@@ -36,18 +26,8 @@ export default async function WikiIndexPage() {
             />
           }
         >
-          {tree.sections.length > 0 || hasHomeHtml ? (
-            <WikiHomeStructured
-              tree={tree}
-              hideBrandHeader={hasHomeHtml}
-              intro={
-                hasHomeHtml ? (
-                  <SoftAppear>
-                    <WikiMirrorHtml html={homeHtml} rewriteWikiLinksToLocal />
-                  </SoftAppear>
-                ) : null
-              }
-            />
+          {tree.sections.length > 0 ? (
+            <WikiHomeStructured tree={tree} />
           ) : (
             <p className="py-12 text-center text-sm font-medium text-[var(--mc-ink-muted)]">
               Вікі ще без структури.

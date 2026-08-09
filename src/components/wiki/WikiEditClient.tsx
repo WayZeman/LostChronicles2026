@@ -242,9 +242,17 @@ export function WikiEditClient({
 
           <div className="space-y-1.5">
             <span className="text-xs font-bold text-[var(--mc-text-muted)]">
-              Вміст
+              Вміст статті
             </span>
-            <WikiPageEditor value={html} onChange={setHtml} disabled={busy} />
+            <p className="text-[11px] text-[var(--mc-text-subtle)]">
+              Візуальний редактор за замовчуванням · «Вихідний код» — HTML
+            </p>
+            <WikiPageEditor
+              value={html}
+              onChange={setHtml}
+              disabled={busy}
+              initialMode="visual"
+            />
           </div>
 
           <div className="flex flex-wrap gap-2 pt-1">

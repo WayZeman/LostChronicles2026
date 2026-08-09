@@ -13,9 +13,7 @@ import type {
   WikiSocialLink,
 } from "@/lib/wiki-structure";
 import { compressImageFile } from "@/lib/compress-image";
-import { WIKI_HOME_SLUG, isWikiHomeSlug } from "@/lib/wiki-home-slug";
 import { cn } from "@/lib/utils";
-import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 
 type View =
   | { kind: "home" }
@@ -51,8 +49,6 @@ export function AdminWikiCms() {
   const [pageSocial, setPageSocial] = useState<SocialDraft[]>([]);
   const [pageSlug, setPageSlug] = useState("");
   const [editingPage, setEditingPage] = useState(false);
-  const [homePreviewHtml, setHomePreviewHtml] = useState<string | null>(null);
-  const [homePreviewTitle, setHomePreviewTitle] = useState("Main Page");
   const cardPhotoInputRef = useRef<HTMLInputElement>(null);
   const cardPhotoLinkIdRef = useRef<number | null>(null);
 
@@ -65,36 +61,15 @@ export function AdminWikiCms() {
     setTree(d.tree ?? { sections: [] });
   }, []);
 
-  const loadHomePreview = useCallback(async () => {
-    try {
-      const res = await fetch(
-        `/api/wiki/pages/${encodeURIComponent(WIKI_HOME_SLUG)}`,
-        { credentials: "include" },
-      );
-      if (!res.ok) {
-        setHomePreviewHtml("");
-        setHomePreviewTitle("Main Page");
-        return;
-      }
-      const d = (await res.json()) as {
-        page?: { title: string; content_html: string };
-      };
-      setHomePreviewTitle(d.page?.title ?? "Main Page");
-      setHomePreviewHtml(d.page?.content_html ?? "");
-    } catch {
-      setHomePreviewHtml(null);
-    }
-  }, []);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       void loadTree().catch((e) =>
         setErr(e instanceof Error ? e.message : "Помилка"),
       );
-      void loadHomePreview();
     });
     return () => cancelAnimationFrame(id);
-  }, [loadTree, loadHomePreview]);
+  }, [loadTree]);
 
   async function openCategory(cat: WikiCategoryRow) {
     setBusy(true);
@@ -152,65 +127,6 @@ export function AdminWikiCms() {
       setPageSocial(d.page.social_links ?? []);
       setEditingPage(true);
       setView({ kind: "page", slug: d.page.slug, fromCategory: true });
-    } catch {
-      setErr("Мережа недоступна");
-    }
-    setBusy(false);
-  }
-
-  async function openHomePage(startEditing = true) {
-    setBusy(true);
-    setErr(null);
-    setMsg(null);
-    try {
-      let res = await fetch(
-        `/api/wiki/pages/${encodeURIComponent(WIKI_HOME_SLUG)}`,
-        { credentials: "include" },
-      );
-      if (res.status === 404) {
-        const created = await fetch("/api/wiki/pages", {
-          method: "POST",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            slug: WIKI_HOME_SLUG,
-            title: "Main Page",
-            content_html: "<p></p>",
-          }),
-        });
-        if (!created.ok) {
-          const d = (await created.json()) as { error?: string };
-          setErr(d.error || "Не вдалося створити головну");
-          setBusy(false);
-          return;
-        }
-        res = await fetch(
-          `/api/wiki/pages/${encodeURIComponent(WIKI_HOME_SLUG)}`,
-          { credentials: "include" },
-        );
-      }
-      const d = (await res.json()) as {
-        page?: {
-          slug: string;
-          title: string;
-          content_html: string;
-          summary?: string;
-          social_links?: SocialDraft[];
-        };
-        error?: string;
-      };
-      if (!res.ok || !d.page) {
-        setErr(d.error || "Головну сторінку не знайдено");
-        setBusy(false);
-        return;
-      }
-      setPageSlug(d.page.slug);
-      setPageTitle(d.page.title);
-      setPageHtml(d.page.content_html);
-      setPageSummary(d.page.summary ?? "");
-      setPageSocial(d.page.social_links ?? []);
-      setEditingPage(startEditing);
-      setView({ kind: "page", slug: d.page.slug, fromCategory: false });
     } catch {
       setErr("Мережа недоступна");
     }
@@ -490,10 +406,6 @@ export function AdminWikiCms() {
       }
       setMsg("Сторінку збережено.");
       setEditingPage(false);
-      if (isWikiHomeSlug(pageSlug)) {
-        setHomePreviewHtml(pageHtml);
-        setHomePreviewTitle(pageTitle);
-      }
     } catch {
       setErr("Мережа недоступна");
     }
@@ -525,34 +437,20 @@ export function AdminWikiCms() {
           </p>
         </div>
         {view.kind === "home" ? (
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => void openHomePage(true)}
-              className={cn(
-                btnSm,
-                "inline-flex items-center gap-1 border-white/15 text-[var(--mc-text)]",
-              )}
-            >
-              <Pencil className="size-3.5" />
-              Редагувати головну (HTML)
-            </button>
-            <button
-              type="button"
-              disabled={busy}
-              onClick={() => setAddingSection((v) => !v)}
-              className={cn(
-                btnSm,
-                "border-[var(--mc-net-green)]/40 text-[var(--mc-net-green)]",
-              )}
-            >
-              <span className="inline-flex items-center gap-1">
-                <Plus className="size-3.5" />
-                Додати розділ
-              </span>
-            </button>
-          </div>
+          <button
+            type="button"
+            disabled={busy}
+            onClick={() => setAddingSection((v) => !v)}
+            className={cn(
+              btnSm,
+              "border-[var(--mc-net-green)]/40 text-[var(--mc-net-green)]",
+            )}
+          >
+            <span className="inline-flex items-center gap-1">
+              <Plus className="size-3.5" />
+              Додати розділ
+            </span>
+          </button>
         ) : null}
       </div>
 
@@ -609,45 +507,6 @@ export function AdminWikiCms() {
           <WikiHomeStructured
             tree={tree}
             editMode
-            hideBrandHeader={Boolean(homePreviewHtml?.trim())}
-            intro={
-              homePreviewHtml != null ? (
-                <div className="space-y-3 rounded-xl border border-white/12 bg-black/25 p-3 sm:p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <div>
-                      <p className="text-[11px] font-bold uppercase tracking-wider text-[var(--mc-text-subtle)]">
-                        Головна сторінка · HTML
-                      </p>
-                      <p className="text-sm font-bold text-[var(--mc-text)]">
-                        {homePreviewTitle}
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      disabled={busy}
-                      onClick={() => void openHomePage(true)}
-                      className={cn(
-                        btnSm,
-                        "inline-flex items-center gap-1 border-white/15 text-[var(--mc-text)]",
-                      )}
-                    >
-                      <Pencil className="size-3" />
-                      Редагувати HTML
-                    </button>
-                  </div>
-                  {homePreviewHtml.trim() ? (
-                    <WikiMirrorHtml
-                      html={homePreviewHtml}
-                      rewriteWikiLinksToLocal
-                    />
-                  ) : (
-                    <p className="text-sm text-[var(--mc-text-muted)]">
-                      Головна ще порожня — відкрий редактор і встав HTML.
-                    </p>
-                  )}
-                </div>
-              ) : null
-            }
             onOpenCategory={(cat) => void openCategory(cat)}
             sectionActions={(sectionId) => (
               <>
@@ -1026,17 +885,18 @@ export function AdminWikiCms() {
 
               <div className="space-y-1">
                 <span className="text-xs font-bold text-[var(--mc-text-muted)]">
-                  Вміст — Текст / HTML
-                  {isWikiHomeSlug(pageSlug) ? " (головна сторінка)" : ""}
+                  Вміст статті
                 </span>
+                <p className="text-[11px] text-[var(--mc-text-subtle)]">
+                  За замовчуванням — візуальний редактор (як на Fandom). Вкладка
+                  «Вихідний код» — для HTML.
+                </p>
                 <WikiPageEditor
                   key={`editor-${pageSlug}`}
                   value={pageHtml}
                   onChange={setPageHtml}
                   disabled={busy}
-                  initialMode={
-                    isWikiHomeSlug(pageSlug) ? "html" : "visual"
-                  }
+                  initialMode="visual"
                 />
               </div>
 
