@@ -90,13 +90,11 @@ function FieldControl({
             : undefined
       }
       maxLength={
-        field.kind === "textarea"
-          ? 2000
-          : field.key === "howFound"
-            ? 500
-            : field.key === "contacts"
-              ? 200
-              : 120
+        field.key === "howFound"
+          ? 500
+          : field.key === "contacts"
+            ? 200
+            : 120
       }
     />
   );
