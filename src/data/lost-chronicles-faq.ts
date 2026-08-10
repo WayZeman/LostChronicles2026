@@ -9,10 +9,6 @@ export type LostChroniclesFaqItem = {
   answer: string;
 };
 
-/** Класична Google Form (архів / запасний варіант). */
-export const LC_GOOGLE_FORM_URL =
-  "https://docs.google.com/forms/d/e/1FAIpQLScWada7pzzu4YeWd3cFLQY3Ozr8UBSmaHFn8tFGHLY-towXdw/viewform?usp=header";
-
 /** Анкета на сайті — головна кнопка та FAQ. */
 export const LC_APPLY_PATH = "/apply";
 
