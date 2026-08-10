@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent, type ReactNode } from "react";
 import {
   LC_DEFAULT_DISCORD_URL,
   LC_DEFAULT_TELEGRAM_URL,
@@ -14,9 +14,6 @@ import { cn } from "@/lib/utils";
 
 const fieldClass =
   "lc-focus-ring mc-input w-full px-3 py-2.5 text-sm text-[var(--mc-text)]";
-const labelClass =
-  "mb-1.5 block text-left text-sm font-bold text-[var(--mc-text)]";
-const hintClass = "mt-1 text-left text-xs text-[var(--mc-text-muted)]";
 
 type AnswersState = Record<string, string | string[]>;
 
@@ -26,6 +23,46 @@ function emptyAnswers(questions: ApplyQuestion[]): AnswersState {
     out[q.id] = q.type === "multi_choice" ? [] : "";
   }
   return out;
+}
+
+function ChoiceOption({
+  selected,
+  onSelect,
+  children,
+  multi,
+}: {
+  selected: boolean;
+  onSelect: () => void;
+  children: ReactNode;
+  multi?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onSelect}
+      className={cn(
+        "lc-focus-ring flex w-full items-center gap-3 border-2 px-3 py-2.5 text-left text-sm font-bold transition-[transform,filter,background-color,border-color]",
+        selected
+          ? "border-[var(--mc-net-green)] bg-[var(--mc-net-green)]/15 text-[var(--mc-text)]"
+          : "border-white/12 bg-black/35 text-[var(--mc-text)] hover:border-[var(--mc-net-green)]/45 hover:bg-black/50",
+      )}
+    >
+      <span
+        className={cn(
+          "flex size-5 shrink-0 items-center justify-center border-2 border-black text-[10px]",
+          multi ? "" : "rounded-full",
+          selected
+            ? "bg-[var(--mc-net-green)] text-[var(--mc-green-ink)]"
+            : "bg-black/50 text-transparent",
+        )}
+        aria-hidden
+      >
+        {selected ? "✓" : "·"}
+      </span>
+      <span className="min-w-0 flex-1 font-semibold leading-snug">{children}</span>
+    </button>
+  );
 }
 
 function QuestionControl({
@@ -44,9 +81,9 @@ function QuestionControl({
       <textarea
         id={id}
         required={q.required}
-        rows={3}
+        rows={4}
         maxLength={2000}
-        className={cn(fieldClass, "min-h-20 resize-y")}
+        className={cn(fieldClass, "min-h-24 resize-y")}
         value={typeof value === "string" ? value : ""}
         placeholder={q.placeholder || undefined}
         onChange={(e) => onChange(e.target.value)}
@@ -56,23 +93,26 @@ function QuestionControl({
 
   if (q.type === "single_choice") {
     return (
-      <div className="space-y-2" role="radiogroup" aria-labelledby={`${id}-label`}>
+      <div className="grid gap-2" role="radiogroup" aria-labelledby={`${id}-label`}>
         {q.options.map((opt) => (
-          <label
+          <ChoiceOption
             key={opt}
-            className="flex cursor-pointer items-center gap-2 text-sm text-[var(--mc-text)]"
+            selected={value === opt}
+            onSelect={() => onChange(opt)}
           >
-            <input
-              type="radio"
-              name={id}
-              required={q.required}
-              checked={value === opt}
-              onChange={() => onChange(opt)}
-              className="size-4 accent-[var(--mc-net-green)]"
-            />
             {opt}
-          </label>
+          </ChoiceOption>
         ))}
+        {/* hidden required radio for native validation if needed */}
+        <input
+          type="text"
+          tabIndex={-1}
+          className="sr-only"
+          required={q.required}
+          value={typeof value === "string" ? value : ""}
+          onChange={() => {}}
+          aria-hidden
+        />
       </div>
     );
   }
@@ -80,25 +120,21 @@ function QuestionControl({
   if (q.type === "multi_choice") {
     const selected = Array.isArray(value) ? value : [];
     return (
-      <div className="space-y-2">
+      <div className="grid gap-2">
         {q.options.map((opt) => {
           const checked = selected.includes(opt);
           return (
-            <label
+            <ChoiceOption
               key={opt}
-              className="flex cursor-pointer items-center gap-2 text-sm text-[var(--mc-text)]"
+              multi
+              selected={checked}
+              onSelect={() => {
+                if (checked) onChange(selected.filter((x) => x !== opt));
+                else onChange([...selected, opt]);
+              }}
             >
-              <input
-                type="checkbox"
-                checked={checked}
-                onChange={() => {
-                  if (checked) onChange(selected.filter((x) => x !== opt));
-                  else onChange([...selected, opt]);
-                }}
-                className="size-4 accent-[var(--mc-net-green)]"
-              />
               {opt}
-            </label>
+            </ChoiceOption>
           );
         })}
       </div>
@@ -224,37 +260,54 @@ export function ApplyForm({
 
   if (doneId !== null) {
     return (
-      <div className="space-y-4 text-center">
-        <p className="text-lg font-bold text-[var(--mc-net-green)]">
-          {config.successTitle}
-        </p>
-        <p className="text-sm leading-relaxed text-[var(--mc-text-muted)]">
-          {config.successBody}
-          {doneId > 0 ? ` (#${doneId})` : ""}
-        </p>
-        {config.successHoursNote ? (
-          <p className="text-xs text-[var(--mc-text-subtle)]">
-            {config.successHoursNote}
-          </p>
-        ) : null}
-        <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <a
-            href={telegram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center justify-center px-5 text-sm"
-          >
-            Telegram
-          </a>
-          <a
-            href={discord}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center px-5 text-sm"
-          >
-            Discord
-          </a>
+      <div className="space-y-5 text-center">
+        <div className="mx-auto flex size-12 items-center justify-center border-2 border-black bg-[var(--mc-net-green)] text-xl font-black text-[var(--mc-green-ink)] shadow-[2px_2px_0_#000]">
+          ✓
         </div>
+        <div className="space-y-2">
+          <p className="lc-hero-display text-xl font-extrabold text-[var(--mc-text)] sm:text-2xl">
+            {config.successTitle}
+          </p>
+          <p className="mx-auto max-w-md text-sm leading-relaxed text-[var(--mc-text-muted)]">
+            {config.successBody}
+            {doneId > 0 ? ` (#${doneId})` : ""}
+          </p>
+          {config.successHoursNote ? (
+            <p className="text-xs text-[var(--mc-text-subtle)]">
+              {config.successHoursNote}
+            </p>
+          ) : null}
+        </div>
+
+        <div className="border-t border-white/10 pt-5">
+          <p className="text-sm font-extrabold text-[var(--mc-text)]">
+            {config.joinTitle}
+          </p>
+          {config.joinBlurb ? (
+            <p className="mx-auto mt-1.5 max-w-sm text-xs leading-relaxed text-[var(--mc-text-muted)]">
+              {config.joinBlurb}
+            </p>
+          ) : null}
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:justify-center">
+            <a
+              href={telegram}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center justify-center px-6 text-sm font-bold"
+            >
+              Telegram
+            </a>
+            <a
+              href={discord}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center px-6 text-sm font-bold"
+            >
+              Discord
+            </a>
+          </div>
+        </div>
+
         <button
           type="button"
           className="lc-focus-ring text-xs font-bold text-[var(--mc-text-muted)] underline-offset-2 hover:underline"
@@ -269,7 +322,7 @@ export function ApplyForm({
   const enabled = config.questions.filter((q) => q.enabled);
 
   return (
-    <form onSubmit={onSubmit} className="space-y-5" noValidate>
+    <form onSubmit={onSubmit} className="space-y-0" noValidate>
       <div
         className="absolute -left-[9999px] h-0 w-0 overflow-hidden"
         aria-hidden
@@ -285,68 +338,73 @@ export function ApplyForm({
         </label>
       </div>
 
-      {enabled.map((q) => (
-        <div key={q.id}>
-          <label className={labelClass} htmlFor={`apply-${q.id}`} id={`apply-${q.id}-label`}>
-            {q.label}
-            {q.required ? <span className="text-rose-300"> *</span> : null}
-          </label>
-          <QuestionControl
-            q={q}
-            value={answers[q.id] ?? (q.type === "multi_choice" ? [] : "")}
-            onChange={(v) =>
-              setAnswers((prev) => ({
-                ...prev,
-                [q.id]: v,
-              }))
-            }
-          />
-          {q.hint ? <p className={hintClass}>{q.hint}</p> : null}
-        </div>
-      ))}
-
-      <div className="rounded-xl border border-white/12 bg-black/25 p-4 text-center sm:p-5">
-        <p className="text-sm font-extrabold text-[var(--mc-text)]">
-          {config.joinTitle}
-        </p>
-        {config.joinBlurb ? (
-          <p className="mx-auto mt-1.5 max-w-md text-xs leading-relaxed text-[var(--mc-text-muted)]">
-            {config.joinBlurb}
-          </p>
-        ) : null}
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:justify-center">
-          <a
-            href={telegram}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center justify-center px-5 text-sm font-bold"
+      <div className="divide-y divide-white/10">
+        {enabled.map((q, index) => (
+          <div
+            key={q.id}
+            className={cn(
+              "py-5 first:pt-0 last:pb-5",
+              index === 0 ? "" : "",
+            )}
           >
-            Telegram
-          </a>
-          <a
-            href={discord}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center px-5 text-sm font-bold"
-          >
-            Discord
-          </a>
-        </div>
+            <div className="mb-2.5 flex items-start gap-2">
+              <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center border-2 border-black bg-black/50 text-[11px] font-extrabold tabular-nums text-[var(--mc-menu-yellow)]">
+                {index + 1}
+              </span>
+              <label
+                className="min-w-0 flex-1 text-left text-sm font-extrabold leading-snug text-[var(--mc-text)] sm:text-[0.9375rem]"
+                htmlFor={`apply-${q.id}`}
+                id={`apply-${q.id}-label`}
+              >
+                {q.label}
+                {q.required ? (
+                  <span className="ml-1 text-[var(--mc-menu-yellow)]">*</span>
+                ) : (
+                  <span className="ml-1.5 text-[11px] font-semibold text-[var(--mc-text-subtle)]">
+                    (необовʼязково)
+                  </span>
+                )}
+              </label>
+            </div>
+            <div className="pl-0 sm:pl-8">
+              <QuestionControl
+                q={q}
+                value={answers[q.id] ?? (q.type === "multi_choice" ? [] : "")}
+                onChange={(v) =>
+                  setAnswers((prev) => ({
+                    ...prev,
+                    [q.id]: v,
+                  }))
+                }
+              />
+              {q.hint ? (
+                <p className="mt-2 text-left text-xs leading-relaxed text-[var(--mc-text-muted)]">
+                  {q.hint}
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ))}
       </div>
 
       {error ? (
-        <p className="text-sm font-bold text-rose-200" role="alert">
+        <p
+          className="mt-4 border-2 border-rose-500/40 bg-rose-500/10 px-3 py-2 text-center text-sm font-bold text-rose-100"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
 
-      <button
-        type="submit"
-        disabled={submitting}
-        className="lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full items-center justify-center px-6 text-sm font-bold disabled:opacity-50 sm:w-auto"
-      >
-        {submitting ? "Надсилаємо…" : config.submitLabel}
-      </button>
+      <div className="mt-6 flex justify-center border-t border-white/10 pt-6">
+        <button
+          type="submit"
+          disabled={submitting}
+          className="lc-focus-ring lc-btn-accent inline-flex min-h-11 min-w-[12rem] items-center justify-center px-8 text-sm font-bold disabled:opacity-50"
+        >
+          {submitting ? "Надсилаємо…" : config.submitLabel}
+        </button>
+      </div>
     </form>
   );
 }
