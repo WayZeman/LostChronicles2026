@@ -6,7 +6,10 @@
 import type { ApplyQuestion } from "@/lib/application-form-config";
 import {
   answersToTelegramLines,
+  applicationServerStatusEmoji,
+  applicationServerStatusLabelUk,
   type ApplicationAnswers,
+  type ApplicationServerStatus,
 } from "@/lib/applications";
 
 export type ApplicationNotifyPayload = {
@@ -17,6 +20,9 @@ export type ApplicationNotifyPayload = {
   answers: ApplicationAnswers;
   questions: ApplyQuestion[];
   nickname?: string;
+  serverStatus?: ApplicationServerStatus;
+  /** new = сповіщення про подачу; view = перегляд /anketa */
+  kind?: "new" | "view";
 };
 
 export function anketaBotConfig(): { token: string; chatId: string } | null {
@@ -33,14 +39,33 @@ export function anketaBotConfig(): { token: string; chatId: string } | null {
 export function formatApplicationTelegramText(
   a: ApplicationNotifyPayload,
 ): string {
-  let head = "📩 Нова анкета!";
+  const kind = a.kind || "new";
+  let head =
+    kind === "view" ? "📋 Анкета" : "📩 Нова анкета!";
   if (a.ordinal && a.total) {
-    head = `📩 Нова анкета!  ·  #${a.ordinal} / ${a.total}`;
+    head =
+      kind === "view"
+        ? `📋 Анкета  ·  #${a.ordinal} / ${a.total}`
+        : `📩 Нова анкета!  ·  #${a.ordinal} / ${a.total}`;
   } else if (a.id) {
-    head = `📩 Нова анкета!  ·  #${a.id}`;
+    head =
+      kind === "view"
+        ? `📋 Анкета  ·  #${a.id}`
+        : `📩 Нова анкета!  ·  #${a.id}`;
   }
+
   const lines = answersToTelegramLines(a.questions, a.answers);
-  return [head, ...lines].join("\n");
+  const out = [head];
+
+  if (kind === "view" || a.serverStatus) {
+    const status = a.serverStatus || "pending";
+    out.push(
+      `${applicationServerStatusEmoji(status)} Статус: ${applicationServerStatusLabelUk(status)}`,
+    );
+  }
+
+  out.push(...lines);
+  return out.join("\n");
 }
 
 export async function sendAnketaTelegramText(

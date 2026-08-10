@@ -7,6 +7,9 @@ import {
 
 export type ApplicationAnswers = Record<string, string | string[]>;
 
+/** Рішення по анкеті: на сервері / відхилено / ще без рішення. */
+export type ApplicationServerStatus = "pending" | "accepted" | "rejected";
+
 export type ApplicationRow = {
   id: number;
   createdAt: string;
@@ -15,6 +18,8 @@ export type ApplicationRow = {
   nickname: string;
   contacts: string;
   email: string;
+  serverStatus: ApplicationServerStatus;
+  serverStatusAt: string | null;
 };
 
 function rowsOf(r: unknown): Record<string, unknown>[] {
@@ -22,6 +27,30 @@ function rowsOf(r: unknown): Record<string, unknown>[] {
 }
 
 let ensured = false;
+
+function normalizeServerStatus(raw: unknown): ApplicationServerStatus {
+  const s = String(raw ?? "")
+    .trim()
+    .toLowerCase();
+  if (s === "accepted" || s === "rejected") return s;
+  return "pending";
+}
+
+export function applicationServerStatusLabelUk(
+  status: ApplicationServerStatus,
+): string {
+  if (status === "accepted") return "На сервері";
+  if (status === "rejected") return "Не прийнято";
+  return "Очікує рішення";
+}
+
+export function applicationServerStatusEmoji(
+  status: ApplicationServerStatus,
+): string {
+  if (status === "accepted") return "✅";
+  if (status === "rejected") return "❌";
+  return "⏳";
+}
 
 async function ensureApplicationsTable(): Promise<void> {
   if (ensured) return;
@@ -39,6 +68,8 @@ async function ensureApplicationsTable(): Promise<void> {
       why_server TEXT NOT NULL DEFAULT '',
       how_found TEXT NOT NULL DEFAULT '',
       answers_json TEXT NOT NULL DEFAULT '{}',
+      server_status TEXT NOT NULL DEFAULT 'pending',
+      server_status_at TIMESTAMPTZ,
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
     )
   `;
@@ -47,8 +78,20 @@ async function ensureApplicationsTable(): Promise<void> {
       ADD COLUMN IF NOT EXISTS answers_json TEXT NOT NULL DEFAULT '{}'
   `;
   await sql`
+    ALTER TABLE applications
+      ADD COLUMN IF NOT EXISTS server_status TEXT NOT NULL DEFAULT 'pending'
+  `;
+  await sql`
+    ALTER TABLE applications
+      ADD COLUMN IF NOT EXISTS server_status_at TIMESTAMPTZ
+  `;
+  await sql`
     CREATE INDEX IF NOT EXISTS applications_created_at_idx
       ON applications (created_at DESC)
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS applications_server_status_idx
+      ON applications (server_status)
   `;
   ensured = true;
 }
@@ -132,6 +175,14 @@ function mapRow(
     id: Number(row.id),
     createdAt: String(row.createdAt ?? row.created_at ?? ""),
     answers,
+    serverStatus: normalizeServerStatus(
+      row.serverStatus ?? row.server_status,
+    ),
+    serverStatusAt: (() => {
+      const v = row.serverStatusAt ?? row.server_status_at;
+      if (v == null || v === "") return null;
+      return String(v);
+    })(),
     ...summary,
   };
 }
@@ -179,6 +230,8 @@ export async function createApplication(input: {
       nickname,
       contacts,
       answers_json,
+      server_status AS "serverStatus",
+      server_status_at AS "serverStatusAt",
       created_at AS "createdAt"
   `);
   const row = rows[0];
@@ -206,6 +259,8 @@ export async function listApplications(
       why_server AS "whyServer",
       how_found AS "howFound",
       answers_json,
+      COALESCE(server_status, 'pending') AS "serverStatus",
+      server_status_at AS "serverStatusAt",
       created_at AS "createdAt"
     FROM applications
     ORDER BY id DESC
@@ -233,6 +288,8 @@ export async function getApplicationById(
       why_server AS "whyServer",
       how_found AS "howFound",
       answers_json,
+      COALESCE(server_status, 'pending') AS "serverStatus",
+      server_status_at AS "serverStatusAt",
       created_at AS "createdAt"
     FROM applications
     WHERE id = ${id}
@@ -267,6 +324,8 @@ export async function getApplicationByOrdinal(
       why_server AS "whyServer",
       how_found AS "howFound",
       answers_json,
+      COALESCE(server_status, 'pending') AS "serverStatus",
+      server_status_at AS "serverStatusAt",
       created_at AS "createdAt"
     FROM applications
     ORDER BY id ASC
@@ -323,6 +382,25 @@ export async function deleteApplicationByOrdinal(
     ordinal: found.ordinal,
     wasTotal: found.total,
   };
+}
+
+export async function setApplicationServerStatusByOrdinal(
+  ordinal: number,
+  status: ApplicationServerStatus,
+  questions: ApplyQuestion[] | null = null,
+): Promise<{ row: ApplicationRow; ordinal: number; total: number } | null> {
+  const found = await getApplicationByOrdinal(ordinal, questions);
+  if (!found) return null;
+  await ensureApplicationsTable();
+  const sql = getSql();
+  await sql`
+    UPDATE applications
+    SET
+      server_status = ${status},
+      server_status_at = NOW()
+    WHERE id = ${found.row.id}
+  `;
+  return getApplicationByOrdinal(ordinal, questions);
 }
 
 export async function countApplications(): Promise<number> {

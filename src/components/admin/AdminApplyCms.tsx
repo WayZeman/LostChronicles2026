@@ -21,6 +21,7 @@ type ApplicationItem = {
   email: string;
   createdAt: string;
   answers: Record<string, string | string[]>;
+  serverStatus?: "pending" | "accepted" | "rejected";
 };
 
 const inputClass =
@@ -612,6 +613,15 @@ export function AdminApplyCms() {
                         <span className="truncate text-sm text-[var(--mc-text)]">
                           {a.nickname || "—"}
                         </span>
+                        {a.serverStatus === "accepted" ? (
+                          <span className="text-[11px] font-semibold text-[var(--mc-net-green)]">
+                            на сервері
+                          </span>
+                        ) : a.serverStatus === "rejected" ? (
+                          <span className="text-[11px] font-semibold text-rose-300/90">
+                            не прийнято
+                          </span>
+                        ) : null}
                         <span className="text-[11px] text-[var(--mc-text-subtle)]">
                           {formatWhen(a.createdAt)}
                         </span>

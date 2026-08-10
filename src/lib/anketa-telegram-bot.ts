@@ -1,9 +1,13 @@
 import { getApplyFormConfig } from "@/lib/application-form-config";
 import {
+  applicationServerStatusEmoji,
+  applicationServerStatusLabelUk,
   countApplications,
   deleteApplicationByOrdinal,
   getApplicationByOrdinal,
   getLastApplicationOrdinal,
+  setApplicationServerStatusByOrdinal,
+  type ApplicationServerStatus,
 } from "@/lib/applications";
 import {
   anketaBotConfig,
@@ -14,6 +18,8 @@ import {
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
 export const ANKETA_BOT_COMMANDS = [
   { command: "anketa", description: "Остання анкета з сайту" },
+  { command: "add", description: "Прийняти: /add server 3" },
+  { command: "deny", description: "Відхилити: /deny server 3" },
   { command: "count", description: "Скільки анкет у базі" },
   { command: "delete", description: "Видалити: /delete 12 або /delete 12 yes" },
   { command: "help", description: "Усі команди анкет" },
@@ -24,25 +30,37 @@ function helpText(): string {
     "Команди анкет (сайт /apply):\n" +
     "/anketa — остання\n" +
     "/anketa 12 — анкета №12\n" +
+    "/add server 12 — прийняти на сервер\n" +
+    "/deny server 12 — не прийнято\n" +
+    "/clear server 12 — скинути статус\n" +
     "/count — скільки всього\n" +
     "/delete 12 — що буде видалено\n" +
     "/delete 12 yes — видалити\n" +
     "/delete last yes — видалити останню\n" +
     "/help — ця підказка\n\n" +
-    "Також працює: /anketa count | /anketa delete 12 yes\n" +
     "№1 = перша (найстаріша), найбільший № = остання.\n" +
     "Після видалення номери зсуваються."
   );
 }
 
-/** Нормалізує /anketa … та окремі /count /help /delete … */
+function parseOrdinalArg(arg: string): number | "last" | null {
+  const m = arg
+    .trim()
+    .match(/^(?:server\s+)?(\d+|last|останн\S*)$/i);
+  if (!m) return null;
+  if (/^остан/i.test(m[1]) || m[1].toLowerCase() === "last") return "last";
+  const n = parseInt(m[1], 10);
+  return Number.isFinite(n) && n > 0 ? n : null;
+}
+
+/** Нормалізує /anketa …, /add server N, /count, /help, /delete … */
 function parseAnketaCommand(
   text: string,
 ): { cmd: string; arg: string } | null {
   const match = text
     .trim()
     .match(
-      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали)(?:@\w+)?(?:\s+(.+))?$/i,
+      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали|add|deny|reject|clear|reset)(?:@\w+)?(?:\s+(.+))?$/i,
     );
   if (!match) return null;
 
@@ -52,6 +70,8 @@ function parseAnketaCommand(
   if (cmd === "анкета") cmd = "anketa";
   if (cmd === "допомога" || cmd === "start") cmd = "help";
   if (cmd === "del" || cmd === "видалити" || cmd === "видали") cmd = "delete";
+  if (cmd === "reject") cmd = "deny";
+  if (cmd === "reset") cmd = "clear";
 
   // /anketa count → cmd count; /anketa delete 12 yes → cmd delete
   if (cmd === "anketa" && arg) {
@@ -86,6 +106,14 @@ function isAllowedChat(chatId: string): boolean {
     .split(/[\s,]+/)
     .filter(Boolean)
     .some((id) => id === String(chatId));
+}
+
+async function resolveOrdinal(
+  target: number | "last",
+): Promise<number | null> {
+  if (target !== "last") return target;
+  const last = await getLastApplicationOrdinal(null);
+  return last?.ordinal ?? null;
 }
 
 /**
@@ -126,6 +154,56 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
   if (cmd === "count") {
     const n = await countApplications();
     await reply(`📊 Анкет з сайту: ${n}`);
+    return true;
+  }
+
+  if (cmd === "add" || cmd === "deny" || cmd === "clear") {
+    if (!arg) {
+      await reply(
+        cmd === "add"
+          ? "Вкажи номер анкети:\n/add server 12"
+          : cmd === "deny"
+            ? "Вкажи номер анкети:\n/deny server 12"
+            : "Вкажи номер анкети:\n/clear server 12",
+      );
+      return true;
+    }
+
+    const parsedOrd = parseOrdinalArg(arg);
+    if (parsedOrd == null) {
+      await reply(
+        `Не зрозумів номер.\nПриклад: /${cmd} server 12\n\n${helpText()}`,
+      );
+      return true;
+    }
+
+    const ordinal = await resolveOrdinal(parsedOrd);
+    if (ordinal == null) {
+      await reply("У базі ще немає анкет з сайту.");
+      return true;
+    }
+
+    const status: ApplicationServerStatus =
+      cmd === "add" ? "accepted" : cmd === "deny" ? "rejected" : "pending";
+
+    const questions = (await getApplyFormConfig()).questions;
+    const updated = await setApplicationServerStatusByOrdinal(
+      ordinal,
+      status,
+      questions,
+    );
+    if (!updated) {
+      const total = await countApplications();
+      await reply(`Немає анкети №${ordinal}. Доступно: 1…${total || 0}`);
+      return true;
+    }
+
+    await reply(
+      `${applicationServerStatusEmoji(status)} Анкета #${updated.ordinal} / ${updated.total}\n` +
+        `👤 Нік: ${updated.row.nickname || "—"}\n` +
+        `Статус: ${applicationServerStatusLabelUk(status)}\n\n` +
+        `Перегляд: /anketa ${updated.ordinal}`,
+    );
     return true;
   }
 
@@ -213,6 +291,8 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
         answers: last.row.answers,
         questions,
         nickname: last.row.nickname,
+        serverStatus: last.row.serverStatus,
+        kind: "view",
       }),
     );
     return true;
@@ -235,6 +315,8 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
         answers: found.row.answers,
         questions,
         nickname: found.row.nickname,
+        serverStatus: found.row.serverStatus,
+        kind: "view",
       }),
     );
     return true;
@@ -299,7 +381,7 @@ export async function registerAnketaBotCommands(
   }));
 
   const scopes: Array<Record<string, unknown> | undefined> = [
-    undefined, // default (приватні чати)
+    undefined,
     { type: "all_private_chats" },
     { type: "all_group_chats" },
     { type: "all_chat_administrators" },
