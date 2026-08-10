@@ -242,6 +242,65 @@ export async function getApplicationById(
   return row ? mapRow(row, questions) : null;
 }
 
+/**
+ * № за порядком як у Google Form: 1 = найстаріша, N = остання.
+ */
+export async function getApplicationByOrdinal(
+  ordinal: number,
+  questions: ApplyQuestion[] | null = null,
+): Promise<{ row: ApplicationRow; ordinal: number; total: number } | null> {
+  await ensureApplicationsTable();
+  const total = await countApplications();
+  if (total < 1 || ordinal < 1 || ordinal > total) return null;
+  const sql = getSql();
+  const offset = ordinal - 1;
+  const rows = rowsOf(await sql`
+    SELECT
+      id,
+      email,
+      nickname,
+      COALESCE(birthday, '') AS birthday,
+      age,
+      contacts,
+      experience,
+      previous_projects AS "previousProjects",
+      why_server AS "whyServer",
+      how_found AS "howFound",
+      answers_json,
+      created_at AS "createdAt"
+    FROM applications
+    ORDER BY id ASC
+    LIMIT 1
+    OFFSET ${offset}
+  `);
+  const row = rows[0];
+  if (!row) return null;
+  return { row: mapRow(row, questions), ordinal, total };
+}
+
+export async function getLastApplicationOrdinal(
+  questions: ApplyQuestion[] | null = null,
+): Promise<{ row: ApplicationRow; ordinal: number; total: number } | null> {
+  const total = await countApplications();
+  if (total < 1) return null;
+  return getApplicationByOrdinal(total, questions);
+}
+
+export async function getOrdinalForApplicationId(
+  id: number,
+): Promise<{ ordinal: number; total: number } | null> {
+  await ensureApplicationsTable();
+  const total = await countApplications();
+  if (total < 1) return null;
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT COUNT(*)::int AS c FROM applications WHERE id <= ${id}
+  `);
+  const ordinal = Number(rows[0]?.c ?? 0);
+  if (ordinal < 1) return null;
+  return { ordinal, total };
+}
+
 export async function deleteApplication(id: number): Promise<boolean> {
   await ensureApplicationsTable();
   const sql = getSql();
@@ -249,6 +308,21 @@ export async function deleteApplication(id: number): Promise<boolean> {
     DELETE FROM applications WHERE id = ${id} RETURNING id
   `);
   return rows.length > 0;
+}
+
+export async function deleteApplicationByOrdinal(
+  ordinal: number,
+): Promise<{ deletedId: number; nickname: string; ordinal: number; wasTotal: number } | null> {
+  const found = await getApplicationByOrdinal(ordinal, null);
+  if (!found) return null;
+  const ok = await deleteApplication(found.row.id);
+  if (!ok) return null;
+  return {
+    deletedId: found.row.id,
+    nickname: found.row.nickname,
+    ordinal: found.ordinal,
+    wasTotal: found.total,
+  };
 }
 
 export async function countApplications(): Promise<number> {

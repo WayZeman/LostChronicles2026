@@ -7,6 +7,7 @@ import {
 } from "@/lib/application-form-config";
 import {
   createApplication,
+  getOrdinalForApplicationId,
   type ApplicationAnswers,
 } from "@/lib/applications";
 import { notifyApplicationTelegram } from "@/lib/notify-application";
@@ -162,12 +163,17 @@ export async function POST(req: Request) {
   }
 
   let id: number | undefined;
+  let ordinal: number | undefined;
+  let total: number | undefined;
   try {
     const row = await createApplication({
       answers,
       questions: config.questions,
     });
     id = row.id;
+    const ord = await getOrdinalForApplicationId(row.id);
+    ordinal = ord?.ordinal;
+    total = ord?.total;
   } catch (e) {
     console.error("[apply] DB insert failed:", e);
     return NextResponse.json(
@@ -178,6 +184,8 @@ export async function POST(req: Request) {
 
   const notified = await notifyApplicationTelegram({
     id,
+    ordinal,
+    total,
     answers,
     questions: config.questions,
   });

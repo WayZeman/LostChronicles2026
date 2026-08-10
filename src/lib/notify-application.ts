@@ -11,12 +11,15 @@ import {
 
 export type ApplicationNotifyPayload = {
   id?: number;
+  /** Порядковий № (1 = найстаріша) */
+  ordinal?: number;
+  total?: number;
   answers: ApplicationAnswers;
   questions: ApplyQuestion[];
   nickname?: string;
 };
 
-function anketaBotConfig(): { token: string; chatId: string } | null {
+export function anketaBotConfig(): { token: string; chatId: string } | null {
   const token =
     process.env.TELEGRAM_ANKETA_BOT_TOKEN?.trim() ||
     process.env.TELEGRAM_ORDERS_BOT_TOKEN?.trim();
@@ -30,27 +33,33 @@ function anketaBotConfig(): { token: string; chatId: string } | null {
 export function formatApplicationTelegramText(
   a: ApplicationNotifyPayload,
 ): string {
-  const head = a.id
-    ? `📩 Нова анкета!  ·  #${a.id}`
-    : "📩 Нова анкета!";
+  let head = "📩 Нова анкета!";
+  if (a.ordinal && a.total) {
+    head = `📩 Нова анкета!  ·  #${a.ordinal} / ${a.total}`;
+  } else if (a.id) {
+    head = `📩 Нова анкета!  ·  #${a.id}`;
+  }
   const lines = answersToTelegramLines(a.questions, a.answers);
   return [head, ...lines].join("\n");
 }
 
-export async function notifyApplicationTelegram(
-  a: ApplicationNotifyPayload,
+export async function sendAnketaTelegramText(
+  text: string,
+  opts?: { chatId?: string; threadId?: number | null },
 ): Promise<boolean> {
   const cfg = anketaBotConfig();
-  if (!cfg) {
-    console.error(
-      "[apply] TELEGRAM_ANKETA_* / TELEGRAM_ORDERS_* missing (див. google-form-all-answers-to-telegram.gs)",
-    );
-    return false;
-  }
+  if (!cfg) return false;
 
-  let text = formatApplicationTelegramText(a);
-  if (text.length > 4000) {
-    text = `${text.slice(0, 3990)}\n…`;
+  let body = text;
+  if (body.length > 4000) body = `${body.slice(0, 3990)}\n…`;
+
+  const payload: Record<string, unknown> = {
+    chat_id: opts?.chatId || cfg.chatId,
+    text: body,
+    disable_web_page_preview: true,
+  };
+  if (opts?.threadId) {
+    payload.message_thread_id = opts.threadId;
   }
 
   try {
@@ -59,11 +68,7 @@ export async function notifyApplicationTelegram(
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: cfg.chatId,
-          text,
-          disable_web_page_preview: true,
-        }),
+        body: JSON.stringify(payload),
       },
     );
     if (!res.ok) {
@@ -79,4 +84,17 @@ export async function notifyApplicationTelegram(
     console.error("[apply] Telegram request failed:", e);
     return false;
   }
+}
+
+export async function notifyApplicationTelegram(
+  a: ApplicationNotifyPayload,
+): Promise<boolean> {
+  const cfg = anketaBotConfig();
+  if (!cfg) {
+    console.error(
+      "[apply] TELEGRAM_ANKETA_* / TELEGRAM_ORDERS_* missing (див. google-form-all-answers-to-telegram.gs)",
+    );
+    return false;
+  }
+  return sendAnketaTelegramText(formatApplicationTelegramText(a));
 }
