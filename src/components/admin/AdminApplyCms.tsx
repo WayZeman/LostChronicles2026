@@ -57,7 +57,7 @@ function needsOptions(type: ApplyQuestionType): boolean {
   );
 }
 
-export function AdminApplyCms() {
+export function AdminApplyCms({ mode }: { mode: "edit" | "view" }) {
   const [config, setConfig] = useState<ApplyFormConfig>(
     DEFAULT_APPLY_FORM_CONFIG,
   );
@@ -74,7 +74,11 @@ export function AdminApplyCms() {
     try {
       const res = await fetch("/api/admin/apply", { credentials: "include" });
       if (!res.ok) {
-        setErr("Не вдалося завантажити анкету");
+        setErr(
+          mode === "edit"
+            ? "Не вдалося завантажити анкету"
+            : "Не вдалося завантажити заявки",
+        );
         return;
       }
       const data = (await res.json()) as {
@@ -88,7 +92,7 @@ export function AdminApplyCms() {
     } catch {
       setErr("Мережева помилка");
     }
-  }, []);
+  }, [mode]);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => {
@@ -223,10 +227,21 @@ export function AdminApplyCms() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-8">
+      {msg ? (
+        <p className="text-sm font-bold text-[var(--mc-net-green)]">{msg}</p>
+      ) : null}
+      {err ? (
+        <p className="text-sm font-bold text-rose-200" role="alert">
+          {err}
+        </p>
+      ) : null}
+
+      {mode === "edit" ? (
+        <>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h2 className="text-lg font-extrabold text-[var(--mc-text)]">
-            Конструктор анкети
+            Редагування анкети
           </h2>
           <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
             Як Google Form: типи питань, варіанти відповідей. Публічна сторінка{" "}
@@ -250,15 +265,6 @@ export function AdminApplyCms() {
           Зберегти
         </button>
       </div>
-
-      {msg ? (
-        <p className="text-sm font-bold text-[var(--mc-net-green)]">{msg}</p>
-      ) : null}
-      {err ? (
-        <p className="text-sm font-bold text-rose-200" role="alert">
-          {err}
-        </p>
-      ) : null}
 
       <section className="space-y-3 rounded-xl border border-white/10 bg-black/20 p-4">
         <h3 className="text-xs font-extrabold uppercase tracking-wide text-[var(--mc-text-muted)]">
@@ -576,12 +582,20 @@ export function AdminApplyCms() {
           Зберегти анкету
         </button>
       </section>
+        </>
+      ) : null}
 
-      <section className="space-y-2 border-t border-white/10 pt-6">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h3 className="text-xs font-extrabold uppercase tracking-wide text-[var(--mc-text-muted)]">
-            Пройдені анкети · {total}
-          </h3>
+      {mode === "view" ? (
+      <section className="space-y-3">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-lg font-extrabold text-[var(--mc-text)]">
+              Перегляд анкет
+            </h2>
+            <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
+              Заявки з сайту · {total}
+            </p>
+          </div>
           <button
             type="button"
             disabled={busy}
@@ -621,7 +635,11 @@ export function AdminApplyCms() {
                           <span className="text-[11px] font-semibold text-rose-300/90">
                             не прийнято
                           </span>
-                        ) : null}
+                        ) : (
+                          <span className="text-[11px] font-semibold text-[var(--mc-text-subtle)]">
+                            очікує
+                          </span>
+                        )}
                         <span className="text-[11px] text-[var(--mc-text-subtle)]">
                           {formatWhen(a.createdAt)}
                         </span>
@@ -668,6 +686,7 @@ export function AdminApplyCms() {
           </ul>
         )}
       </section>
+      ) : null}
     </div>
   );
 }

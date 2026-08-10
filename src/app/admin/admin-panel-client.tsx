@@ -27,6 +27,7 @@ import "@/components/proposals/proposal-vote.css";
 type Tab =
   | "faq"
   | "apply"
+  | "apply-apps"
   | "connect"
   | "support"
   | "voting"
@@ -98,6 +99,7 @@ export function AdminPanelClient() {
   const initialTab: Tab =
     tabParam === "faq" ||
     tabParam === "apply" ||
+    tabParam === "apply-apps" ||
     tabParam === "connect" ||
     tabParam === "support" ||
     tabParam === "voting" ||
@@ -238,6 +240,7 @@ export function AdminPanelClient() {
       if (
         t === "faq" ||
         t === "apply" ||
+        t === "apply-apps" ||
         t === "connect" ||
         t === "support" ||
         t === "voting" ||
@@ -562,7 +565,8 @@ export function AdminPanelClient() {
   const tabs: { id: Tab; label: string }[] = isFullAdmin
     ? [
         { id: "faq", label: "FAQ" },
-        { id: "apply", label: "Анкета" },
+        { id: "apply", label: "Редагування анкети" },
+        { id: "apply-apps", label: "Перегляд анкет" },
         { id: "connect", label: "Підключення" },
         { id: "support", label: "Підтримка" },
         { id: "voting", label: "Голосування" },
@@ -604,7 +608,7 @@ export function AdminPanelClient() {
                 Керування сайтом
               </h1>
               <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
-                FAQ, анкета, підключення, підтримка, вікі, пропозиції та ролі.
+                FAQ, анкети, підключення, підтримка, вікі, пропозиції та ролі.
               </p>
             </div>
           </header>
@@ -774,7 +778,8 @@ export function AdminPanelClient() {
               </div>
             ) : null}
 
-            {tab === "apply" ? <AdminApplyCms /> : null}
+            {tab === "apply" ? <AdminApplyCms mode="edit" /> : null}
+            {tab === "apply-apps" ? <AdminApplyCms mode="view" /> : null}
 
             {tab === "connect" ? (
               <div className="grid gap-3 sm:grid-cols-2">
