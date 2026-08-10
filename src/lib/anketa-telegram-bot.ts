@@ -17,30 +17,39 @@ import {
 
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
 export const ANKETA_BOT_COMMANDS = [
-  { command: "anketa", description: "Остання анкета з сайту" },
+  { command: "anketa", description: "Остання / №N — анкета зі статусом" },
   { command: "add", description: "Прийняти: /add server 3" },
   { command: "deny", description: "Відхилити: /deny server 3" },
+  { command: "clear", description: "Скинути статус: /clear server 3" },
   { command: "count", description: "Скільки анкет у базі" },
-  { command: "delete", description: "Видалити: /delete 12 або /delete 12 yes" },
+  { command: "delete", description: "Видалити: /delete 12 yes" },
   { command: "help", description: "Усі команди анкет" },
 ] as const;
 
-function helpText(): string {
+/** Текст /help і підказка для групи. */
+export function anketaHelpText(): string {
   return (
-    "Команди анкет (сайт /apply):\n" +
-    "/anketa — остання\n" +
-    "/anketa 12 — анкета №12\n" +
+    "📋 Команди анкет (сайт /apply)\n\n" +
+    "/anketa — остання анкета\n" +
+    "/anketa 12 — анкета №12 (+ статус)\n" +
     "/add server 12 — прийняти на сервер\n" +
     "/deny server 12 — не прийнято\n" +
     "/clear server 12 — скинути статус\n" +
-    "/count — скільки всього\n" +
+    "/count — скільки анкет у базі\n" +
     "/delete 12 — що буде видалено\n" +
     "/delete 12 yes — видалити\n" +
     "/delete last yes — видалити останню\n" +
     "/help — ця підказка\n\n" +
+    "Коротко також: /add 12 · /deny 12\n\n" +
+    "Статуси в анкеті:\n" +
+    "✅ На сервері · ❌ Не прийнято · ⏳ Очікує рішення\n\n" +
     "№1 = перша (найстаріша), найбільший № = остання.\n" +
     "Після видалення номери зсуваються."
   );
+}
+
+function helpText(): string {
+  return anketaHelpText();
 }
 
 function parseOrdinalArg(arg: string): number | "last" | null {
