@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import Link from "next/link";
 import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
 import { HeroAuthGreeting } from "@/components/site/HeroAuthGreeting";
@@ -11,7 +12,7 @@ import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { cn } from "@/lib/utils";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
-import { LC_GOOGLE_FORM_URL } from "@/data/lost-chronicles-faq";
+import { LC_APPLY_PATH } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
 import {
   getConnectSettings,
@@ -86,15 +87,12 @@ export default async function Home() {
               draggable={false}
             />
             <div className="pointer-events-none absolute inset-x-0 bottom-[7%] z-10 flex justify-center sm:bottom-[8%] md:bottom-[9%]">
-              <a
-                href={LC_GOOGLE_FORM_URL}
-                target="_blank"
-                rel="noopener noreferrer"
+              <Link
+                href={LC_APPLY_PATH}
                 className="lc-focus-ring lc-btn-accent pointer-events-auto min-h-11 px-8 py-2.5 text-sm shadow-[0_6px_20px_rgba(0,0,0,0.5)]"
               >
                 Подати заявку
-                <ExternalLink className="size-3.5 opacity-70" aria-hidden />
-              </a>
+              </Link>
             </div>
           </div>
 

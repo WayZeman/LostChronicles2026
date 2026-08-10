@@ -9,15 +9,15 @@ export type LostChroniclesFaqItem = {
   answer: string;
 };
 
-/** Класична Google Form — кнопка на головній. */
+/** Класична Google Form (архів / запасний варіант). */
 export const LC_GOOGLE_FORM_URL =
   "https://docs.google.com/forms/d/e/1FAIpQLScWada7pzzu4YeWd3cFLQY3Ozr8UBSmaHFn8tFGHLY-towXdw/viewform?usp=header";
 
-/** Нова анкета на сайті — кнопка в FAQ (п.1). */
+/** Анкета на сайті — головна кнопка та FAQ. */
 export const LC_APPLY_PATH = "/apply";
 
-/** @deprecated використовуй LC_GOOGLE_FORM_URL або LC_APPLY_PATH */
-export const LC_FORM_URL = LC_GOOGLE_FORM_URL;
+/** Основне посилання на анкету. */
+export const LC_FORM_URL = LC_APPLY_PATH;
 
 const FAQ_CTA_BTN =
   "lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-5 py-2.5 text-sm sm:min-h-[2.5rem] sm:w-auto sm:shrink-0 sm:self-center sm:px-6";

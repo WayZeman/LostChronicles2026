@@ -45,10 +45,7 @@ export default async function ApplyPage() {
               className="pointer-events-none absolute left-1/2 top-0 h-16 w-[min(100%,18rem)] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(255,214,74,0.14),transparent_70%)]"
               aria-hidden
             />
-            <p className="relative text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--mc-menu-yellow)]">
-              Lost Chronicles
-            </p>
-            <h1 className="lc-hero-title lc-hero-display relative mt-2 text-balance text-[clamp(2rem,6vw,2.75rem)] leading-none text-[var(--mc-text)]">
+            <h1 className="lc-hero-title lc-hero-display relative text-balance text-[clamp(2rem,6vw,2.75rem)] leading-none text-[var(--mc-text)]">
               {config.pageTitle}
             </h1>
             <div
