@@ -238,6 +238,7 @@ export function ApplyForm({
     try {
       const res = await fetch("/api/apply", {
         method: "POST",
+        credentials: "include",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ answers, website }),
       });
@@ -245,6 +246,10 @@ export function ApplyForm({
         error?: string;
         id?: number;
       };
+      if (res.status === 401) {
+        window.location.href = `/auth-required?next=${encodeURIComponent("/apply")}`;
+        return;
+      }
       if (!res.ok) {
         setError(data.error || "Не вдалося надіслати анкету.");
         return;

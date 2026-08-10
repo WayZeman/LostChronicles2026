@@ -5,6 +5,7 @@ import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth-session";
 /** Створення пропозиції / адмінка / редагування вікі — лише для авторизованих. */
 function isAuthRequiredPath(pathname: string): boolean {
   if (pathname === "/proposals/new") return true;
+  if (pathname === "/apply" || pathname.startsWith("/apply/")) return true;
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
   if (pathname === "/wiki/new") return true;
   if (/^\/wiki\/.+\/edit\/?$/.test(pathname)) return true;

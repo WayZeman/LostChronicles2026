@@ -10,6 +10,7 @@ import {
   getOrdinalForApplicationId,
   type ApplicationAnswers,
 } from "@/lib/applications";
+import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { notifyApplicationTelegram } from "@/lib/notify-application";
 
 export const dynamic = "force-dynamic";
@@ -111,6 +112,14 @@ function validateAnswers(
 }
 
 export async function POST(req: Request) {
+  const userId = await getSessionUserIdFromCookies();
+  if (!userId) {
+    return NextResponse.json(
+      { error: "Щоб надіслати анкету, увійди на сайт." },
+      { status: 401 },
+    );
+  }
+
   if (!allowRate(clientIp(req))) {
     return NextResponse.json(
       { error: "Забагато заявок з цієї адреси. Спробуй пізніше." },
