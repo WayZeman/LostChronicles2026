@@ -1794,3 +1794,367 @@ textarea.mc-input:focus {
     transition: none !important;
   }
 }
+
+/* --- Щоденне сповіщення «проголосуй» --- */
+
+@keyframes lc-vote-nudge-scrim-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lc-vote-nudge-scrim-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes lc-vote-nudge-card-in {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 28px, 0) scale(0.94);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(0, -4px, 0) scale(1.015);
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes lc-vote-nudge-card-out {
+  from {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.96);
+  }
+}
+
+@keyframes lc-vote-nudge-icon {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  50% {
+    transform: translate3d(0, -3px, 0);
+  }
+}
+
+@keyframes lc-vote-nudge-link-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 10px, 0);
+  }
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes lc-vote-nudge-shine {
+  0% {
+    transform: translateX(-130%) skewX(-18deg);
+    opacity: 0;
+  }
+  20% {
+    opacity: 0.55;
+  }
+  55% {
+    opacity: 0.2;
+  }
+  100% {
+    transform: translateX(220%) skewX(-18deg);
+    opacity: 0;
+  }
+}
+
+.lc-vote-nudge {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0.75rem;
+  padding-bottom: calc(5.75rem + env(safe-area-inset-bottom, 0px));
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .lc-vote-nudge {
+    align-items: center;
+    padding-bottom: 0.75rem;
+  }
+}
+
+.lc-vote-nudge__scrim {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+  pointer-events: auto;
+  background:
+    radial-gradient(
+      70% 55% at 50% 70%,
+      color-mix(in srgb, var(--mc-grass) 18%, transparent),
+      transparent 70%
+    ),
+    rgba(4, 6, 5, 0.52);
+  backdrop-filter: blur(3px);
+  -webkit-backdrop-filter: blur(3px);
+  animation: lc-vote-nudge-scrim-in 0.38s var(--am-ease, ease) both;
+}
+
+.lc-vote-nudge--leaving .lc-vote-nudge__scrim {
+  animation: lc-vote-nudge-scrim-out 0.3s ease both;
+}
+
+.lc-vote-nudge__card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 21.5rem;
+  overflow: hidden;
+  pointer-events: auto;
+  padding: 1rem 1rem 0.85rem;
+  background:
+    linear-gradient(
+      165deg,
+      color-mix(in srgb, var(--mc-grass) 14%, rgba(32, 38, 34, 0.98)) 0%,
+      rgba(14, 17, 15, 0.98) 48%,
+      rgba(10, 12, 11, 0.99) 100%
+    );
+  box-shadow:
+    0 22px 48px rgba(0, 0, 0, 0.55),
+    0 0 0 1px color-mix(in srgb, var(--mc-grass-bright) 22%, transparent);
+  animation: lc-vote-nudge-card-in 0.55s cubic-bezier(0.22, 1.2, 0.36, 1) both;
+}
+
+.lc-vote-nudge--leaving .lc-vote-nudge__card {
+  animation: lc-vote-nudge-card-out 0.3s ease both;
+}
+
+.lc-vote-nudge__shine {
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.lc-vote-nudge__shine::before {
+  content: "";
+  position: absolute;
+  top: -20%;
+  bottom: -20%;
+  left: 0;
+  width: 42%;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, #fff 18%, transparent),
+    transparent
+  );
+  animation: lc-vote-nudge-shine 1.6s 0.35s ease both;
+}
+
+.lc-vote-nudge__glow {
+  pointer-events: none;
+  position: absolute;
+  top: -2.5rem;
+  right: -1.5rem;
+  width: 8rem;
+  height: 8rem;
+  border-radius: 999px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--mc-menu-yellow) 28%, transparent),
+    transparent 70%
+  );
+  opacity: 0.7;
+}
+
+.lc-vote-nudge__close {
+  position: absolute;
+  top: 0.45rem;
+  right: 0.45rem;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  color: var(--mc-text-muted);
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.lc-vote-nudge__close:hover {
+  color: var(--mc-text);
+  background: color-mix(in srgb, #fff 8%, transparent);
+}
+
+.lc-vote-nudge__hero {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-right: 1.5rem;
+}
+
+.lc-vote-nudge__icon-wrap {
+  flex-shrink: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  background:
+    linear-gradient(
+      160deg,
+      color-mix(in srgb, var(--mc-grass) 28%, #1a221c),
+      color-mix(in srgb, var(--mc-menu-yellow) 12%, #121612)
+    );
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--mc-grass-bright) 25%, transparent);
+  animation: lc-vote-nudge-icon 2.8s ease-in-out infinite;
+}
+
+.lc-vote-nudge__icon {
+  width: 1.15rem;
+  height: 1.15rem;
+  color: var(--mc-menu-yellow);
+}
+
+.lc-vote-nudge__eyebrow {
+  margin: 0;
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--mc-menu-yellow) 88%, #fff);
+}
+
+.lc-vote-nudge__title {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1.25;
+  letter-spacing: 0.01em;
+  color: var(--mc-text);
+}
+
+.lc-vote-nudge__text {
+  margin: 0.4rem 0 0;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--mc-ink-subtle);
+}
+
+.lc-vote-nudge__links {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0.85rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-vote-nudge__link-item {
+  animation: lc-vote-nudge-link-in 0.42s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation-delay: calc(0.22s + var(--i, 0) * 0.07s);
+}
+
+.lc-vote-nudge__link {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 2.4rem;
+  padding: 0.45rem 0.65rem;
+  text-decoration: none;
+  color: var(--mc-text);
+  background: color-mix(in srgb, #000 28%, transparent);
+  border: 1px solid color-mix(in srgb, var(--mc-grass-bright) 18%, transparent);
+  transition:
+    background-color 0.18s ease,
+    border-color 0.18s ease,
+    transform 0.18s ease,
+    color 0.18s ease;
+}
+
+.lc-vote-nudge__link:hover {
+  background: color-mix(in srgb, var(--mc-grass) 22%, #1a1f1c);
+  border-color: color-mix(in srgb, var(--mc-grass-bright) 45%, transparent);
+  color: var(--mc-grass-bright);
+  transform: translateY(-1px);
+}
+
+.lc-vote-nudge__link:active {
+  transform: translateY(0);
+}
+
+.lc-vote-nudge__link-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.lc-vote-nudge__link-hint {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--mc-text-muted);
+}
+
+.lc-vote-nudge__link:hover .lc-vote-nudge__link-hint {
+  color: color-mix(in srgb, var(--mc-grass-bright) 70%, #fff);
+}
+
+.lc-vote-nudge__link-icon {
+  width: 0.7rem;
+  height: 0.7rem;
+  opacity: 0.45;
+}
+
+.lc-vote-nudge__optout {
+  display: block;
+  width: 100%;
+  margin-top: 0.7rem;
+  padding: 0.25rem;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  color: var(--mc-text-muted);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, #fff 14%, transparent);
+  text-underline-offset: 0.15rem;
+  transition: color 0.15s ease;
+}
+
+.lc-vote-nudge__optout:hover {
+  color: var(--mc-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-vote-nudge__scrim,
+  .lc-vote-nudge__card,
+  .lc-vote-nudge__icon-wrap,
+  .lc-vote-nudge__shine::before,
+  .lc-vote-nudge__link-item,
+  .lc-vote-nudge--leaving .lc-vote-nudge__scrim,
+  .lc-vote-nudge--leaving .lc-vote-nudge__card {
+    animation: none !important;
+  }
+
+  .lc-vote-nudge__link:hover {
+    transform: none !important;
+  }
+}

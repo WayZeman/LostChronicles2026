@@ -4,6 +4,7 @@ import { Noto_Sans } from "next/font/google";
 import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
+import { DailyVoteNudge } from "@/components/site/DailyVoteNudge";
 import { RouteEnter } from "@/components/site/RouteEnter";
 import { SiteAtmosphere } from "@/components/site/SiteAtmosphere";
 import { SiteIntroCurtain } from "@/components/site/SiteIntroCurtain";
@@ -133,6 +134,7 @@ export default function RootLayout({
         <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />
         <SiteIntroCurtain />
+        <DailyVoteNudge />
         <div className="mc-net-backdrop" aria-hidden>
           <div className="mc-bg-blob-layer">
             <span className="mc-bg-blob mc-bg-blob-1" />
