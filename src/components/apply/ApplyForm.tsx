@@ -339,50 +339,30 @@ export function ApplyForm({
       </div>
 
       <div className="divide-y divide-white/10">
-        {enabled.map((q, index) => (
-          <div
-            key={q.id}
-            className={cn(
-              "py-5 first:pt-0 last:pb-5",
-              index === 0 ? "" : "",
-            )}
-          >
-            <div className="mb-2.5 flex items-start gap-2">
-              <span className="mt-0.5 flex size-6 shrink-0 items-center justify-center border-2 border-black bg-black/50 text-[11px] font-extrabold tabular-nums text-[var(--mc-menu-yellow)]">
-                {index + 1}
-              </span>
-              <label
-                className="min-w-0 flex-1 text-left text-sm font-extrabold leading-snug text-[var(--mc-text)] sm:text-[0.9375rem]"
-                htmlFor={`apply-${q.id}`}
-                id={`apply-${q.id}-label`}
-              >
-                {q.label}
-                {q.required ? (
-                  <span className="ml-1 text-[var(--mc-menu-yellow)]">*</span>
-                ) : (
-                  <span className="ml-1.5 text-[11px] font-semibold text-[var(--mc-text-subtle)]">
-                    (необовʼязково)
-                  </span>
-                )}
-              </label>
-            </div>
-            <div className="pl-0 sm:pl-8">
-              <QuestionControl
-                q={q}
-                value={answers[q.id] ?? (q.type === "multi_choice" ? [] : "")}
-                onChange={(v) =>
-                  setAnswers((prev) => ({
-                    ...prev,
-                    [q.id]: v,
-                  }))
-                }
-              />
-              {q.hint ? (
-                <p className="mt-2 text-left text-xs leading-relaxed text-[var(--mc-text-muted)]">
-                  {q.hint}
-                </p>
-              ) : null}
-            </div>
+        {enabled.map((q) => (
+          <div key={q.id} className="py-5 first:pt-0 last:pb-5">
+            <label
+              className="mb-2.5 block text-left text-sm font-extrabold leading-snug text-[var(--mc-text)] sm:text-[0.9375rem]"
+              htmlFor={`apply-${q.id}`}
+              id={`apply-${q.id}-label`}
+            >
+              {q.label}
+            </label>
+            <QuestionControl
+              q={q}
+              value={answers[q.id] ?? (q.type === "multi_choice" ? [] : "")}
+              onChange={(v) =>
+                setAnswers((prev) => ({
+                  ...prev,
+                  [q.id]: v,
+                }))
+              }
+            />
+            {q.hint ? (
+              <p className="mt-2 text-left text-xs leading-relaxed text-[var(--mc-text-muted)]">
+                {q.hint}
+              </p>
+            ) : null}
           </div>
         ))}
       </div>

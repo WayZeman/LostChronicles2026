@@ -40,15 +40,27 @@ export default async function ApplyPage() {
         )}
       >
         <SoftAppear>
-          <header className="mb-6 text-center sm:mb-8">
-            <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--mc-menu-yellow)]">
+          <header className="relative mb-7 text-center sm:mb-9">
+            <div
+              className="pointer-events-none absolute left-1/2 top-0 h-16 w-[min(100%,18rem)] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(255,214,74,0.14),transparent_70%)]"
+              aria-hidden
+            />
+            <p className="relative text-[11px] font-bold uppercase tracking-[0.22em] text-[var(--mc-menu-yellow)]">
               Lost Chronicles
             </p>
-            <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
+            <h1 className="lc-hero-title lc-hero-display relative mt-2 text-balance text-[clamp(2rem,6vw,2.75rem)] leading-none text-[var(--mc-text)]">
               {config.pageTitle}
             </h1>
+            <div
+              className="mx-auto mt-4 flex w-full max-w-[14rem] items-center gap-2"
+              aria-hidden
+            >
+              <span className="h-px flex-1 bg-gradient-to-r from-transparent to-[var(--mc-menu-yellow)]/55" />
+              <span className="size-1.5 rotate-45 border border-[var(--mc-menu-yellow)]/70 bg-[var(--mc-menu-yellow)]/30" />
+              <span className="h-px flex-1 bg-gradient-to-l from-transparent to-[var(--mc-menu-yellow)]/55" />
+            </div>
             {config.pageIntro ? (
-              <p className="mx-auto mt-3 max-w-md text-pretty text-sm leading-relaxed text-[var(--mc-text-muted)] sm:text-[0.9375rem]">
+              <p className="relative mx-auto mt-4 max-w-md text-pretty text-sm leading-relaxed text-[var(--mc-text-muted)] sm:text-[0.9375rem]">
                 {config.pageIntro}
               </p>
             ) : null}
