@@ -27,10 +27,11 @@ export async function GET() {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const config = await getApplyFormConfig();
-    const [applications, total] = await Promise.all([
-      listApplications(100, config.questions),
-      countApplications(),
-    ]);
+    const total = await countApplications();
+    const applications = await listApplications(
+      Math.max(total, 1),
+      config.questions,
+    );
     return NextResponse.json({ config, applications, total });
   } catch {
     return NextResponse.json(

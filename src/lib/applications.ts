@@ -245,7 +245,7 @@ export async function listApplications(
 ): Promise<ApplicationRow[]> {
   await ensureApplicationsTable();
   const sql = getSql();
-  const safeLimit = Math.min(200, Math.max(1, Math.floor(limit)));
+  const safeLimit = Math.min(5000, Math.max(1, Math.floor(limit)));
   const rows = rowsOf(await sql`
     SELECT
       id,
