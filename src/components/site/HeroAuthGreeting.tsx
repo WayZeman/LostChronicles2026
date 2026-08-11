@@ -214,6 +214,14 @@ export function HeroAuthGreeting() {
             </Link>
           ) : null}
 
+          <Link
+            href="/profile"
+            onClick={() => setOpen(false)}
+            className="lc-focus-ring mt-3 flex w-full items-center justify-center rounded-lg border border-white/12 bg-white/[0.04] px-2 py-2 text-xs font-bold text-[var(--mc-text)] hover:bg-white/[0.08]"
+          >
+            Мій профіль
+          </Link>
+
           <button
             type="button"
             disabled={busy}

@@ -2176,3 +2176,20 @@ textarea.mc-input:focus {
     transform: none !important;
   }
 }
+
+@keyframes lc-diamond-bob {
+  0%,
+  100% {
+    transform: translate(-50%, -50%) translateY(0);
+  }
+  50% {
+    transform: translate(-50%, -50%) translateY(-6px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  [class*="lc-diamond-bob"] {
+    animation: none !important;
+  }
+}
+

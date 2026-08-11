@@ -4,6 +4,8 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
 import { HeroAuthGreeting } from "@/components/site/HeroAuthGreeting";
+import { DiamondHuntCounter } from "@/components/site/DiamondHuntCounter";
+import { DiamondHuntLeaderboard } from "@/components/site/DiamondHuntLeaderboard";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPanel";
@@ -97,6 +99,7 @@ export default async function Home() {
           </div>
 
           <HeroAuthGreeting />
+          <DiamondHuntCounter />
 
           {voteUrl ? (
             <div className="relative z-10 mt-5 flex flex-wrap justify-center gap-3">
@@ -132,6 +135,8 @@ export default async function Home() {
           >
             <HeroServerOverviewPanel />
           </Suspense>
+
+          <DiamondHuntLeaderboard />
 
           <div className={cn(lcGlassPanelClass, "lc-interactive-panel-static")}>
             <h2 className="lc-section-title text-center text-lg uppercase md:text-xl">

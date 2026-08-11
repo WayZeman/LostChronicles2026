@@ -7,6 +7,7 @@ function isAuthRequiredPath(pathname: string): boolean {
   if (pathname === "/proposals/new") return true;
   if (pathname === "/apply" || pathname.startsWith("/apply/")) return true;
   if (pathname === "/admin" || pathname.startsWith("/admin/")) return true;
+  if (pathname === "/profile" || pathname.startsWith("/profile/")) return true;
   if (pathname === "/wiki/new") return true;
   if (/^\/wiki\/.+\/edit\/?$/.test(pathname)) return true;
   return false;
