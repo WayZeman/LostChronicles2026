@@ -80,15 +80,15 @@ export function DiamondFinishModal() {
           Вітаємо!
         </h2>
         <p className="mt-2 text-sm leading-relaxed text-[var(--mc-text)]">
-          Ти знайшов усі{" "}
-          <span className="font-bold text-cyan-200">100 діамантів</span> на
-          сайті Lost Chronicles.
+          Ти знайшов{" "}
+          <span className="font-bold text-cyan-200">усі розсипані діаманти</span>{" "}
+          на сайті Lost Chronicles.
         </p>
         <p className="mt-4 font-[family-name:var(--font-minecraft)] text-3xl font-bold tabular-nums text-[var(--mc-menu-yellow)]">
           #{place}
         </p>
         <p className="mt-1 text-xs text-[var(--mc-text-muted)]">
-          Ти {place}-й гравець, хто зібрав усі діаманти
+          Ти {place}-й гравець, хто зібрав їх усі
         </p>
         <button
           type="button"

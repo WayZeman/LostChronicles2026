@@ -14,7 +14,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS diamond_collections_user_spot_uidx
 UPDATE diamond_event
 SET
   title = COALESCE(NULLIF(TRIM(title), ''), 'Пошук діамантів'),
-  blurb = 'Знайди всі 100 діамантів, схованих на сторінках сайту. Хто збере усі — потрапить до таблиці переможців.',
+  blurb = 'Якось випадковим чином по сайту Lost Chronicles розсипались діаманти. Вони ховаються в куточках сторінок, у відповідях FAQ і серед товарів магазину — шукай і збирай, поки триває подія.',
   diamonds_per_day = 100,
   updated_at = NOW()
 WHERE id = 1;

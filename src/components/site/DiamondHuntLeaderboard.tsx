@@ -84,7 +84,7 @@ export function DiamondHuntLeaderboard() {
         </h2>
       </div>
       <p className="mt-2 text-center text-xs text-[var(--mc-text-muted)]">
-        Хто знайде всі 100 діамантів першим — чемпіон івенту
+        Топ збирачів розсипаних діамантів
       </p>
 
       {entries.length === 0 ? (
@@ -118,7 +118,7 @@ export function DiamondHuntLeaderboard() {
               </span>
               <span className="inline-flex items-center gap-1 text-sm font-bold tabular-nums text-cyan-200">
                 <DiamondIcon size={14} className="size-3.5 shrink-0" />
-                {e.score}/100
+                {e.score}
               </span>
             </li>
           ))}

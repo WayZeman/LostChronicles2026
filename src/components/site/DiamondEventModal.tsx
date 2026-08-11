@@ -34,7 +34,6 @@ export function DiamondEventModal() {
   const [blurb, setBlurb] = useState("");
   const [endAt, setEndAt] = useState<string | null>(null);
   const [balance, setBalance] = useState(0);
-  const [total, setTotal] = useState(100);
   const [remain, setRemain] = useState("");
   const [active, setActive] = useState(false);
 
@@ -56,7 +55,6 @@ export function DiamondEventModal() {
         blurb?: string;
         endAt?: string | null;
         balance?: number;
-        total?: number;
       };
       const isActive = Boolean(data.active);
       setActive(isActive);
@@ -65,7 +63,6 @@ export function DiamondEventModal() {
       if (data.blurb) setBlurb(data.blurb);
       setEndAt(data.endAt ?? null);
       setBalance(data.balance ?? 0);
-      setTotal(data.total ?? 100);
 
       if (!isActive) {
         setOpen(false);
@@ -97,7 +94,6 @@ export function DiamondEventModal() {
         return;
       }
       if (d?.balance !== undefined) setBalance(d.balance);
-      if (d?.total !== undefined) setTotal(d.total);
       if (d?.endAt !== undefined) setEndAt(d.endAt ?? null);
       if (d?.title) setTitle(d.title);
       if (d?.blurb) setBlurb(d.blurb);
@@ -191,7 +187,7 @@ export function DiamondEventModal() {
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-[var(--mc-text-muted)]">
               {blurb ||
-                "Знайди всі 100 діамантів на сайті. Вони сховані на різних сторінках і в розділах — відкривай FAQ, заглядай у магазин."}
+                "Якось випадковим чином по сайту Lost Chronicles розсипались діаманти. Вони ховаються в куточках сторінок, у відповідях FAQ і серед товарів магазину — шукай і збирай, поки триває подія."}
             </p>
           </div>
         </div>
@@ -207,10 +203,10 @@ export function DiamondEventModal() {
           </div>
           <div className="rounded-lg border border-white/10 bg-black/25 px-3 py-2 text-center">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-[var(--mc-text-muted)]">
-              Прогрес
+              Зібрано
             </p>
             <p className="mt-0.5 text-sm font-bold tabular-nums text-cyan-200">
-              {loggedIn ? `${balance} / ${total}` : `? / ${total}`}
+              {loggedIn ? balance : "—"}
             </p>
           </div>
         </div>

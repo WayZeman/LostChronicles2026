@@ -7,7 +7,6 @@ import {
 } from "@/lib/diamond-hunt-events";
 import { AUTH_ME_CHANGED_EVENT } from "@/lib/auth-me-events";
 import { DiamondIcon } from "@/components/site/DiamondIcon";
-import { DIAMOND_EVENT_TOTAL } from "@/data/diamond-spots";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -17,7 +16,6 @@ type Props = {
 export function DiamondHuntCounter({ className }: Props) {
   const [visible, setVisible] = useState(false);
   const [balance, setBalance] = useState(0);
-  const [total, setTotal] = useState(DIAMOND_EVENT_TOTAL);
 
   const load = useCallback(async () => {
     try {
@@ -28,7 +26,6 @@ export function DiamondHuntCounter({ className }: Props) {
         user?: number | null;
         active?: boolean;
         balance?: number;
-        total?: number;
       };
       if (!data.user || !data.active) {
         setVisible(false);
@@ -36,7 +33,6 @@ export function DiamondHuntCounter({ className }: Props) {
       }
       setVisible(true);
       setBalance(data.balance ?? 0);
-      setTotal(data.total ?? DIAMOND_EVENT_TOTAL);
     } catch {
       setVisible(false);
     }
@@ -58,7 +54,6 @@ export function DiamondHuntCounter({ className }: Props) {
         return;
       }
       if (detail?.balance !== undefined) setBalance(detail.balance);
-      if (detail?.total !== undefined) setTotal(detail.total);
       if (detail?.active === true) setVisible(true);
     };
     window.addEventListener(AUTH_ME_CHANGED_EVENT, onAuth);
@@ -89,7 +84,7 @@ export function DiamondHuntCounter({ className }: Props) {
       >
         <DiamondIcon size={18} className="size-[18px] shrink-0" />
         <span className="tabular-nums text-[var(--mc-menu-yellow)]">
-          {balance}/{total}
+          {balance}
         </span>
       </div>
     </div>

@@ -43,7 +43,7 @@ function bool(v: unknown): boolean {
 }
 
 const DEFAULT_BLURB =
-  "Знайди всі 100 діамантів, схованих на сторінках сайту. Хто збере усі — потрапить до таблиці переможців.";
+  "Якось випадковим чином по сайту Lost Chronicles розсипались діаманти. Вони ховаються в куточках сторінок, у відповідях FAQ і серед товарів магазину — шукай і збирай, поки триває подія.";
 
 export async function ensureDiamondHuntSchema(): Promise<void> {
   if (!schemaReady) {
@@ -66,7 +66,7 @@ export async function ensureDiamondHuntSchema(): Promise<void> {
           id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
           enabled BOOLEAN NOT NULL DEFAULT FALSE,
           title TEXT NOT NULL DEFAULT 'Пошук діамантів',
-          blurb TEXT NOT NULL DEFAULT 'Знайди всі 100 діамантів, схованих на сторінках сайту.',
+          blurb TEXT NOT NULL DEFAULT 'Якось випадковим чином по сайту розсипались діаманти.',
           start_at TIMESTAMPTZ,
           end_at TIMESTAMPTZ,
           diamonds_per_day INT NOT NULL DEFAULT 100,
@@ -77,6 +77,17 @@ export async function ensureDiamondHuntSchema(): Promise<void> {
         INSERT INTO diamond_event (id, enabled, title, blurb, diamonds_per_day)
         VALUES (1, FALSE, 'Пошук діамантів', ${DEFAULT_BLURB}, 100)
         ON CONFLICT (id) DO NOTHING
+      `;
+      // Оновити старий дефолтний опис, якщо адмін його не міняв під себе
+      await sql`
+        UPDATE diamond_event
+        SET blurb = ${DEFAULT_BLURB}, updated_at = NOW()
+        WHERE id = 1
+          AND (
+            blurb ILIKE '%100 діамант%'
+            OR blurb ILIKE '%Кожен день%'
+            OR TRIM(blurb) = ''
+          )
       `;
       await sql`
         CREATE TABLE IF NOT EXISTS diamond_collections (
@@ -280,6 +291,38 @@ export async function endDiamondEvent(): Promise<DiamondEventSettings> {
     WHERE id = 1
   `;
   return getDiamondEventSettings();
+}
+
+/** Скинути збори й фініші, не змінюючи дати / увімкнення івенту. */
+export async function resetDiamondProgress(): Promise<{
+  event: DiamondEventSettings;
+  clearedCollections: number;
+  clearedFinishers: number;
+}> {
+  await ensureDiamondHuntSchema();
+  const sql = getSql();
+  const colRows = rowsOf(await sql`
+    WITH deleted AS (
+      DELETE FROM diamond_collections RETURNING 1
+    )
+    SELECT COUNT(*)::int AS c FROM deleted
+  `);
+  const finRows = rowsOf(await sql`
+    WITH deleted AS (
+      DELETE FROM diamond_finishers RETURNING 1
+    )
+    SELECT COUNT(*)::int AS c FROM deleted
+  `);
+  await sql`
+    UPDATE diamond_event
+    SET updated_at = NOW()
+    WHERE id = 1
+  `;
+  return {
+    event: await getDiamondEventSettings(),
+    clearedCollections: num(colRows[0]?.c),
+    clearedFinishers: num(finRows[0]?.c),
+  };
 }
 
 export type UserProfileFields = {

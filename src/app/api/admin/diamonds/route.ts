@@ -5,6 +5,7 @@ import {
   getDiamondEventSettings,
   getDiamondFinishers,
   getDiamondLeaderboard,
+  resetDiamondProgress,
   startDiamondEvent,
   updateDiamondEventSettings,
 } from "@/lib/diamond-hunt";
@@ -60,6 +61,10 @@ export async function PUT(req: Request) {
     if (action === "end") {
       const event = await endDiamondEvent();
       return NextResponse.json({ event });
+    }
+    if (action === "reset") {
+      const result = await resetDiamondProgress();
+      return NextResponse.json(result);
     }
 
     const patch: {

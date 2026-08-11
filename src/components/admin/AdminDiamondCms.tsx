@@ -103,7 +103,7 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
     return () => cancelAnimationFrame(id);
   }, [load]);
 
-  async function runAction(action: "start" | "end" | "save") {
+  async function runAction(action: "start" | "end" | "save" | "reset") {
     setBusy(true);
     onMsg(null);
     onErr(null);
@@ -126,7 +126,11 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await res.json()) as { error?: string };
+      const data = (await res.json()) as {
+        error?: string;
+        clearedCollections?: number;
+        clearedFinishers?: number;
+      };
       if (!res.ok) {
         onErr(data.error || "Не вдалося зберегти");
         setBusy(false);
@@ -138,6 +142,12 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
         );
       } else if (action === "end") {
         onMsg("Івент завершено.");
+      } else if (action === "reset") {
+        const cols = data.clearedCollections ?? 0;
+        const fins = data.clearedFinishers ?? 0;
+        onMsg(
+          `Прогрес скинуто (зборів: ${cols}, фінішів: ${fins}). Дати івенту без змін.`,
+        );
       } else {
         onMsg("Налаштування збережено");
       }
@@ -184,6 +194,23 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
           className="lc-focus-ring rounded-lg border border-rose-400/40 bg-rose-500/15 px-4 py-2.5 text-xs font-bold text-rose-100 hover:bg-rose-500/25 disabled:opacity-50"
         >
           Закінчити івент
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (
+              !window.confirm(
+                "Скинути весь прогрес гравців (збори + фініші)? Дати івенту не зміняться.",
+              )
+            ) {
+              return;
+            }
+            void runAction("reset");
+          }}
+          className="lc-focus-ring rounded-lg border border-amber-400/35 bg-amber-500/10 px-4 py-2.5 text-xs font-bold text-amber-100 hover:bg-amber-500/20 disabled:opacity-50"
+        >
+          Скинути прогрес
         </button>
       </div>
 
@@ -309,9 +336,7 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
                   {i + 1}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{e.displayName}</span>
-                <span className="tabular-nums text-cyan-200">
-                  {e.score}/{DIAMOND_EVENT_TOTAL}
-                </span>
+                <span className="tabular-nums text-cyan-200">{e.score}</span>
               </li>
             ))}
           </ol>
