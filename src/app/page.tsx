@@ -6,6 +6,7 @@ import { ExternalLink } from "lucide-react";
 import { HeroAuthGreeting } from "@/components/site/HeroAuthGreeting";
 import { DiamondHuntCounter } from "@/components/site/DiamondHuntCounter";
 import { DiamondHuntLeaderboard } from "@/components/site/DiamondHuntLeaderboard";
+import { DiamondPageRoot } from "@/components/site/DiamondSlot";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPanel";
@@ -73,7 +74,7 @@ export default async function Home() {
 
   return (
     <main className={lcPageMainClass}>
-      <div className={lcPageContainerHomeClass}>
+      <DiamondPageRoot className={lcPageContainerHomeClass}>
         <section className="am-reveal relative z-10 flex flex-col items-center pt-0 text-center md:pt-0">
           <h1 className="sr-only">Lost Chronicles — Ukrainian Minecraft Server</h1>
 
@@ -179,7 +180,7 @@ export default async function Home() {
           blurb={support.blurb}
           catalogLinks={support.catalogLinks}
         />
-      </div>
+      </DiamondPageRoot>
     </main>
   );
 }

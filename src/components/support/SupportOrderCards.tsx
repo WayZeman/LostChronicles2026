@@ -5,6 +5,7 @@ import { ShoppingBag, ShoppingCart, Trash2, X } from "lucide-react";
 
 import { AUTH_ME_CHANGED_EVENT } from "@/lib/auth-me-events";
 import { authRequiredPath } from "@/lib/auth-paths";
+import { DiamondSlot } from "@/components/site/DiamondSlot";
 import {
   effectivePriceTiers,
   type SupportPriceTier,
@@ -373,7 +374,7 @@ export function SupportOrderCards({ cards }: Props) {
         </div>
       ) : (
         <ul className="flex flex-wrap justify-center gap-4 pb-8 sm:gap-5">
-          {cards.map((card) => {
+          {cards.map((card, cardIndex) => {
             const q = qtyFor(card.id);
             const added = justAdded === card.id;
             const tiers = cardTiers(card);
@@ -389,11 +390,17 @@ export function SupportOrderCards({ cards }: Props) {
               >
                 <article
                   className={cn(
-                    "flex h-full flex-col overflow-hidden border-2 border-black bg-black/30",
+                    "relative flex h-full flex-col overflow-hidden border-2 border-black bg-black/30",
                     "shadow-[4px_4px_0_rgba(0,0,0,0.45)] transition-[transform,box-shadow] duration-150",
                     "hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,0.5)]",
                   )}
                 >
+                  {cardIndex < 8 ? (
+                    <DiamondSlot
+                      id={`support-card-${cardIndex}`}
+                      className="!absolute !left-2 !top-2 !z-[5] !size-8"
+                    />
+                  ) : null}
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#121212]">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img

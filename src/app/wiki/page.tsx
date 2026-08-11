@@ -4,6 +4,7 @@ import {
   lcPageContainerClass,
   lcPageMainClass,
 } from "@/components/site/lc-page-shell";
+import { DiamondPageRoot } from "@/components/site/DiamondSlot";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { WikiSearchBox } from "@/components/wiki/WikiSearchBox";
 import { WikiHomeStructured } from "@/components/wiki/WikiHomeStructured";
@@ -17,7 +18,7 @@ export default async function WikiIndexPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <div className={lcPageContainerClass}>
+      <DiamondPageRoot className={lcPageContainerClass}>
         <WikiContentFrame
           topSlot={
             <WikiSearchBox
@@ -34,7 +35,7 @@ export default async function WikiIndexPage() {
             </p>
           )}
         </WikiContentFrame>
-      </div>
+      </DiamondPageRoot>
     </main>
   );
 }

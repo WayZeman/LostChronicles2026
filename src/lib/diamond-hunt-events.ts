@@ -3,7 +3,16 @@ export const DIAMOND_HUNT_CHANGED_EVENT = "lc:diamond-hunt-changed";
 
 export type DiamondHuntChangedDetail = {
   balance?: number;
+  total?: number;
+  finishPlace?: number | null;
+  justFinished?: boolean;
+  endAt?: string | null;
+  title?: string;
+  blurb?: string;
+  active?: boolean;
+  /** @deprecated */
   todayCollected?: number;
+  /** @deprecated */
   todayTotal?: number;
 };
 

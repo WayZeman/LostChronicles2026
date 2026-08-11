@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { TelegramNewsFeed } from "@/components/news/TelegramNewsFeed";
+import { DiamondPageRoot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
@@ -23,7 +24,7 @@ export default async function NewsListPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <div
+      <DiamondPageRoot
         className={cn(
           "site-container relative z-10 mx-auto w-full max-w-3xl",
           "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-6",
@@ -52,7 +53,7 @@ export default async function NewsListPage() {
         ) : (
           <TelegramNewsFeed posts={posts} topicUrl={topic.topicUrl} />
         )}
-      </div>
+      </DiamondPageRoot>
     </main>
   );
 }

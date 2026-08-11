@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import {
+  endDiamondEvent,
   getDiamondEventSettings,
+  getDiamondFinishers,
   getDiamondLeaderboard,
+  startDiamondEvent,
   updateDiamondEventSettings,
 } from "@/lib/diamond-hunt";
 import { requireAdminUserId } from "@/lib/site-content";
@@ -17,11 +20,12 @@ export async function GET() {
     if (!userId) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
-    const [event, leaderboard] = await Promise.all([
+    const [event, leaderboard, finishers] = await Promise.all([
       getDiamondEventSettings(),
       getDiamondLeaderboard(25),
+      getDiamondFinishers(25),
     ]);
-    return NextResponse.json({ event, leaderboard });
+    return NextResponse.json({ event, leaderboard, finishers });
   } catch {
     return NextResponse.json(
       { error: "Database unavailable" },
@@ -47,13 +51,23 @@ export async function PUT(req: Request) {
     }
 
     const b = (body ?? {}) as Record<string, unknown>;
+    const action = typeof b.action === "string" ? b.action : "save";
+
+    if (action === "start") {
+      const event = await startDiamondEvent();
+      return NextResponse.json({ event });
+    }
+    if (action === "end") {
+      const event = await endDiamondEvent();
+      return NextResponse.json({ event });
+    }
+
     const patch: {
       enabled?: boolean;
       title?: string;
       blurb?: string;
       startAt?: string | null;
       endAt?: string | null;
-      diamondsPerDay?: number;
     } = {};
 
     if ("enabled" in b) patch.enabled = Boolean(b.enabled);
@@ -74,10 +88,6 @@ export async function PUT(req: Request) {
           : typeof b.endAt === "string"
             ? b.endAt
             : null;
-    }
-    if ("diamondsPerDay" in b) {
-      const n = Number(b.diamondsPerDay);
-      if (Number.isFinite(n)) patch.diamondsPerDay = n;
     }
 
     const event = await updateDiamondEventSettings(patch);

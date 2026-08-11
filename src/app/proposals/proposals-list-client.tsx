@@ -9,6 +9,7 @@ import {
   type ProposalListCardData,
 } from "@/components/proposals/ProposalListCard";
 import { SoftAppear } from "@/components/site/SoftAppear";
+import { DiamondPageRoot } from "@/components/site/DiamondSlot";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
   isProposalVotingOpenClient,
@@ -69,7 +70,7 @@ export function ProposalsListClient() {
 
   return (
     <main className={lcPageMainClass}>
-      <div
+      <DiamondPageRoot
         className={cn(
           "site-container relative z-10 mx-auto w-full max-w-3xl",
           "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(5.5rem,env(safe-area-inset-bottom,0px))] pt-4",
@@ -246,7 +247,7 @@ export function ProposalsListClient() {
             ))}
           </ul>
         )}
-      </div>
+      </DiamondPageRoot>
     </main>
   );
 }

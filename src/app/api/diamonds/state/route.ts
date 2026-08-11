@@ -7,13 +7,12 @@ export const dynamic = "force-dynamic";
 export async function GET(req: Request) {
   try {
     const userId = await getSessionUserIdFromCookies();
-    if (!userId) {
-      return NextResponse.json({ user: null, active: false });
-    }
-
     const url = new URL(req.url);
     const path = url.searchParams.get("path") || "/";
-    const state = await getDiamondPlayerState({ userId, pathname: path });
+    const state = await getDiamondPlayerState({
+      userId: userId ?? null,
+      pathname: path,
+    });
     return NextResponse.json({
       user: userId,
       ...state,

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { ApplyForm } from "@/components/apply/ApplyForm";
+import { DiamondPageRoot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SoftAppear } from "@/components/site/SoftAppear";
@@ -32,7 +33,7 @@ export default async function ApplyPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <div
+      <DiamondPageRoot
         className={cn(
           "site-container relative z-10 mx-auto w-full max-w-xl",
           "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-8",
@@ -78,7 +79,7 @@ export default async function ApplyPage() {
             <ApplyForm initialConfig={config} />
           </div>
         </SoftAppear>
-      </div>
+      </DiamondPageRoot>
     </main>
   );
 }

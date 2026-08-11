@@ -1,6 +1,10 @@
 import { getSql } from "@/lib/db";
 import {
-  DIAMOND_SPOT_POOL,
+  DIAMOND_EVENT_DURATION_DAYS,
+  DIAMOND_EVENT_TOTAL,
+  DIAMOND_SPOTS,
+  getSpotById,
+  getSpotsForPath,
   isDiamondPathAllowed,
   normalizeDiamondPath,
   type DiamondSpotDef,
@@ -38,6 +42,9 @@ function bool(v: unknown): boolean {
   return false;
 }
 
+const DEFAULT_BLURB =
+  "Знайди всі 100 діамантів, схованих на сторінках сайту. Хто збере усі — потрапить до таблиці переможців.";
+
 export async function ensureDiamondHuntSchema(): Promise<void> {
   if (!schemaReady) {
     schemaReady = (async () => {
@@ -59,16 +66,16 @@ export async function ensureDiamondHuntSchema(): Promise<void> {
           id INT PRIMARY KEY DEFAULT 1 CHECK (id = 1),
           enabled BOOLEAN NOT NULL DEFAULT FALSE,
           title TEXT NOT NULL DEFAULT 'Пошук діамантів',
-          blurb TEXT NOT NULL DEFAULT 'Знайди діаманти, сховані на сайті. Кожен день — нові місця.',
+          blurb TEXT NOT NULL DEFAULT 'Знайди всі 100 діамантів, схованих на сторінках сайту.',
           start_at TIMESTAMPTZ,
           end_at TIMESTAMPTZ,
-          diamonds_per_day INT NOT NULL DEFAULT 20,
+          diamonds_per_day INT NOT NULL DEFAULT 100,
           updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
       `;
       await sql`
-        INSERT INTO diamond_event (id, enabled, title)
-        VALUES (1, FALSE, 'Пошук діамантів')
+        INSERT INTO diamond_event (id, enabled, title, blurb, diamonds_per_day)
+        VALUES (1, FALSE, 'Пошук діамантів', ${DEFAULT_BLURB}, 100)
         ON CONFLICT (id) DO NOTHING
       `;
       await sql`
@@ -76,18 +83,28 @@ export async function ensureDiamondHuntSchema(): Promise<void> {
           id BIGSERIAL PRIMARY KEY,
           user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
           spot_id VARCHAR(64) NOT NULL,
-          day_key DATE NOT NULL,
-          collected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-          CONSTRAINT diamond_collections_user_day_spot UNIQUE (user_id, day_key, spot_id)
+          day_key DATE NOT NULL DEFAULT CURRENT_DATE,
+          collected_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
         )
+      `;
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS diamond_collections_user_spot_uidx
+          ON diamond_collections (user_id, spot_id)
       `;
       await sql`
         CREATE INDEX IF NOT EXISTS diamond_collections_user_idx
           ON diamond_collections (user_id)
       `;
       await sql`
-        CREATE INDEX IF NOT EXISTS diamond_collections_day_idx
-          ON diamond_collections (day_key)
+        CREATE TABLE IF NOT EXISTS diamond_finishers (
+          user_id INT PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
+          place INT NOT NULL,
+          finished_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+        )
+      `;
+      await sql`
+        CREATE UNIQUE INDEX IF NOT EXISTS diamond_finishers_place_uidx
+          ON diamond_finishers (place)
       `;
     })().catch((err) => {
       schemaReady = null;
@@ -97,81 +114,28 @@ export async function ensureDiamondHuntSchema(): Promise<void> {
   await schemaReady;
 }
 
-/** День івенту в Europe/Kyiv як YYYY-MM-DD. */
-export function kyivDayKey(date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone: "Europe/Kyiv",
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(date);
-}
-
-function hashString(input: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
-}
-
-function mulberry32(seed: number): () => number {
-  let t = seed >>> 0;
-  return () => {
-    t += 0x6d2b79f5;
-    let r = Math.imul(t ^ (t >>> 15), 1 | t);
-    r ^= r + Math.imul(r ^ (r >>> 7), 61 | r);
-    return ((r ^ (r >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
-export function pickDailySpots(
-  dayKey: string,
-  count: number,
-  pool: DiamondSpotDef[] = DIAMOND_SPOT_POOL,
-): DiamondSpotDef[] {
-  const n = Math.max(0, Math.min(count, pool.length));
-  if (n === 0) return [];
-  const rnd = mulberry32(hashString(`lc-diamond:${dayKey}`));
-  const copy = [...pool];
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(rnd() * (i + 1));
-    const tmp = copy[i]!;
-    copy[i] = copy[j]!;
-    copy[j] = tmp;
-  }
-  return copy.slice(0, n);
-}
-
 export type DiamondEventSettings = {
   enabled: boolean;
   title: string;
   blurb: string;
   startAt: string | null;
   endAt: string | null;
-  diamondsPerDay: number;
+  /** Завжди DIAMOND_EVENT_TOTAL для UI */
+  totalDiamonds: number;
+  durationDays: number;
   updatedAt: string | null;
 };
 
-export async function getDiamondEventSettings(): Promise<DiamondEventSettings> {
-  await ensureDiamondHuntSchema();
-  const sql = getSql();
-  const rows = rowsOf(await sql`
-    SELECT enabled, title, blurb, start_at, end_at, diamonds_per_day, updated_at
-    FROM diamond_event
-    WHERE id = 1
-    LIMIT 1
-  `);
-  const r = rows[0];
+function mapEvent(r: Record<string, unknown> | undefined): DiamondEventSettings {
   if (!r) {
     return {
       enabled: false,
       title: "Пошук діамантів",
-      blurb: "Знайди діаманти, сховані на сайті. Кожен день — нові місця.",
+      blurb: DEFAULT_BLURB,
       startAt: null,
       endAt: null,
-      diamondsPerDay: 20,
+      totalDiamonds: DIAMOND_EVENT_TOTAL,
+      durationDays: DIAMOND_EVENT_DURATION_DAYS,
       updatedAt: null,
     };
   }
@@ -181,9 +145,7 @@ export async function getDiamondEventSettings(): Promise<DiamondEventSettings> {
   return {
     enabled: bool(r.enabled),
     title: str(r.title) || "Пошук діамантів",
-    blurb:
-      str(r.blurb) ||
-      "Знайди діаманти, сховані на сайті. Кожен день — нові місця.",
+    blurb: str(r.blurb) || DEFAULT_BLURB,
     startAt:
       startRaw instanceof Date
         ? startRaw.toISOString()
@@ -196,7 +158,8 @@ export async function getDiamondEventSettings(): Promise<DiamondEventSettings> {
         : endRaw
           ? String(endRaw)
           : null,
-    diamondsPerDay: Math.max(1, Math.min(40, num(r.diamonds_per_day) || 20)),
+    totalDiamonds: DIAMOND_EVENT_TOTAL,
+    durationDays: DIAMOND_EVENT_DURATION_DAYS,
     updatedAt:
       updatedRaw instanceof Date
         ? updatedRaw.toISOString()
@@ -204,6 +167,18 @@ export async function getDiamondEventSettings(): Promise<DiamondEventSettings> {
           ? String(updatedRaw)
           : null,
   };
+}
+
+export async function getDiamondEventSettings(): Promise<DiamondEventSettings> {
+  await ensureDiamondHuntSchema();
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT enabled, title, blurb, start_at, end_at, updated_at
+    FROM diamond_event
+    WHERE id = 1
+    LIMIT 1
+  `);
+  return mapEvent(rows[0]);
 }
 
 export function isEventActiveNow(
@@ -228,19 +203,12 @@ export async function updateDiamondEventSettings(input: {
   blurb?: string;
   startAt?: string | null;
   endAt?: string | null;
-  diamondsPerDay?: number;
 }): Promise<DiamondEventSettings> {
   await ensureDiamondHuntSchema();
   const current = await getDiamondEventSettings();
   const enabled = input.enabled ?? current.enabled;
   const title = (input.title ?? current.title).trim() || "Пошук діамантів";
-  const blurb =
-    (input.blurb ?? current.blurb).trim() ||
-    "Знайди діаманти, сховані на сайті. Кожен день — нові місця.";
-  const diamondsPerDay = Math.max(
-    1,
-    Math.min(40, input.diamondsPerDay ?? current.diamondsPerDay),
-  );
+  const blurb = (input.blurb ?? current.blurb).trim() || DEFAULT_BLURB;
 
   let startAt: string | null =
     input.startAt === undefined ? current.startAt : input.startAt;
@@ -260,7 +228,7 @@ export async function updateDiamondEventSettings(input: {
       ${blurb},
       ${startAt},
       ${endAt},
-      ${diamondsPerDay},
+      ${DIAMOND_EVENT_TOTAL},
       NOW()
     )
     ON CONFLICT (id) DO UPDATE SET
@@ -269,8 +237,47 @@ export async function updateDiamondEventSettings(input: {
       blurb = EXCLUDED.blurb,
       start_at = EXCLUDED.start_at,
       end_at = EXCLUDED.end_at,
-      diamonds_per_day = EXCLUDED.diamonds_per_day,
+      diamonds_per_day = ${DIAMOND_EVENT_TOTAL},
       updated_at = NOW()
+  `;
+  return getDiamondEventSettings();
+}
+
+/** Старт: увімкнути, now → +10 днів, очистити збори й фініши. */
+export async function startDiamondEvent(): Promise<DiamondEventSettings> {
+  await ensureDiamondHuntSchema();
+  const sql = getSql();
+  const start = new Date();
+  const end = new Date(
+    start.getTime() + DIAMOND_EVENT_DURATION_DAYS * 24 * 60 * 60 * 1000,
+  );
+  await sql`DELETE FROM diamond_collections`;
+  await sql`DELETE FROM diamond_finishers`;
+  await sql`
+    UPDATE diamond_event
+    SET
+      enabled = TRUE,
+      start_at = ${start.toISOString()},
+      end_at = ${end.toISOString()},
+      diamonds_per_day = ${DIAMOND_EVENT_TOTAL},
+      updated_at = NOW()
+    WHERE id = 1
+  `;
+  return getDiamondEventSettings();
+}
+
+/** Кінець: вимкнути зараз. */
+export async function endDiamondEvent(): Promise<DiamondEventSettings> {
+  await ensureDiamondHuntSchema();
+  const sql = getSql();
+  const now = new Date().toISOString();
+  await sql`
+    UPDATE diamond_event
+    SET
+      enabled = FALSE,
+      end_at = ${now},
+      updated_at = NOW()
+    WHERE id = 1
   `;
   return getDiamondEventSettings();
 }
@@ -334,83 +341,209 @@ export async function getUserDiamondTotal(userId: number): Promise<number> {
   return num(rows[0]?.c);
 }
 
-export async function getCollectedSpotIdsForDay(
+export async function getCollectedSpotIds(
   userId: number,
-  dayKey: string,
 ): Promise<Set<string>> {
   await ensureDiamondHuntSchema();
   const sql = getSql();
   const rows = rowsOf(await sql`
     SELECT spot_id
     FROM diamond_collections
-    WHERE user_id = ${userId} AND day_key = ${dayKey}::date
+    WHERE user_id = ${userId}
   `);
   return new Set(rows.map((r) => str(r.spot_id)).filter(Boolean));
 }
 
+export async function getFinisherPlace(
+  userId: number,
+): Promise<number | null> {
+  await ensureDiamondHuntSchema();
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT place
+    FROM diamond_finishers
+    WHERE user_id = ${userId}
+    LIMIT 1
+  `);
+  if (!rows[0]) return null;
+  const p = num(rows[0].place);
+  return p > 0 ? p : null;
+}
+
+async function recordFinisherIfNeeded(userId: number): Promise<number | null> {
+  const balance = await getUserDiamondTotal(userId);
+  if (balance < DIAMOND_EVENT_TOTAL) return null;
+
+  const existing = await getFinisherPlace(userId);
+  if (existing) return existing;
+
+  await ensureDiamondHuntSchema();
+  const sql = getSql();
+  try {
+    const rows = rowsOf(await sql`
+      INSERT INTO diamond_finishers (user_id, place)
+      VALUES (
+        ${userId},
+        (SELECT COALESCE(MAX(place), 0) + 1 FROM diamond_finishers)
+      )
+      ON CONFLICT (user_id) DO NOTHING
+      RETURNING place
+    `);
+    if (rows[0]) return num(rows[0].place);
+  } catch {
+    /* race — read again */
+  }
+  return getFinisherPlace(userId);
+}
+
 export type DiamondPublicSpot = {
   id: string;
+  kind: "page" | "slot";
+  slot?: string;
   top: number;
   left: number;
+  size: "sm" | "md";
+  opacity: number;
 };
+
+function toPublicSpot(s: DiamondSpotDef): DiamondPublicSpot {
+  if (s.kind === "slot") {
+    return {
+      id: s.id,
+      kind: "slot",
+      slot: s.slot,
+      top: s.top ?? 50,
+      left: s.left ?? 50,
+      size: s.size ?? "md",
+      opacity: s.opacity ?? 0.85,
+    };
+  }
+  return {
+    id: s.id,
+    kind: "page",
+    top: s.top,
+    left: s.left,
+    size: s.size ?? "md",
+    opacity: s.opacity ?? 0.85,
+  };
+}
 
 export type DiamondPlayerState = {
   active: boolean;
   title: string;
   blurb: string;
-  dayKey: string;
-  todayTotal: number;
-  todayCollected: number;
+  endAt: string | null;
+  startAt: string | null;
+  total: number;
   balance: number;
+  finishPlace: number | null;
   spotsOnPage: DiamondPublicSpot[];
 };
 
 export async function getDiamondPlayerState(params: {
-  userId: number;
+  userId: number | null;
   pathname: string;
 }): Promise<DiamondPlayerState> {
   const settings = await getDiamondEventSettings();
-  const dayKey = kyivDayKey();
-  const balance = await getUserDiamondTotal(params.userId);
   const active = isEventActiveNow(settings);
   const empty: DiamondPlayerState = {
     active: false,
     title: settings.title,
     blurb: settings.blurb,
-    dayKey,
-    todayTotal: settings.diamondsPerDay,
-    todayCollected: 0,
-    balance,
+    endAt: settings.endAt,
+    startAt: settings.startAt,
+    total: DIAMOND_EVENT_TOTAL,
+    balance: 0,
+    finishPlace: null,
     spotsOnPage: [],
   };
-  if (!active) return empty;
 
-  const path = normalizeDiamondPath(params.pathname);
-  if (!isDiamondPathAllowed(path)) {
-    return { ...empty, active: true };
+  if (!active) {
+    return {
+      ...empty,
+      endAt: settings.endAt,
+      startAt: settings.startAt,
+      title: settings.title,
+      blurb: settings.blurb,
+    };
   }
 
-  const daily = pickDailySpots(dayKey, settings.diamondsPerDay);
-  const collected = await getCollectedSpotIdsForDay(params.userId, dayKey);
-  const todayCollected = daily.filter((s) => collected.has(s.id)).length;
-  const spotsOnPage = daily
-    .filter((s) => normalizeDiamondPath(s.path) === path && !collected.has(s.id))
-    .map((s) => ({ id: s.id, top: s.top, left: s.left }));
+  if (!params.userId) {
+    return {
+      ...empty,
+      active: true,
+      title: settings.title,
+      blurb: settings.blurb,
+      endAt: settings.endAt,
+      startAt: settings.startAt,
+    };
+  }
+
+  const balance = await getUserDiamondTotal(params.userId);
+  const finishPlace = await getFinisherPlace(params.userId);
+  const path = normalizeDiamondPath(params.pathname);
+
+  if (!isDiamondPathAllowed(path)) {
+    return {
+      active: true,
+      title: settings.title,
+      blurb: settings.blurb,
+      endAt: settings.endAt,
+      startAt: settings.startAt,
+      total: DIAMOND_EVENT_TOTAL,
+      balance,
+      finishPlace,
+      spotsOnPage: [],
+    };
+  }
+
+  const collected = await getCollectedSpotIds(params.userId);
+  const spotsOnPage = getSpotsForPath(path)
+    .filter((s) => !collected.has(s.id))
+    .map(toPublicSpot);
 
   return {
     active: true,
     title: settings.title,
     blurb: settings.blurb,
-    dayKey,
-    todayTotal: daily.length,
-    todayCollected,
+    endAt: settings.endAt,
+    startAt: settings.startAt,
+    total: DIAMOND_EVENT_TOTAL,
     balance,
+    finishPlace,
     spotsOnPage,
   };
 }
 
+/** Публічний стан івенту (для вікна події без логіну). */
+export async function getDiamondPublicEventInfo(): Promise<{
+  active: boolean;
+  title: string;
+  blurb: string;
+  endAt: string | null;
+  startAt: string | null;
+  total: number;
+}> {
+  const settings = await getDiamondEventSettings();
+  const active = isEventActiveNow(settings);
+  return {
+    active,
+    title: settings.title,
+    blurb: settings.blurb,
+    endAt: settings.endAt,
+    startAt: settings.startAt,
+    total: DIAMOND_EVENT_TOTAL,
+  };
+}
+
 export type CollectResult =
-  | { ok: true; balance: number; todayCollected: number; todayTotal: number }
+  | {
+      ok: true;
+      balance: number;
+      total: number;
+      finishPlace: number | null;
+      justFinished: boolean;
+    }
   | { ok: false; error: string; code?: string };
 
 export async function collectDiamond(params: {
@@ -422,42 +555,46 @@ export async function collectDiamond(params: {
     return { ok: false, error: "Івент зараз неактивний.", code: "inactive" };
   }
 
-  const dayKey = kyivDayKey();
-  const daily = pickDailySpots(dayKey, settings.diamondsPerDay);
-  const spot = daily.find((s) => s.id === params.spotId);
-  if (!spot) {
-    return { ok: false, error: "Цей діамант сьогодні недоступний.", code: "invalid" };
+  const spot = getSpotById(params.spotId);
+  if (!spot || !DIAMOND_SPOTS.some((s) => s.id === params.spotId)) {
+    return { ok: false, error: "Невідомий діамант.", code: "invalid" };
   }
 
   await ensureDiamondHuntSchema();
   const sql = getSql();
+  const beforePlace = await getFinisherPlace(params.userId);
+
   try {
     await sql`
       INSERT INTO diamond_collections (user_id, spot_id, day_key)
-      VALUES (${params.userId}, ${params.spotId}, ${dayKey}::date)
+      VALUES (${params.userId}, ${params.spotId}, CURRENT_DATE)
     `;
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (/unique|duplicate/i.test(msg)) {
       const balance = await getUserDiamondTotal(params.userId);
-      const collected = await getCollectedSpotIdsForDay(params.userId, dayKey);
+      const finishPlace = await recordFinisherIfNeeded(params.userId);
       return {
         ok: true,
         balance,
-        todayCollected: daily.filter((s) => collected.has(s.id)).length,
-        todayTotal: daily.length,
+        total: DIAMOND_EVENT_TOTAL,
+        finishPlace,
+        justFinished: false,
       };
     }
     throw err;
   }
 
   const balance = await getUserDiamondTotal(params.userId);
-  const collected = await getCollectedSpotIdsForDay(params.userId, dayKey);
+  const finishPlace = await recordFinisherIfNeeded(params.userId);
+  const justFinished = Boolean(finishPlace) && !beforePlace;
+
   return {
     ok: true,
     balance,
-    todayCollected: daily.filter((s) => collected.has(s.id)).length,
-    todayTotal: daily.length,
+    total: DIAMOND_EVENT_TOTAL,
+    finishPlace,
+    justFinished,
   };
 }
 
@@ -500,5 +637,40 @@ export async function getDiamondLeaderboard(
     discordId: r.discord_id == null ? null : str(r.discord_id),
     username: str(r.username),
     score: num(r.score),
+  }));
+}
+
+export type DiamondFinisherEntry = {
+  userId: number;
+  displayName: string;
+  place: number;
+  finishedAt: string;
+};
+
+export async function getDiamondFinishers(
+  limit = 25,
+): Promise<DiamondFinisherEntry[]> {
+  await ensureDiamondHuntSchema();
+  const sql = getSql();
+  const lim = Math.max(1, Math.min(100, limit));
+  const rows = rowsOf(await sql`
+    SELECT
+      f.user_id,
+      f.place,
+      f.finished_at,
+      COALESCE(NULLIF(TRIM(u.game_nickname), ''), u.username) AS display_name
+    FROM diamond_finishers f
+    INNER JOIN users u ON u.id = f.user_id
+    ORDER BY f.place ASC
+    LIMIT ${lim}
+  `);
+  return rows.map((r) => ({
+    userId: num(r.user_id),
+    displayName: str(r.display_name) || "Гравець",
+    place: num(r.place),
+    finishedAt:
+      r.finished_at instanceof Date
+        ? r.finished_at.toISOString()
+        : String(r.finished_at ?? ""),
   }));
 }

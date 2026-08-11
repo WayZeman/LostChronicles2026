@@ -35,8 +35,9 @@ export async function POST(req: Request) {
     return NextResponse.json({
       ok: true,
       balance: result.balance,
-      todayCollected: result.todayCollected,
-      todayTotal: result.todayTotal,
+      total: result.total,
+      finishPlace: result.finishPlace,
+      justFinished: result.justFinished,
     });
   } catch {
     return NextResponse.json(

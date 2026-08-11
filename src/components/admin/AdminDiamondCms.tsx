@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { DiamondIcon } from "@/components/site/DiamondIcon";
+import { DIAMOND_EVENT_DURATION_DAYS, DIAMOND_EVENT_TOTAL } from "@/data/diamond-spots";
 import { cn } from "@/lib/utils";
 
 type EventDraft = {
@@ -10,15 +11,18 @@ type EventDraft = {
   blurb: string;
   startAt: string;
   endAt: string;
-  diamondsPerDay: number;
 };
 
 type LeaderEntry = {
   userId: number;
   displayName: string;
   score: number;
-  avatar?: string | null;
-  customAvatar?: string | null;
+};
+
+type FinisherEntry = {
+  userId: number;
+  displayName: string;
+  place: number;
 };
 
 function toDatetimeLocalValue(iso: string | null | undefined): string {
@@ -49,9 +53,9 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
     blurb: "",
     startAt: "",
     endAt: "",
-    diamondsPerDay: 20,
   });
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
+  const [finishers, setFinishers] = useState<FinisherEntry[]>([]);
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
 
@@ -66,9 +70,9 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
           blurb: string;
           startAt: string | null;
           endAt: string | null;
-          diamondsPerDay: number;
         };
         leaderboard?: LeaderEntry[];
+        finishers?: FinisherEntry[];
         error?: string;
       };
       if (!res.ok) {
@@ -82,10 +86,10 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
           blurb: data.event.blurb,
           startAt: toDatetimeLocalValue(data.event.startAt),
           endAt: toDatetimeLocalValue(data.event.endAt),
-          diamondsPerDay: data.event.diamondsPerDay,
         });
       }
       setLeaderboard(Array.isArray(data.leaderboard) ? data.leaderboard : []);
+      setFinishers(Array.isArray(data.finishers) ? data.finishers : []);
       setReady(true);
     } catch {
       onErr("Мережа недоступна");
@@ -99,24 +103,28 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
     return () => cancelAnimationFrame(id);
   }, [load]);
 
-  async function onSave(e: React.FormEvent) {
-    e.preventDefault();
+  async function runAction(action: "start" | "end" | "save") {
     setBusy(true);
     onMsg(null);
     onErr(null);
     try {
+      const body =
+        action === "save"
+          ? {
+              action: "save",
+              enabled: draft.enabled,
+              title: draft.title,
+              blurb: draft.blurb,
+              startAt: fromDatetimeLocalValue(draft.startAt),
+              endAt: fromDatetimeLocalValue(draft.endAt),
+            }
+          : { action };
+
       const res = await fetch("/api/admin/diamonds", {
         method: "PUT",
         credentials: "include",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          enabled: draft.enabled,
-          title: draft.title,
-          blurb: draft.blurb,
-          startAt: fromDatetimeLocalValue(draft.startAt),
-          endAt: fromDatetimeLocalValue(draft.endAt),
-          diamondsPerDay: draft.diamondsPerDay,
-        }),
+        body: JSON.stringify(body),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -124,7 +132,15 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
         setBusy(false);
         return;
       }
-      onMsg("Івент діамантів збережено");
+      if (action === "start") {
+        onMsg(
+          `Івент запущено на ${DIAMOND_EVENT_DURATION_DAYS} днів (${DIAMOND_EVENT_TOTAL} діамантів). Прогрес скинуто.`,
+        );
+      } else if (action === "end") {
+        onMsg("Івент завершено.");
+      } else {
+        onMsg("Налаштування збережено");
+      }
       await load();
     } catch {
       onErr("Мережа недоступна");
@@ -140,11 +156,49 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
 
   return (
     <div className="space-y-6">
-      <form onSubmit={(e) => void onSave(e)} className="space-y-4">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (
+              !window.confirm(
+                `Почати івент на ${DIAMOND_EVENT_DURATION_DAYS} днів? Усі збори та фініші буде скинуто.`,
+              )
+            ) {
+              return;
+            }
+            void runAction("start");
+          }}
+          className="lc-focus-ring lc-btn-accent px-4 py-2.5 text-xs disabled:opacity-50"
+        >
+          Почати івент
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => {
+            if (!window.confirm("Завершити івент зараз?")) return;
+            void runAction("end");
+          }}
+          className="lc-focus-ring rounded-lg border border-rose-400/40 bg-rose-500/15 px-4 py-2.5 text-xs font-bold text-rose-100 hover:bg-rose-500/25 disabled:opacity-50"
+        >
+          Закінчити івент
+        </button>
+      </div>
+
+      <form
+        onSubmit={(e) => {
+          e.preventDefault();
+          void runAction("save");
+        }}
+        className="space-y-4"
+      >
         <p className="text-xs text-[var(--mc-text-muted)]">
-          Діаманти видно лише залогіненим гравцям (не в адмінці). Щодня
-          з&apos;являється новий набір місць. Адмін бачить івент завжди для
-          перевірки через увімкнення.
+          Рівно {DIAMOND_EVENT_TOTAL} діамантів на сайті (скроляться зі
+          сторінкою, частина в FAQ / картках магазину). Тривалість старту:{" "}
+          {DIAMOND_EVENT_DURATION_DAYS} днів (тиждень + 3 дні). Видно лише
+          залогіненим; у адмінці діаманти не показуються.
         </p>
 
         <label className="flex items-center gap-2 text-sm font-semibold text-[var(--mc-text)]">
@@ -156,7 +210,7 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
             }
             className="size-4 accent-[var(--mc-net-green)]"
           />
-          Івент увімкнено
+          Івент увімкнено (ручне)
         </label>
 
         <label className="block text-[11px] font-semibold text-[var(--mc-text-muted)]">
@@ -170,7 +224,7 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
         </label>
 
         <label className="block text-[11px] font-semibold text-[var(--mc-text-muted)]">
-          Опис
+          Опис (вікно події)
           <textarea
             value={draft.blurb}
             onChange={(e) => setDraft((d) => ({ ...d, blurb: e.target.value }))}
@@ -205,37 +259,41 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
           </label>
         </div>
 
-        <label className="block text-[11px] font-semibold text-[var(--mc-text-muted)]">
-          Діамантів на день
-          <input
-            type="number"
-            min={1}
-            max={40}
-            value={draft.diamondsPerDay}
-            onChange={(e) =>
-              setDraft((d) => ({
-                ...d,
-                diamondsPerDay: Number(e.target.value) || 20,
-              }))
-            }
-            className="lc-focus-ring mc-input mt-1 w-full max-w-[8rem] px-2.5 py-2 text-sm"
-          />
-        </label>
-
         <button
           type="submit"
           disabled={busy}
-          className="lc-focus-ring lc-btn-accent px-4 py-2 text-xs disabled:opacity-50"
+          className="lc-focus-ring rounded-lg border border-white/12 px-4 py-2 text-xs font-bold text-[var(--mc-text)] hover:bg-white/[0.04] disabled:opacity-50"
         >
-          {busy ? "…" : "Зберегти івент"}
+          {busy ? "…" : "Зберегти текст / дати"}
         </button>
       </form>
 
       <div>
         <h3 className="flex items-center gap-2 text-sm font-bold text-[var(--mc-text)]">
           <DiamondIcon size={16} />
-          Поточний топ
+          Хто зібрав усі {DIAMOND_EVENT_TOTAL}
         </h3>
+        {finishers.length === 0 ? (
+          <p className="mt-2 text-xs text-[var(--mc-text-muted)]">Поки нікого</p>
+        ) : (
+          <ol className="mt-3 space-y-1.5">
+            {finishers.map((e) => (
+              <li
+                key={e.userId}
+                className="flex items-center gap-2 rounded-md border border-[var(--mc-menu-yellow)]/20 px-2.5 py-1.5 text-sm"
+              >
+                <span className="w-8 tabular-nums text-[var(--mc-menu-yellow)]">
+                  #{e.place}
+                </span>
+                <span className="min-w-0 flex-1 truncate">{e.displayName}</span>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+
+      <div>
+        <h3 className="text-sm font-bold text-[var(--mc-text)]">Топ за прогресом</h3>
         {leaderboard.length === 0 ? (
           <p className="mt-2 text-xs text-[var(--mc-text-muted)]">Поки порожньо</p>
         ) : (
@@ -251,7 +309,9 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
                   {i + 1}
                 </span>
                 <span className="min-w-0 flex-1 truncate">{e.displayName}</span>
-                <span className="tabular-nums text-cyan-200">{e.score}</span>
+                <span className="tabular-nums text-cyan-200">
+                  {e.score}/{DIAMOND_EVENT_TOTAL}
+                </span>
               </li>
             ))}
           </ol>

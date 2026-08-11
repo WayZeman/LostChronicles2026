@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
 import { SoftAppear } from "@/components/site/SoftAppear";
+import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SupportOrderCards } from "@/components/support/SupportOrderCards";
 import { SupportSupportersSection } from "@/components/support/SupportSupportersSection";
@@ -48,7 +49,7 @@ export default async function SupportPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <div
+      <DiamondPageRoot
         className={cn(
           "site-container relative z-10 mx-auto w-full max-w-5xl",
           "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(7rem,env(safe-area-inset-bottom,0px))] pt-5",
@@ -56,7 +57,11 @@ export default async function SupportPage() {
         )}
       >
         <SoftAppear>
-          <header className="mb-6 text-center sm:mb-8">
+          <header className="relative mb-6 text-center sm:mb-8">
+            <DiamondSlot
+              id="support-header"
+              className="!absolute !right-2 !top-0 !size-8 sm:!right-6"
+            />
             <h1 className="lc-hero-title lc-hero-display text-balance text-3xl text-[var(--mc-text)] sm:text-4xl">
               Магазин
             </h1>
@@ -80,8 +85,34 @@ export default async function SupportPage() {
           }))}
         />
 
-        <SupportSupportersSection entries={leaderboard} />
-      </div>
+        {/* Якщо карток менше 8 — запасні якорі, щоб усі 100 діамантів лишались збиральними */}
+        {cards.length < 8 ? (
+          <div className="relative mb-4 min-h-[2.5rem]" aria-hidden>
+            {Array.from({ length: 8 - cards.length }, (_, i) => {
+              const index = cards.length + i;
+              return (
+                <DiamondSlot
+                  key={`support-card-fallback-${index}`}
+                  id={`support-card-${index}`}
+                  className="!absolute !size-8"
+                  style={{
+                    top: "20%",
+                    left: `${10 + i * 12}%`,
+                  }}
+                />
+              );
+            })}
+          </div>
+        ) : null}
+
+        <div className="relative">
+          <DiamondSlot
+            id="support-supporters"
+            className="!absolute !right-3 !top-3 !z-10 !size-8"
+          />
+          <SupportSupportersSection entries={leaderboard} />
+        </div>
+      </DiamondPageRoot>
     </main>
   );
 }

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { SoftAppear } from "@/components/site/SoftAppear";
+import { DiamondPageRoot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { notifyAuthMeChanged } from "@/lib/auth-me-events";
@@ -129,7 +130,7 @@ export function ProfilePageClient() {
 
   return (
     <main className={lcPageMainClass}>
-      <div className="mx-auto w-full max-w-lg px-4 py-8 sm:py-10">
+      <DiamondPageRoot className="mx-auto w-full max-w-lg px-4 py-8 sm:py-10">
         <SoftAppear>
           <div className={cn(lcGlassPanelClass, "!p-5 sm:!p-7")}>
             <div className="flex items-start gap-4">
@@ -280,7 +281,7 @@ export function ProfilePageClient() {
             </Link>
           </div>
         </SoftAppear>
-      </div>
+      </DiamondPageRoot>
     </main>
   );
 }
