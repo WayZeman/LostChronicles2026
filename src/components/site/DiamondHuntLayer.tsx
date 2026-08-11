@@ -60,6 +60,9 @@ function DiamondButton({
 }) {
   const size = spot.size in SIZE_CLASS ? spot.size : "md";
   const rotate = typeof spot.rotate === "number" ? spot.rotate : 0;
+  // Не піднімати «приховані» діаманти — інакше прозорість з даних губиться.
+  const opacity = Math.max(0.32, Math.min(0.96, spot.opacity));
+  const glow = Math.max(0.16, opacity * 0.65);
   return (
     <button
       type="button"
@@ -71,22 +74,26 @@ function DiamondButton({
         onCollect(spot.id);
       }}
       className={cn(
-        "pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2",
+        "group pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2",
         "lc-focus-ring touch-manipulation rounded-full",
         SIZE_CLASS[size],
         "lc-diamond-float",
         "transition-[filter,transform] hover:brightness-125 active:scale-90",
-        "drop-shadow-[0_0_10px_rgba(80,200,255,0.55)]",
       )}
       style={{
         top: `${spot.top}%`,
         left: `${spot.left}%`,
-        opacity: Math.max(0.62, Math.min(1, spot.opacity)),
+        filter: `drop-shadow(0 0 ${3 + glow * 10}px rgba(80,200,255,${glow}))`,
         ["--lc-diamond-rot" as string]: `${rotate}deg`,
         animationDelay: `${(spot.id.charCodeAt(spot.id.length - 1) % 12) * 0.11}s`,
       }}
     >
-      <DiamondIcon size={SIZE_PX[size]} className="size-full" />
+      <span
+        className="block size-full opacity-[var(--lc-diamond-op)] transition-opacity duration-150 group-hover:!opacity-100"
+        style={{ ["--lc-diamond-op" as string]: String(opacity) }}
+      >
+        <DiamondIcon size={SIZE_PX[size]} className="size-full" />
+      </span>
     </button>
   );
 }

@@ -24,18 +24,23 @@ export function DiamondSlot({
   );
 }
 
-/** Псевдовипадкове місце в смужці (без рівних рядів / діагоналей). */
+/** Псевдовипадкове місце в смужці (новий seed — інший розкид). */
 function scatterStyle(index: number, seed: number): CSSProperties {
-  const golden = 2.399963229728653;
-  const t = (index + 1) * golden + seed * 0.37;
-  const left = 3 + ((Math.sin(t * 3.17) * 0.5 + 0.5) * 90 + (index * 17) % 11) % 94;
+  const golden = 2.618033988749895;
+  const t = (index + 3) * golden + seed * 0.61;
+  const left =
+    2 +
+    (((Math.sin(t * 4.11) * 0.5 + 0.5) * 88 + (index * 31 + seed * 3) % 17) %
+      93);
   const top =
-    6 + ((Math.cos(t * 2.71) * 0.5 + 0.5) * 78 + (index * 23 + seed) % 19) % 86;
-  const wiggleX = ((index * 41 + seed * 7) % 9) - 4;
-  const wiggleY = ((index * 29 + seed * 3) % 11) - 5;
+    5 +
+    (((Math.cos(t * 3.37) * 0.5 + 0.5) * 80 + (index * 19 + seed * 5) % 23) %
+      84);
+  const wiggleX = ((index * 53 + seed * 11) % 13) - 6;
+  const wiggleY = ((index * 37 + seed * 9) % 15) - 7;
   return {
-    top: `${Math.max(4, Math.min(90, top + wiggleY))}%`,
-    left: `${Math.max(2, Math.min(94, left + wiggleX))}%`,
+    top: `${Math.max(3, Math.min(92, top + wiggleY))}%`,
+    left: `${Math.max(2, Math.min(95, left + wiggleX))}%`,
   };
 }
 
@@ -47,11 +52,12 @@ export function DiamondSlotStrip({
   ids: string[];
   className?: string;
 }) {
-  const seed = ids.reduce((acc, id) => acc + id.charCodeAt(0), 0) % 97;
+  const seed =
+    ids.reduce((acc, id, i) => acc + id.charCodeAt(0) * (i + 3), 17) % 131;
   return (
     <div
       className={cn(
-        "pointer-events-none relative my-4 min-h-[5.5rem] w-full sm:min-h-[6.5rem]",
+        "pointer-events-none relative my-4 min-h-[6rem] w-full sm:min-h-[7rem]",
         className,
       )}
       aria-hidden
