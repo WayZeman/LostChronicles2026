@@ -184,63 +184,65 @@ export const DIAMOND_SPOTS: DiamondSpotDef[] = [
   slot(55, "d055", "/wiki", "wiki-cat-3", 48, 84),
   slot(56, "d056", "/wiki", "wiki-cat-4", 21, 55),
 
-  // ——— Wiki any subpage 12 ———
+  // ——— Wiki any subpage (без RP новин) 8 ———
   page(57, "d057", "/wiki/*", 6, 28),
   page(58, "d058", "/wiki/*", 31, 86),
   page(59, "d059", "/wiki/*", 66, 9),
   page(60, "d060", "/wiki/*", 79, 57),
   slot(61, "d061", "/wiki/*", "wiki-sub-0", 44, 19),
   slot(62, "d062", "/wiki/*", "wiki-sub-1", 13, 71),
-  slot(63, "d063", "/wiki/*", "wiki-sub-2", 58, 92),
-  slot(64, "d064", "/wiki/*", "wiki-sub-3", 24, 41),
-  slot(65, "d065", "/wiki/*", "wiki-pagecard-0", 71, 14),
-  slot(66, "d066", "/wiki/*", "wiki-pagecard-1", 37, 63),
-  slot(67, "d067", "/wiki/*", "wiki-pagecard-2", 82, 36),
-  slot(68, "d068", "/wiki/*", "wiki-article-header", 17, 88),
+  slot(63, "d063", "/wiki/*", "wiki-pagecard-0", 71, 14),
+  slot(64, "d064", "/wiki/*", "wiki-article-header", 17, 88),
+
+  // ——— RP новини (/wiki/RP_новини) 6 ———
+  page(65, "d065", "/wiki/RP_новини", 8, 18),
+  page(66, "d066", "/wiki/RP_новини", 24, 82),
+  page(67, "d067", "/wiki/RP_новини", 58, 11),
+  slot(68, "d068", "/wiki/RP_новини", "rp-news-0", 19, 64),
+  slot(69, "d069", "/wiki/RP_новини", "rp-news-1", 72, 28),
+  slot(70, "d070", "/wiki/RP_новини", "rp-news-2", 41, 88),
 
   // ——— News 7 ———
-  page(69, "d069", "/news", 8, 52),
-  page(70, "d070", "/news", 34, 11),
-  page(71, "d071", "/news", 67, 83),
-  slot(72, "d072", "/news", "news-header", 49, 27),
-  slot(73, "d073", "/news", "news-post-0", 16, 74),
-  slot(74, "d074", "/news", "news-post-1", 78, 46),
-  slot(75, "d075", "/news", "news-post-2", 41, 91),
+  page(71, "d071", "/news", 8, 52),
+  page(72, "d072", "/news", 34, 11),
+  page(73, "d073", "/news", 67, 83),
+  slot(74, "d074", "/news", "news-header", 49, 27),
+  slot(75, "d075", "/news", "news-post-0", 16, 74),
+  slot(76, "d076", "/news", "news-post-1", 78, 46),
+  slot(77, "d077", "/news", "news-post-2", 41, 91),
 
   // ——— Proposals list 6 ———
-  page(76, "d076", "/proposals", 9, 81),
-  page(77, "d077", "/proposals", 44, 14),
-  slot(78, "d078", "/proposals", "prop-header", 71, 58),
-  slot(79, "d079", "/proposals", "prop-card-0", 22, 37),
-  slot(80, "d080", "/proposals", "prop-card-1", 57, 89),
-  slot(81, "d081", "/proposals", "prop-card-2", 33, 6),
+  page(78, "d078", "/proposals", 9, 81),
+  page(79, "d079", "/proposals", 44, 14),
+  slot(80, "d080", "/proposals", "prop-header", 71, 58),
+  slot(81, "d081", "/proposals", "prop-card-0", 22, 37),
+  slot(82, "d082", "/proposals", "prop-card-1", 57, 89),
+  slot(83, "d083", "/proposals", "prop-card-2", 33, 6),
 
   // ——— Create proposal 4 ———
-  slot(82, "d082", "/proposals/new", "prop-new-header", 18, 44),
-  slot(83, "d083", "/proposals/new", "prop-new-kind", 76, 81),
-  slot(84, "d084", "/proposals/new", "prop-new-form", 47, 13),
-  page(85, "d085", "/proposals/new", 61, 66),
+  slot(84, "d084", "/proposals/new", "prop-new-header", 18, 44),
+  slot(85, "d085", "/proposals/new", "prop-new-kind", 76, 81),
+  slot(86, "d086", "/proposals/new", "prop-new-form", 47, 13),
+  page(87, "d087", "/proposals/new", 61, 66),
 
   // ——— Proposal detail 5 ———
-  slot(86, "d086", "/proposals/*", "prop-detail-header", 12, 77),
-  slot(87, "d087", "/proposals/*", "prop-detail-body", 69, 28),
-  slot(88, "d088", "/proposals/*", "prop-detail-vote", 38, 91),
-  page(89, "d089", "/proposals/*", 54, 8),
-  page(90, "d090", "/proposals/*", 23, 49),
+  slot(88, "d088", "/proposals/*", "prop-detail-header", 12, 77),
+  slot(89, "d089", "/proposals/*", "prop-detail-body", 69, 28),
+  slot(90, "d090", "/proposals/*", "prop-detail-vote", 38, 91),
+  page(91, "d091", "/proposals/*", 54, 8),
+  page(92, "d092", "/proposals/*", 23, 49),
 
   // ——— Map 4 ———
-  page(91, "d091", "/map", 17, 73),
-  page(92, "d092", "/map", 58, 21),
-  slot(93, "d093", "/map", "map-header", 8, 41),
-  slot(94, "d094", "/map", "map-cta", 74, 86),
+  page(93, "d093", "/map", 17, 73),
+  page(94, "d094", "/map", 58, 21),
+  slot(95, "d095", "/map", "map-header", 8, 41),
+  slot(96, "d096", "/map", "map-cta", 74, 86),
 
-  // ——— Apply 6 ———
-  page(95, "d095", "/apply", 14, 8),
-  slot(96, "d096", "/apply", "apply-header", 61, 79),
-  slot(97, "d097", "/apply", "apply-q-0", 29, 52),
-  slot(98, "d098", "/apply", "apply-q-1", 81, 17),
-  slot(99, "d099", "/apply", "apply-q-2", 46, 91),
-  slot(100, "d100", "/apply", "apply-q-3", 8, 34),
+  // ——— Apply 4 ———
+  page(97, "d097", "/apply", 14, 8),
+  slot(98, "d098", "/apply", "apply-header", 61, 79),
+  slot(99, "d099", "/apply", "apply-q-0", 29, 52),
+  slot(100, "d100", "/apply", "apply-q-1", 81, 17),
 ];
 
 if (DIAMOND_SPOTS.length !== DIAMOND_EVENT_TOTAL) {
@@ -266,6 +268,20 @@ export function normalizeDiamondPath(pathname: string): string {
   return raw || "/";
 }
 
+/** Чи це сторінка RP новин у вікі (для виключення з `/wiki/*`). */
+function isRpNewsDiamondPath(rest: string): boolean {
+  const normalized = rest
+    .replace(/_/g, " ")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+  return (
+    normalized === "rp новини" ||
+    normalized === "рп новини" ||
+    normalized === "rp news"
+  );
+}
+
 /** Чи збігається spot.path з актуальним pathname (підтримка `/wiki/*`). */
 export function spotPathMatches(spotPath: string, pathname: string): boolean {
   const actual = normalizeDiamondPath(pathname);
@@ -281,6 +297,8 @@ export function spotPathMatches(spotPath: string, pathname: string): boolean {
       if (rest === "new") return false;
       if (rest.includes("/")) return false;
     }
+    // /wiki/* — без окремої сторінки RP новин (у неї свої слоти)
+    if (base === "/wiki" && isRpNewsDiamondPath(rest)) return false;
     return true;
   }
 

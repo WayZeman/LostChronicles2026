@@ -74,18 +74,16 @@ function DiamondButton({
         onCollect(spot.id);
       }}
       className={cn(
-        "group pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2",
+        "group pointer-events-auto absolute",
         "lc-focus-ring touch-manipulation rounded-full",
         SIZE_CLASS[size],
-        "lc-diamond-float",
         "transition-[filter,transform] hover:brightness-125 active:scale-90",
       )}
       style={{
         top: `${spot.top}%`,
         left: `${spot.left}%`,
+        transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
         filter: `drop-shadow(0 0 ${3 + glow * 10}px rgba(80,200,255,${glow}))`,
-        ["--lc-diamond-rot" as string]: `${rotate}deg`,
-        animationDelay: `${(spot.id.charCodeAt(spot.id.length - 1) % 12) * 0.11}s`,
       }}
     >
       <span

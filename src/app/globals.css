@@ -2177,26 +2177,3 @@ textarea.mc-input:focus {
   }
 }
 
-@keyframes lc-diamond-bob {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) rotate(var(--lc-diamond-rot, 0deg))
-      translateY(0);
-  }
-  50% {
-    transform: translate(-50%, -50%) rotate(var(--lc-diamond-rot, 0deg))
-      translateY(-6px);
-  }
-}
-
-.lc-diamond-float {
-  animation: lc-diamond-bob 2.4s ease-in-out infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .lc-diamond-float,
-  [class*="lc-diamond-bob"] {
-    animation: none !important;
-  }
-}
-

@@ -66,7 +66,7 @@ export default async function WikiArticlePage({
               rewriteWikiLinksToLocal={false}
             />
           </WikiContentFrame>
-          <DiamondSlotStrip ids={WIKI_SUB_STRIP} />
+          <DiamondSlotStrip ids={["rp-news-0", "rp-news-1", "rp-news-2"]} />
         </DiamondPageRoot>
       </main>
     );
