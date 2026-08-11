@@ -14,6 +14,11 @@ import {
   formatApplicationTelegramText,
   sendAnketaTelegramText,
 } from "@/lib/notify-application";
+import {
+  notifySupportOrderNotPaidTelegram,
+  supportOrderToNotifyPayload,
+} from "@/lib/notify-support-order";
+import { markSupportOrderNotPaid } from "@/lib/support-orders";
 
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
 export const ANKETA_BOT_COMMANDS = [
@@ -23,7 +28,8 @@ export const ANKETA_BOT_COMMANDS = [
   { command: "clear", description: "Скинути статус: /clear server 3" },
   { command: "count", description: "Скільки анкет у базі" },
   { command: "delete", description: "Видалити: /delete 12 yes" },
-  { command: "help", description: "Усі команди анкет" },
+  { command: "notpay", description: "Неоплачений чек: /notpay 10" },
+  { command: "help", description: "Усі команди" },
 ] as const;
 
 /** Текст /help і підказка для групи. */
@@ -38,7 +44,9 @@ export function anketaHelpText(): string {
     "/count — скільки анкет у базі\n" +
     "/delete 12 — що буде видалено\n" +
     "/delete 12 yes — видалити\n" +
-    "/delete last yes — видалити останню\n" +
+    "/delete last yes — видалити останню\n\n" +
+    "🛒 Магазин / підтримка\n\n" +
+    "/notpay 10 — чек №10 не оплачено (зняти з топу)\n\n" +
     "/help — ця підказка\n\n" +
     "Коротко також: /add 12 · /deny 12\n\n" +
     "Статуси в анкеті:\n" +
@@ -69,7 +77,7 @@ function parseAnketaCommand(
   const match = text
     .trim()
     .match(
-      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали|add|deny|reject|clear|reset)(?:@\w+)?(?:\s+(.+))?$/i,
+      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали|add|deny|reject|clear|reset|notpay)(?:@\w+)?(?:\s+(.+))?$/i,
     );
   if (!match) return null;
 
@@ -107,8 +115,9 @@ function parseAnketaCommand(
 
 function isAllowedChat(chatId: string): boolean {
   const cfg = anketaBotConfig();
-  if (!cfg) return false;
-  if (String(chatId) === String(cfg.chatId)) return true;
+  if (cfg && String(chatId) === String(cfg.chatId)) return true;
+  const ordersChat = process.env.TELEGRAM_ORDERS_CHAT_ID?.trim();
+  if (ordersChat && String(chatId) === String(ordersChat)) return true;
   const extra = process.env.TELEGRAM_ANKETA_ALLOWED_CHAT_IDS?.trim();
   if (!extra) return false;
   return extra
@@ -157,6 +166,46 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
 
   if (cmd === "help") {
     await reply(helpText());
+    return true;
+  }
+
+  if (cmd === "notpay") {
+    if (!arg || !/^\d+$/.test(arg)) {
+      await reply(
+        "Вкажи номер чека:\n/notpay 10\n\n(номер з повідомлення «Чек № …»)",
+      );
+      return true;
+    }
+    const orderId = parseInt(arg, 10);
+    const result = await markSupportOrderNotPaid(orderId);
+    if (!result.ok) {
+      if (result.reason === "not_found") {
+        await reply(`Немає замовлення (чек) №${orderId}.`);
+        return true;
+      }
+      if (result.reason === "already_cancelled") {
+        await reply(`Чек №${orderId} уже позначено як неоплачений.`);
+        return true;
+      }
+      if (result.reason === "expired") {
+        await reply(
+          `Чек №${orderId} уже прострочений (expired) і не в топі.`,
+        );
+        return true;
+      }
+      await reply(`Не вдалося оновити чек №${orderId}. Спробуй ще раз.`);
+      return true;
+    }
+
+    const notified = await notifySupportOrderNotPaidTelegram(
+      supportOrderToNotifyPayload(result.order),
+    );
+    await reply(
+      `✅ Чек №${result.order.id} скасовано як неоплачений.\n` +
+        `👤 ${result.order.nickname || "—"}\n` +
+        `Сума знята з топу (лише цей чек).\n` +
+        (notified ? "Сповіщення надіслано в чат." : "⚠️ Сповіщення в чат не пішло."),
+    );
     return true;
   }
 

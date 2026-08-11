@@ -443,6 +443,61 @@ export async function expireStaleSupportOrders(): Promise<number> {
   return rows.length;
 }
 
+export type MarkSupportOrderNotPaidResult =
+  | {
+      ok: true;
+      order: SupportOrderRecord;
+      previousStatus: string;
+    }
+  | {
+      ok: false;
+      reason: "not_found" | "already_cancelled" | "expired" | "conflict";
+    };
+
+/**
+ * Позначити чек як неоплачений (скасовано) — випадає з топу підтримки.
+ * Знімається лише це замовлення, інші внески ніку лишаються.
+ */
+export async function markSupportOrderNotPaid(
+  id: number,
+): Promise<MarkSupportOrderNotPaidResult> {
+  if (!Number.isInteger(id) || id < 1) {
+    return { ok: false, reason: "not_found" };
+  }
+  await ensureSupportOrdersTable();
+  const existing = await getSupportOrderById(id);
+  if (!existing) return { ok: false, reason: "not_found" };
+  if (existing.status === "cancelled") {
+    return { ok: false, reason: "already_cancelled" };
+  }
+  if (existing.status === "expired") {
+    return { ok: false, reason: "expired" };
+  }
+
+  const sql = getSql();
+  const rows = rowsOf(
+    await sql`
+      UPDATE support_orders
+      SET status = 'cancelled',
+          paid_at = NULL
+      WHERE id = ${id}
+        AND status IN ('pending', 'paid')
+      RETURNING id
+    `,
+  );
+  if (rows.length < 1) {
+    return { ok: false, reason: "conflict" };
+  }
+
+  const order = await getSupportOrderById(id);
+  if (!order) return { ok: false, reason: "conflict" };
+  return {
+    ok: true,
+    order,
+    previousStatus: existing.status,
+  };
+}
+
 function pickOrdersForAmount(
   pending: SupportOrderRecord[],
   differenceKopecks: number,

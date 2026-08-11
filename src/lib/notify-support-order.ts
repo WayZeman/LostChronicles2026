@@ -154,6 +154,20 @@ export async function notifySupportOrderPaidTelegram(
   return sendOrdersTelegramHtml(html);
 }
 
+/** Адмін позначив чек як неоплачений → випадає з топу. */
+export async function notifySupportOrderNotPaidTelegram(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  const html =
+    `❌ <b>ПІДТРИМКА НЕ ОПЛАЧЕНА</b>\n` +
+    `<i>Lost Chronicles · магазин</i>\n\n` +
+    buildReceipt(order) +
+    `\n\n⚠️ <i>Замовлення скасовано: оплата не надійшла, тому підтримка недійсна.\n` +
+    `Цей чек знято з топу (інші внески гравця лишаються).</i>`;
+
+  return sendOrdersTelegramHtml(html);
+}
+
 export async function notifyUnmatchedDonationTelegram(
   amountKopecks: number,
 ): Promise<boolean> {
@@ -165,4 +179,41 @@ export async function notifyUnmatchedDonationTelegram(
     `${divider()}\n` +
     `<i>Немає pending-замовлення з такою сумою</i>`;
   return sendOrdersTelegramHtml(html);
+}
+
+/** Payload для сповіщень з повного запису замовлення. */
+export function supportOrderToNotifyPayload(
+  order: {
+    id: number;
+    card_title: string;
+    price_label: string;
+    amount_kopecks: number;
+    quantity?: number;
+    nickname: string;
+    note: string;
+    items?: Array<{
+      card_title: string;
+      price_label: string;
+      quantity: number;
+      line_kopecks: number;
+      unit_kopecks?: number;
+    }>;
+  },
+): OrderNotifyPayload {
+  return {
+    id: order.id,
+    card_title: order.card_title,
+    price_label: order.price_label,
+    amount_kopecks: order.amount_kopecks,
+    quantity: order.quantity,
+    nickname: order.nickname,
+    note: order.note,
+    items: order.items?.map((it) => ({
+      card_title: it.card_title,
+      price_label: it.price_label,
+      quantity: it.quantity,
+      line_kopecks: it.line_kopecks,
+      unit_kopecks: it.unit_kopecks,
+    })),
+  };
 }
