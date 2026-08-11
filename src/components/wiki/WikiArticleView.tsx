@@ -2,6 +2,7 @@ import Link from "next/link";
 import { ArrowLeft, ExternalLink, MessageCircle } from "lucide-react";
 import type { WikiSocialLink } from "@/lib/wiki-structure";
 import { SoftAppear } from "@/components/site/SoftAppear";
+import { DiamondSlot, DiamondSlotStrip } from "@/components/site/DiamondSlot";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
@@ -62,7 +63,11 @@ export function WikiArticleView({
       </div>
 
       <SoftAppear>
-        <header className="space-y-3 border-b border-white/10 pb-5">
+        <header className="relative space-y-3 border-b border-white/10 pb-5">
+          <DiamondSlot
+            id="wiki-article-header"
+            className="!absolute !right-0 !top-0"
+          />
           <h1 className="lc-hero-title text-2xl text-[var(--mc-text)] sm:text-3xl md:text-4xl">
             {title}
           </h1>
@@ -94,7 +99,10 @@ export function WikiArticleView({
       </SoftAppear>
 
       <SoftAppear slow>
-        <WikiMirrorHtml html={html} rewriteWikiLinksToLocal />
+        <div className="relative">
+          <DiamondSlotStrip ids={["wiki-sub-1", "wiki-sub-2", "wiki-sub-3"]} />
+          <WikiMirrorHtml html={html} rewriteWikiLinksToLocal />
+        </div>
       </SoftAppear>
     </div>
   );

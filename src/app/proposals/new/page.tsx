@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import { AuthRequiredPanel } from "@/components/site/AuthRequiredPanel";
+import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SoftAppear } from "@/components/site/SoftAppear";
@@ -158,7 +159,7 @@ export default function NewProposalPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <div className="site-container mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
+      <DiamondPageRoot className="site-container mx-auto w-full max-w-2xl px-4 py-8 sm:py-12">
         <Link
           href="/proposals"
           className="mb-4 inline-block text-sm font-semibold text-[var(--mc-net-green)] hover:underline"
@@ -166,17 +167,31 @@ export default function NewProposalPage() {
           ← Усі голосування
         </Link>
         <SoftAppear>
-          <h1 className="lc-hero-title mb-2 text-3xl font-bold tracking-tight text-[var(--mc-text)] sm:text-4xl">
-            Нове голосування
-          </h1>
-          <p className="mb-6 text-sm text-[var(--mc-text-muted)]">
-            Пропозиція За/Проти або вибір одного з кількох варіантів
-          </p>
+          <div className="relative">
+            <DiamondSlot
+              id="prop-new-header"
+              className="!absolute !right-0 !top-0"
+            />
+            <h1 className="lc-hero-title mb-2 text-3xl font-bold tracking-tight text-[var(--mc-text)] sm:text-4xl">
+              Нове голосування
+            </h1>
+            <p className="mb-6 text-sm text-[var(--mc-text-muted)]">
+              Пропозиція За/Проти або вибір одного з кількох варіантів
+            </p>
+          </div>
           <form
             onSubmit={(e) => void onSubmit(e)}
-            className={cn(lcGlassPanelClass, "space-y-5")}
+            className={cn(lcGlassPanelClass, "relative space-y-5")}
           >
-            <div>
+            <DiamondSlot
+              id="prop-new-form"
+              className="!absolute !right-3 !top-3"
+            />
+            <div className="relative">
+              <DiamondSlot
+                id="prop-new-kind"
+                className="!absolute !-right-1 !-top-1"
+              />
               <span className="mb-2 block text-sm font-semibold text-[var(--mc-text)]">
                 Тип
               </span>
@@ -347,7 +362,7 @@ export default function NewProposalPage() {
             </button>
           </form>
         </SoftAppear>
-      </div>
+      </DiamondPageRoot>
     </main>
   );
 }

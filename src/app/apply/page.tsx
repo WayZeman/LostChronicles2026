@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { ApplyForm } from "@/components/apply/ApplyForm";
-import { DiamondPageRoot } from "@/components/site/DiamondSlot";
+import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SoftAppear } from "@/components/site/SoftAppear";
@@ -42,6 +42,10 @@ export default async function ApplyPage() {
       >
         <SoftAppear>
           <header className="relative mb-7 text-center sm:mb-9">
+            <DiamondSlot
+              id="apply-header"
+              className="!absolute !right-0 !top-0 sm:!right-2"
+            />
             <div
               className="pointer-events-none absolute left-1/2 top-0 h-16 w-[min(100%,18rem)] -translate-x-1/2 bg-[radial-gradient(ellipse_at_center,rgba(255,214,74,0.14),transparent_70%)]"
               aria-hidden

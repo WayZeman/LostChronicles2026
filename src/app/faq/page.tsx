@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 
 export const revalidate = 120;
 
-const FAQ_DIAMOND_SLOTS = 13;
+const FAQ_DIAMOND_SLOTS = 12;
 
 export default async function FAQPage() {
   let faqs = LOST_CHRONICLES_FAQ.map((item) => ({

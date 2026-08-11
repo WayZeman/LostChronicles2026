@@ -1,10 +1,9 @@
 /**
- * Рівно 100 діамантів на весь івент.
- * kind "page" — % від [data-diamond-page] (скроляться з контентом).
- * kind "slot" — портал у [data-diamond-slot="id"] (FAQ, картки тощо).
+ * Рівно 100 діамантів. path: точний шлях або префікс `/wiki/*`, `/proposals/*`.
+ * kind "page" — % від [data-diamond-page]; "slot" — [data-diamond-slot].
+ * На мобілці top ≤ 82%, щоб не ховатись під нижню навігацію.
  */
 export const DIAMOND_EVENT_TOTAL = 100;
-/** 1 тиждень + 3 дні */
 export const DIAMOND_EVENT_DURATION_DAYS = 10;
 
 export type DiamondSpotDef =
@@ -21,7 +20,6 @@ export type DiamondSpotDef =
       id: string;
       path: string;
       kind: "slot";
-      /** збігається з data-diamond-slot */
       slot: string;
       top?: number;
       left?: number;
@@ -36,145 +34,159 @@ function page(
   left: number,
   opts?: { size?: "sm" | "md"; opacity?: number },
 ): DiamondSpotDef {
-  return { id, path, kind: "page", top, left, ...opts };
+  return {
+    id,
+    path,
+    kind: "page",
+    top,
+    left,
+    size: opts?.size ?? "md",
+    opacity: opts?.opacity ?? 0.92,
+  };
 }
 
 function slot(
   id: string,
   path: string,
   slotId: string,
-  opts?: {
-    top?: number;
-    left?: number;
-    size?: "sm" | "md";
-    opacity?: number;
-  },
+  opts?: { size?: "sm" | "md"; opacity?: number },
 ): DiamondSpotDef {
-  return { id, path, kind: "slot", slot: slotId, ...opts };
+  return {
+    id,
+    path,
+    kind: "slot",
+    slot: slotId,
+    size: opts?.size ?? "md",
+    opacity: opts?.opacity ?? 0.92,
+  };
 }
 
 /**
- * Розподіл: головна, FAQ (відкрий відповіді), магазин (картки),
- * новини, вікі, мапа, голосування, анкета, профіль.
+ * Розкидано по всьому сайту: головна, FAQ, магазин, вікі (країни/довідник),
+ * новини, пропозиції (+ створення / деталі), мапа, анкета, профіль.
  */
 export const DIAMOND_SPOTS: DiamondSpotDef[] = [
-  // ——— Home (28) ———
-  page("d001", "/", 6, 8, { size: "sm", opacity: 0.55 }),
-  page("d002", "/", 9, 72, { size: "sm" }),
-  page("d003", "/", 14, 42, { opacity: 0.45 }),
-  page("d004", "/", 18, 88, { size: "sm" }),
-  page("d005", "/", 22, 14),
-  page("d006", "/", 26, 58, { size: "sm", opacity: 0.5 }),
-  page("d007", "/", 31, 30),
-  page("d008", "/", 35, 78, { size: "sm" }),
-  page("d009", "/", 39, 6, { opacity: 0.4 }),
-  page("d010", "/", 43, 92),
-  page("d011", "/", 48, 48, { size: "sm" }),
-  page("d012", "/", 52, 18),
-  page("d013", "/", 56, 70, { opacity: 0.55 }),
-  page("d014", "/", 60, 36, { size: "sm" }),
-  page("d015", "/", 64, 84),
-  page("d016", "/", 68, 10, { size: "sm", opacity: 0.45 }),
-  page("d017", "/", 72, 54),
-  page("d018", "/", 76, 26, { size: "sm" }),
-  page("d019", "/", 80, 66, { opacity: 0.5 }),
-  page("d020", "/", 84, 40),
-  page("d021", "/", 88, 16, { size: "sm" }),
-  page("d022", "/", 91, 80),
-  page("d023", "/", 12, 22, { size: "sm", opacity: 0.35 }),
-  page("d024", "/", 45, 8, { size: "sm" }),
-  page("d025", "/", 58, 50, { opacity: 0.4 }),
-  page("d026", "/", 70, 90, { size: "sm" }),
-  page("d027", "/", 33, 44),
-  page("d028", "/", 86, 55, { size: "sm", opacity: 0.5 }),
+  // ——— Home 16 ———
+  page("d001", "/", 8, 10),
+  page("d002", "/", 12, 78),
+  page("d003", "/", 18, 36),
+  page("d004", "/", 24, 88),
+  page("d005", "/", 32, 14),
+  page("d006", "/", 38, 62),
+  page("d007", "/", 46, 28),
+  page("d008", "/", 52, 82),
+  page("d009", "/", 58, 18),
+  page("d010", "/", 64, 70),
+  page("d011", "/", 70, 42),
+  page("d012", "/", 76, 12),
+  slot("d013", "/", "home-online"),
+  slot("d014", "/", "home-join"),
+  slot("d015", "/", "home-social"),
+  slot("d016", "/", "home-support"),
 
-  // ——— FAQ (20): частина в відповідях ———
-  page("d029", "/faq", 8, 12, { size: "sm" }),
-  page("d030", "/faq", 12, 80),
-  page("d031", "/faq", 18, 40, { opacity: 0.45 }),
-  page("d032", "/faq", 88, 20, { size: "sm" }),
-  page("d033", "/faq", 92, 70),
-  page("d034", "/faq", 10, 55, { size: "sm", opacity: 0.4 }),
-  page("d035", "/faq", 94, 45),
-  slot("d036", "/faq", "faq-ans-0", { size: "sm", opacity: 0.7 }),
-  slot("d037", "/faq", "faq-ans-1", { size: "sm" }),
-  slot("d038", "/faq", "faq-ans-2", { opacity: 0.55 }),
-  slot("d039", "/faq", "faq-ans-3", { size: "sm" }),
-  slot("d040", "/faq", "faq-ans-4"),
-  slot("d041", "/faq", "faq-ans-5", { size: "sm", opacity: 0.5 }),
-  slot("d042", "/faq", "faq-ans-6"),
-  slot("d043", "/faq", "faq-ans-7", { size: "sm" }),
-  slot("d044", "/faq", "faq-ans-8", { opacity: 0.6 }),
-  slot("d045", "/faq", "faq-ans-9", { size: "sm" }),
-  slot("d046", "/faq", "faq-ans-10"),
-  slot("d047", "/faq", "faq-ans-11", { size: "sm", opacity: 0.45 }),
-  slot("d048", "/faq", "faq-ans-12", { size: "sm" }),
+  // ——— FAQ 14 ———
+  page("d017", "/faq", 8, 16),
+  page("d018", "/faq", 12, 84),
+  slot("d019", "/faq", "faq-ans-0"),
+  slot("d020", "/faq", "faq-ans-1"),
+  slot("d021", "/faq", "faq-ans-2"),
+  slot("d022", "/faq", "faq-ans-3"),
+  slot("d023", "/faq", "faq-ans-4"),
+  slot("d024", "/faq", "faq-ans-5"),
+  slot("d025", "/faq", "faq-ans-6"),
+  slot("d026", "/faq", "faq-ans-7"),
+  slot("d027", "/faq", "faq-ans-8"),
+  slot("d028", "/faq", "faq-ans-9"),
+  slot("d029", "/faq", "faq-ans-10"),
+  slot("d030", "/faq", "faq-ans-11"),
 
-  // ——— Support / магазин (18) ———
-  page("d049", "/support", 6, 10, { size: "sm" }),
-  page("d050", "/support", 10, 78),
-  page("d051", "/support", 14, 40, { opacity: 0.4 }),
-  page("d052", "/support", 88, 18, { size: "sm" }),
-  page("d053", "/support", 92, 66),
-  page("d054", "/support", 96, 40, { size: "sm", opacity: 0.5 }),
-  slot("d055", "/support", "support-card-0", { size: "sm" }),
-  slot("d056", "/support", "support-card-1", { opacity: 0.55 }),
-  slot("d057", "/support", "support-card-2", { size: "sm" }),
-  slot("d058", "/support", "support-card-3"),
-  slot("d059", "/support", "support-card-4", { size: "sm", opacity: 0.45 }),
-  slot("d060", "/support", "support-card-5", { size: "sm" }),
-  slot("d061", "/support", "support-card-6"),
-  slot("d062", "/support", "support-card-7", { size: "sm", opacity: 0.5 }),
-  slot("d063", "/support", "support-supporters", { size: "sm" }),
-  slot("d064", "/support", "support-header", { opacity: 0.6 }),
-  page("d065", "/support", 50, 8, { size: "sm" }),
-  page("d066", "/support", 55, 90, { size: "sm", opacity: 0.4 }),
+  // ——— Support 14 ———
+  page("d031", "/support", 8, 12),
+  page("d032", "/support", 14, 80),
+  page("d033", "/support", 48, 10),
+  page("d034", "/support", 55, 88),
+  slot("d035", "/support", "support-header"),
+  slot("d036", "/support", "support-card-0"),
+  slot("d037", "/support", "support-card-1"),
+  slot("d038", "/support", "support-card-2"),
+  slot("d039", "/support", "support-card-3"),
+  slot("d040", "/support", "support-card-4"),
+  slot("d041", "/support", "support-card-5"),
+  slot("d042", "/support", "support-card-6"),
+  slot("d043", "/support", "support-card-7"),
+  slot("d044", "/support", "support-supporters"),
 
-  // ——— News (8) ———
-  page("d067", "/news", 8, 14, { size: "sm" }),
-  page("d068", "/news", 18, 82),
-  page("d069", "/news", 32, 28, { opacity: 0.45 }),
-  page("d070", "/news", 48, 70, { size: "sm" }),
-  page("d071", "/news", 62, 16),
-  page("d072", "/news", 76, 58, { size: "sm", opacity: 0.5 }),
-  page("d073", "/news", 88, 36),
-  page("d074", "/news", 42, 48, { size: "sm", opacity: 0.35 }),
+  // ——— Wiki home 12 ———
+  page("d045", "/wiki", 10, 14),
+  page("d046", "/wiki", 16, 82),
+  slot("d047", "/wiki", "wiki-header"),
+  slot("d048", "/wiki", "wiki-search"),
+  slot("d049", "/wiki", "wiki-sec-0"),
+  slot("d050", "/wiki", "wiki-sec-1"),
+  slot("d051", "/wiki", "wiki-sec-2"),
+  slot("d052", "/wiki", "wiki-cat-0"),
+  slot("d053", "/wiki", "wiki-cat-1"),
+  slot("d054", "/wiki", "wiki-cat-2"),
+  slot("d055", "/wiki", "wiki-cat-3"),
+  slot("d056", "/wiki", "wiki-cat-4"),
 
-  // ——— Wiki (8) ———
-  page("d075", "/wiki", 10, 12, { size: "sm" }),
-  page("d076", "/wiki", 22, 78),
-  page("d077", "/wiki", 38, 30, { opacity: 0.45 }),
-  page("d078", "/wiki", 52, 66, { size: "sm" }),
-  page("d079", "/wiki", 66, 18),
-  page("d080", "/wiki", 78, 84, { size: "sm", opacity: 0.5 }),
-  page("d081", "/wiki", 90, 44),
-  page("d082", "/wiki", 34, 52, { size: "sm", opacity: 0.4 }),
+  // ——— Wiki any subpage (країни, довідник цін, статті…) 12 ———
+  page("d057", "/wiki/*", 10, 18),
+  page("d058", "/wiki/*", 18, 76),
+  page("d059", "/wiki/*", 62, 22),
+  page("d060", "/wiki/*", 72, 70),
+  slot("d061", "/wiki/*", "wiki-sub-0"),
+  slot("d062", "/wiki/*", "wiki-sub-1"),
+  slot("d063", "/wiki/*", "wiki-sub-2"),
+  slot("d064", "/wiki/*", "wiki-sub-3"),
+  slot("d065", "/wiki/*", "wiki-pagecard-0"),
+  slot("d066", "/wiki/*", "wiki-pagecard-1"),
+  slot("d067", "/wiki/*", "wiki-pagecard-2"),
+  slot("d068", "/wiki/*", "wiki-article-header"),
 
-  // ——— Map (6) ———
-  page("d083", "/map", 12, 18, { size: "sm" }),
-  page("d084", "/map", 28, 76),
-  page("d085", "/map", 48, 22, { opacity: 0.45 }),
-  page("d086", "/map", 64, 68, { size: "sm" }),
-  page("d087", "/map", 82, 40),
-  page("d088", "/map", 40, 50, { size: "sm", opacity: 0.4 }),
+  // ——— News 7 ———
+  page("d069", "/news", 10, 16),
+  page("d070", "/news", 20, 78),
+  page("d071", "/news", 55, 24),
+  slot("d072", "/news", "news-header"),
+  slot("d073", "/news", "news-post-0"),
+  slot("d074", "/news", "news-post-1"),
+  slot("d075", "/news", "news-post-2"),
 
-  // ——— Proposals (6) ———
-  page("d089", "/proposals", 10, 16, { size: "sm" }),
-  page("d090", "/proposals", 28, 80),
-  page("d091", "/proposals", 48, 24, { opacity: 0.45 }),
-  page("d092", "/proposals", 66, 72, { size: "sm" }),
-  page("d093", "/proposals", 84, 38),
-  page("d094", "/proposals", 40, 48, { size: "sm", opacity: 0.4 }),
+  // ——— Proposals list 6 ———
+  page("d076", "/proposals", 12, 14),
+  page("d077", "/proposals", 28, 82),
+  slot("d078", "/proposals", "prop-header"),
+  slot("d079", "/proposals", "prop-card-0"),
+  slot("d080", "/proposals", "prop-card-1"),
+  slot("d081", "/proposals", "prop-card-2"),
 
-  // ——— Apply (4) ———
-  page("d095", "/apply", 14, 20, { size: "sm", opacity: 0.5 }),
-  page("d096", "/apply", 40, 78),
-  page("d097", "/apply", 68, 28, { size: "sm" }),
-  page("d098", "/apply", 88, 62, { opacity: 0.45 }),
+  // ——— Create proposal 4 ———
+  slot("d082", "/proposals/new", "prop-new-header"),
+  slot("d083", "/proposals/new", "prop-new-kind"),
+  slot("d084", "/proposals/new", "prop-new-form"),
+  page("d085", "/proposals/new", 70, 40),
 
-  // ——— Profile (2) ———
-  page("d099", "/profile", 30, 22, { size: "sm", opacity: 0.55 }),
-  page("d100", "/profile", 70, 74, { size: "sm" }),
+  // ——— Proposal detail (будь-яке /proposals/123) 5 ———
+  slot("d086", "/proposals/*", "prop-detail-header"),
+  slot("d087", "/proposals/*", "prop-detail-body"),
+  slot("d088", "/proposals/*", "prop-detail-vote"),
+  page("d089", "/proposals/*", 40, 18),
+  page("d090", "/proposals/*", 68, 78),
+
+  // ——— Map 4 ———
+  page("d091", "/map", 14, 20),
+  page("d092", "/map", 36, 74),
+  slot("d093", "/map", "map-header"),
+  slot("d094", "/map", "map-cta"),
+
+  // ——— Apply 6 ———
+  page("d095", "/apply", 12, 22),
+  slot("d096", "/apply", "apply-header"),
+  slot("d097", "/apply", "apply-q-0"),
+  slot("d098", "/apply", "apply-q-1"),
+  slot("d099", "/apply", "apply-q-2"),
+  slot("d100", "/apply", "apply-q-3"),
 ];
 
 if (DIAMOND_SPOTS.length !== DIAMOND_EVENT_TOTAL) {
@@ -190,9 +202,35 @@ if (idSet.size !== DIAMOND_EVENT_TOTAL) {
 
 export function normalizeDiamondPath(pathname: string): string {
   if (!pathname || pathname === "") return "/";
-  const p = pathname.split("?")[0]!.split("#")[0]!;
-  if (p.length > 1 && p.endsWith("/")) return p.slice(0, -1);
-  return p || "/";
+  let raw = pathname.split("?")[0]!.split("#")[0]!;
+  try {
+    raw = decodeURIComponent(raw);
+  } catch {
+    /* keep raw */
+  }
+  if (raw.length > 1 && raw.endsWith("/")) raw = raw.slice(0, -1);
+  return raw || "/";
+}
+
+/** Чи збігається spot.path з актуальним pathname (підтримка `/wiki/*`). */
+export function spotPathMatches(spotPath: string, pathname: string): boolean {
+  const actual = normalizeDiamondPath(pathname);
+  const pattern = normalizeDiamondPath(spotPath);
+
+  if (pattern.endsWith("/*")) {
+    const base = pattern.slice(0, -2);
+    if (!actual.startsWith(`${base}/`)) return false;
+    const rest = actual.slice(base.length + 1);
+    if (!rest) return false;
+    // /proposals/* — лише деталь (/proposals/123), не /new
+    if (base === "/proposals") {
+      if (rest === "new") return false;
+      if (rest.includes("/")) return false;
+    }
+    return true;
+  }
+
+  return pattern === actual;
 }
 
 export function isDiamondPathAllowed(pathname: string): boolean {
@@ -203,8 +241,7 @@ export function isDiamondPathAllowed(pathname: string): boolean {
 }
 
 export function getSpotsForPath(pathname: string): DiamondSpotDef[] {
-  const path = normalizeDiamondPath(pathname);
-  return DIAMOND_SPOTS.filter((s) => normalizeDiamondPath(s.path) === path);
+  return DIAMOND_SPOTS.filter((s) => spotPathMatches(s.path, pathname));
 }
 
 export function getSpotById(id: string): DiamondSpotDef | undefined {

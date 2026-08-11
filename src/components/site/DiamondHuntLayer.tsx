@@ -43,7 +43,7 @@ function DiamondButton({
   busy: boolean;
   onCollect: (id: string) => void;
 }) {
-  const sz = spot.size === "sm" ? "size-7 sm:size-8" : "size-9 sm:size-10";
+  const sz = spot.size === "sm" ? "size-8 sm:size-9" : "size-10 sm:size-11";
   return (
     <button
       type="button"
@@ -56,20 +56,20 @@ function DiamondButton({
       }}
       className={cn(
         "pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2",
-        "lc-focus-ring rounded-full",
+        "lc-focus-ring touch-manipulation rounded-full",
         sz,
         "lc-diamond-float",
         "transition-[filter,transform] hover:brightness-125 active:scale-90",
-        "drop-shadow-[0_0_8px_rgba(80,200,255,0.5)]",
+        "drop-shadow-[0_0_10px_rgba(80,200,255,0.65)]",
       )}
       style={{
         top: `${spot.top}%`,
         left: `${spot.left}%`,
-        opacity: spot.opacity,
+        opacity: Math.max(0.75, spot.opacity),
       }}
     >
       <DiamondIcon
-        size={spot.size === "sm" ? 28 : 40}
+        size={spot.size === "sm" ? 32 : 44}
         className="size-full"
       />
     </button>

@@ -6,7 +6,7 @@ import { ExternalLink } from "lucide-react";
 import { HeroAuthGreeting } from "@/components/site/HeroAuthGreeting";
 import { DiamondHuntCounter } from "@/components/site/DiamondHuntCounter";
 import { DiamondHuntLeaderboard } from "@/components/site/DiamondHuntLeaderboard";
-import { DiamondPageRoot } from "@/components/site/DiamondSlot";
+import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPanel";
@@ -118,9 +118,13 @@ export default async function Home() {
         </section>
 
         <div
-          className="am-reveal am-delay-1 mt-12 flex w-full flex-col gap-6 sm:mt-10 md:mt-12 md:gap-8"
+          className="am-reveal am-delay-1 relative mt-12 flex w-full flex-col gap-6 sm:mt-10 md:mt-12 md:gap-8"
           aria-label="Онлайн та підключення до сервера"
         >
+          <DiamondSlot
+            id="home-online"
+            className="!absolute !right-2 !top-2 !z-[5] sm:!right-4"
+          />
           <Suspense
             fallback={
               <div
@@ -139,7 +143,16 @@ export default async function Home() {
 
           <DiamondHuntLeaderboard />
 
-          <div className={cn(lcGlassPanelClass, "lc-interactive-panel-static")}>
+          <div
+            className={cn(
+              lcGlassPanelClass,
+              "lc-interactive-panel-static relative",
+            )}
+          >
+            <DiamondSlot
+              id="home-join"
+              className="!absolute !left-2 !top-2 !z-[5]"
+            />
             <h2 className="lc-section-title text-center text-lg uppercase md:text-xl">
               Підключитися до сервера
             </h2>
@@ -161,7 +174,7 @@ export default async function Home() {
               <div
                 className={cn(
                   lcGlassPanelClass,
-                  "lc-interactive-panel-static overflow-hidden !p-0",
+                  "lc-interactive-panel-static relative overflow-hidden !p-0",
                   "lc-skeleton-breathe min-h-[18.5rem] sm:min-h-[22.5rem] md:min-h-[26.5rem]",
                 )}
                 aria-busy
@@ -171,15 +184,27 @@ export default async function Home() {
               </div>
             }
           >
-            <HeroSocialPanel />
+            <div className="relative">
+              <DiamondSlot
+                id="home-social"
+                className="!absolute !right-3 !top-3 !z-[5]"
+              />
+              <HeroSocialPanel />
+            </div>
           </Suspense>
         </div>
 
-        <SupportMonobankSection
-          jarUrl={support.jarUrl}
-          blurb={support.blurb}
-          catalogLinks={support.catalogLinks}
-        />
+        <div className="relative">
+          <DiamondSlot
+            id="home-support"
+            className="!absolute !left-3 !top-4 !z-[5]"
+          />
+          <SupportMonobankSection
+            jarUrl={support.jarUrl}
+            blurb={support.blurb}
+            catalogLinks={support.catalogLinks}
+          />
+        </div>
       </DiamondPageRoot>
     </main>
   );

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { ExternalLink, Map as MapIcon } from "lucide-react";
 
 import { lcPageContainerClass, lcPageMainMapClass } from "@/components/site/lc-page-shell";
-import { DiamondPageRoot } from "@/components/site/DiamondSlot";
+import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 
 /** BlueMap. Перевизначення: NEXT_PUBLIC_MAP_URL у .env / Vercel (у лапках, якщо є # у hash). */
@@ -22,7 +22,11 @@ export default function MapPage() {
     <main className={lcPageMainMapClass}>
       <DiamondPageRoot className={lcPageContainerClass}>
         <WikiContentFrame>
-          <div className="flex flex-col items-center text-center">
+          <div className="relative flex flex-col items-center text-center">
+            <DiamondSlot
+              id="map-header"
+              className="!absolute !right-2 !top-0"
+            />
             <h2 className="lc-section-title text-xl uppercase md:text-2xl">
               Перейти до карти
             </h2>
@@ -39,7 +43,11 @@ export default function MapPage() {
               />
             </div>
 
-            <div className="mt-6 md:mt-8">
+            <div className="relative mt-6 md:mt-8">
+              <DiamondSlot
+                id="map-cta"
+                className="!absolute !-right-2 !-top-3 sm:!-right-6"
+              />
               <a
                 href={mapUrl}
                 target="_blank"

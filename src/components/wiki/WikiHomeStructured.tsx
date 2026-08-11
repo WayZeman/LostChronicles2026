@@ -3,6 +3,7 @@ import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import type { WikiCategoryRow, WikiHomeTree } from "@/lib/wiki-structure";
 import { SoftAppear } from "@/components/site/SoftAppear";
+import { DiamondSlot } from "@/components/site/DiamondSlot";
 import {
   wikiAccentForSlug,
   wikiPagesChip,
@@ -45,13 +46,28 @@ export function WikiHomeStructured({
     );
   }
 
+  const catIndexById = new Map<number, number>();
+  {
+    let i = 0;
+    for (const s of tree.sections) {
+      for (const c of s.categories) {
+        catIndexById.set(c.id, i);
+        i += 1;
+      }
+    }
+  }
+
   return (
     <div className="space-y-12 sm:space-y-14">
       {intro}
 
       {!hideBrandHeader ? (
         <SoftAppear>
-          <header className="text-center">
+          <header className="relative text-center">
+            <DiamondSlot
+              id="wiki-header"
+              className="!absolute !right-1 !top-0 sm:!right-4"
+            />
             <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[var(--mc-text-subtle)]">
               Lost Chronicles
             </p>
@@ -71,6 +87,12 @@ export function WikiHomeStructured({
         <SoftAppear key={section.id} slow={sectionIdx > 0}>
           <section className="space-y-5">
             <header className="relative text-center">
+              {sectionIdx < 3 ? (
+                <DiamondSlot
+                  id={`wiki-sec-${sectionIdx}`}
+                  className="!absolute !left-1 !top-0 sm:!left-4"
+                />
+              ) : null}
               <h2 className="lc-section-title text-lg text-[var(--mc-text)] sm:text-xl">
                 {section.title}
               </h2>
@@ -160,6 +182,12 @@ export function WikiHomeStructured({
 
                 return (
                   <article key={cat.id} className={cardClass}>
+                    {(catIndexById.get(cat.id) ?? 99) < 5 ? (
+                      <DiamondSlot
+                        id={`wiki-cat-${catIndexById.get(cat.id)}`}
+                        className="!absolute !bottom-3 !right-3 !z-[5]"
+                      />
+                    ) : null}
                     {editMode && onOpenCategory ? (
                       <button
                         type="button"

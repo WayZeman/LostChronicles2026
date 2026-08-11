@@ -43,7 +43,7 @@ function bool(v: unknown): boolean {
 }
 
 const DEFAULT_BLURB =
-  "Якось випадковим чином по сайту Lost Chronicles розсипались діаманти. Вони ховаються в куточках сторінок, у відповідях FAQ і серед товарів магазину — шукай і збирай, поки триває подія.";
+  "Якось випадковим чином по сайту Lost Chronicles розсипались діаманти. Шукай їх на головній, у FAQ, магазині, вікі (держави, довідник цін), новинах, пропозиціях і анкеті — гортай і відкривай розділи.";
 
 export async function ensureDiamondHuntSchema(): Promise<void> {
   if (!schemaReady) {

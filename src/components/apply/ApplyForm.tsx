@@ -10,6 +10,7 @@ import {
   type ApplyFormConfig,
   type ApplyQuestion,
 } from "@/lib/application-form-config";
+import { DiamondSlot } from "@/components/site/DiamondSlot";
 import { cn } from "@/lib/utils";
 
 const fieldClass =
@@ -344,8 +345,14 @@ export function ApplyForm({
       </div>
 
       <div className="divide-y divide-white/10">
-        {enabled.map((q) => (
-          <div key={q.id} className="py-5 first:pt-0 last:pb-5">
+        {enabled.map((q, qIdx) => (
+          <div key={q.id} className="relative py-5 first:pt-0 last:pb-5">
+            {qIdx < 4 ? (
+              <DiamondSlot
+                id={`apply-q-${qIdx}`}
+                className="!absolute !right-0 !top-5"
+              />
+            ) : null}
             <label
               className="mb-2.5 block text-left text-sm font-extrabold leading-snug text-[var(--mc-text)] sm:text-[0.9375rem]"
               htmlFor={`apply-${q.id}`}

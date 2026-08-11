@@ -4,7 +4,7 @@ import {
   lcPageContainerClass,
   lcPageMainClass,
 } from "@/components/site/lc-page-shell";
-import { DiamondPageRoot } from "@/components/site/DiamondSlot";
+import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { WikiSearchBox } from "@/components/wiki/WikiSearchBox";
 import { WikiHomeStructured } from "@/components/wiki/WikiHomeStructured";
@@ -21,10 +21,16 @@ export default async function WikiIndexPage() {
       <DiamondPageRoot className={lcPageContainerClass}>
         <WikiContentFrame
           topSlot={
-            <WikiSearchBox
-              embedded
-              placeholder="Шукати державу, місто, гравця…"
-            />
+            <div className="relative">
+              <DiamondSlot
+                id="wiki-search"
+                className="!absolute !right-2 !top-1/2 !z-[5] !-translate-y-1/2"
+              />
+              <WikiSearchBox
+                embedded
+                placeholder="Шукати державу, місто, гравця…"
+              />
+            </div>
           }
         >
           {tree.sections.length > 0 ? (
