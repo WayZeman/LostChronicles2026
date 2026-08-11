@@ -200,12 +200,11 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
     const notified = await notifySupportOrderNotPaidTelegram(
       supportOrderToNotifyPayload(result.order),
     );
-    await reply(
-      `✅ Чек №${result.order.id} скасовано як неоплачений.\n` +
-        `👤 ${result.order.nickname || "—"}\n` +
-        `Сума знята з топу (лише цей чек).\n` +
-        (notified ? "Сповіщення надіслано в чат." : "⚠️ Сповіщення в чат не пішло."),
-    );
+    if (!notified) {
+      await reply(
+        `Чек №${result.order.id} скасовано, але сповіщення в чат не пішло.`,
+      );
+    }
     return true;
   }
 
