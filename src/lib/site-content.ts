@@ -290,6 +290,15 @@ async function ensureCmsTables(): Promise<void> {
         price: "25 ₴",
         qty: true,
       },
+      {
+        order: 9,
+        title: "Кастомний підпис предмета",
+        description:
+          "Кастомна назва (підпис) для твого предмета в грі — зроби його унікальним.",
+        image: "/support-item-rename.jpg",
+        price: "15 ₴",
+        qty: true,
+      },
     ] as const;
     for (const s of seeds) {
       const tiersJson = JSON.stringify(
@@ -314,6 +323,49 @@ async function ensureCmsTables(): Promise<void> {
         )
       `;
     }
+  }
+
+  // Товар «Кастомний підпис предмета» — додати, якщо ще немає (не затирає адмін-каталог)
+  {
+    const title = "Кастомний підпис предмета";
+    const description =
+      "Кастомна назва (підпис) для твого предмета в грі — зроби його унікальним.";
+    const image = "/support-item-rename.jpg";
+    const price = "15 ₴";
+    const tiersJson = JSON.stringify([{ label: "", price_label: price }]);
+    await sql`
+      INSERT INTO support_cards (
+        sort_order, title, description, image_url, price_label, price_tiers,
+        button_url, quantity_enabled
+      )
+      SELECT
+        COALESCE((SELECT MAX(sort_order) FROM support_cards), 0) + 1,
+        ${title},
+        ${description},
+        ${image},
+        ${price},
+        ${tiersJson},
+        ${""},
+        ${true}
+      WHERE NOT EXISTS (
+        SELECT 1 FROM support_cards
+        WHERE lower(trim(title)) = lower(${title})
+      )
+    `;
+    await sql`
+      UPDATE support_cards
+      SET
+        image_url = ${image},
+        description = ${description},
+        price_label = ${price},
+        price_tiers = ${tiersJson},
+        updated_at = NOW()
+      WHERE lower(trim(title)) = lower(${title})
+        AND (
+          image_url IS DISTINCT FROM ${image}
+          OR price_label IS DISTINCT FROM ${price}
+        )
+    `;
   }
 
   // Seed settings defaults
