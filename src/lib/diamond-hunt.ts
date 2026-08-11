@@ -229,6 +229,9 @@ export async function updateDiamondEventSettings(input: {
   if (startAt === "") startAt = null;
   if (endAt === "") endAt = null;
 
+  const startDate = parseEventDate(startAt);
+  const endDate = parseEventDate(endAt);
+
   const sql = getSql();
   await sql`
     INSERT INTO diamond_event (id, enabled, title, blurb, start_at, end_at, diamonds_per_day, updated_at)
@@ -237,8 +240,8 @@ export async function updateDiamondEventSettings(input: {
       ${enabled},
       ${title},
       ${blurb},
-      ${startAt},
-      ${endAt},
+      ${startDate},
+      ${endDate},
       ${DIAMOND_EVENT_TOTAL},
       NOW()
     )
@@ -254,22 +257,40 @@ export async function updateDiamondEventSettings(input: {
   return getDiamondEventSettings();
 }
 
-/** Старт: увімкнути, now → +10 днів, очистити збори й фініши. */
-export async function startDiamondEvent(): Promise<DiamondEventSettings> {
+function parseEventDate(raw: string | null | undefined): Date | null {
+  if (raw == null) return null;
+  const t = String(raw).trim();
+  if (!t) return null;
+  const d = new Date(t);
+  return Number.isFinite(d.getTime()) ? d : null;
+}
+
+/**
+ * Старт івенту: увімкнути + очистити прогрес.
+ * Дати з адмінки (startAt/endAt) мають пріоритет; якщо кінець не заданий —
+ * старт + DIAMOND_EVENT_DURATION_DAYS.
+ */
+export async function startDiamondEvent(opts?: {
+  startAt?: string | null;
+  endAt?: string | null;
+}): Promise<DiamondEventSettings> {
   await ensureDiamondHuntSchema();
   const sql = getSql();
-  const start = new Date();
-  const end = new Date(
-    start.getTime() + DIAMOND_EVENT_DURATION_DAYS * 24 * 60 * 60 * 1000,
-  );
+  const start = parseEventDate(opts?.startAt) ?? new Date();
+  let end = parseEventDate(opts?.endAt);
+  if (!end || end.getTime() <= start.getTime()) {
+    end = new Date(
+      start.getTime() + DIAMOND_EVENT_DURATION_DAYS * 24 * 60 * 60 * 1000,
+    );
+  }
   await sql`DELETE FROM diamond_collections`;
   await sql`DELETE FROM diamond_finishers`;
   await sql`
     UPDATE diamond_event
     SET
       enabled = TRUE,
-      start_at = ${start.toISOString()},
-      end_at = ${end.toISOString()},
+      start_at = ${start},
+      end_at = ${end},
       diamonds_per_day = ${DIAMOND_EVENT_TOTAL},
       updated_at = NOW()
     WHERE id = 1
@@ -445,8 +466,9 @@ export type DiamondPublicSpot = {
   slot?: string;
   top: number;
   left: number;
-  size: "sm" | "md";
+  size: "xs" | "sm" | "md" | "lg";
   opacity: number;
+  rotate: number;
 };
 
 function toPublicSpot(s: DiamondSpotDef): DiamondPublicSpot {
@@ -459,6 +481,7 @@ function toPublicSpot(s: DiamondSpotDef): DiamondPublicSpot {
       left: s.left ?? 50,
       size: s.size ?? "md",
       opacity: s.opacity ?? 0.85,
+      rotate: s.rotate ?? 0,
     };
   }
   return {
@@ -468,6 +491,7 @@ function toPublicSpot(s: DiamondSpotDef): DiamondPublicSpot {
     left: s.left,
     size: s.size ?? "md",
     opacity: s.opacity ?? 0.85,
+    rotate: s.rotate ?? 0,
   };
 }
 

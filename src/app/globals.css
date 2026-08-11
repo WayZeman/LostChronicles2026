@@ -2180,10 +2180,12 @@ textarea.mc-input:focus {
 @keyframes lc-diamond-bob {
   0%,
   100% {
-    transform: translate(-50%, -50%) translateY(0);
+    transform: translate(-50%, -50%) rotate(var(--lc-diamond-rot, 0deg))
+      translateY(0);
   }
   50% {
-    transform: translate(-50%, -50%) translateY(-6px);
+    transform: translate(-50%, -50%) rotate(var(--lc-diamond-rot, 0deg))
+      translateY(-6px);
   }
 }
 

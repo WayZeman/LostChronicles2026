@@ -118,7 +118,13 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
               startAt: fromDatetimeLocalValue(draft.startAt),
               endAt: fromDatetimeLocalValue(draft.endAt),
             }
-          : { action };
+          : action === "start"
+            ? {
+                action: "start",
+                startAt: fromDatetimeLocalValue(draft.startAt),
+                endAt: fromDatetimeLocalValue(draft.endAt),
+              }
+            : { action };
 
       const res = await fetch("/api/admin/diamonds", {
         method: "PUT",
@@ -130,6 +136,7 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
         error?: string;
         clearedCollections?: number;
         clearedFinishers?: number;
+        event?: { startAt?: string | null; endAt?: string | null };
       };
       if (!res.ok) {
         onErr(data.error || "Не вдалося зберегти");
@@ -137,8 +144,11 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
         return;
       }
       if (action === "start") {
+        const endLabel = data.event?.endAt
+          ? toDatetimeLocalValue(data.event.endAt).replace("T", " ")
+          : `+${DIAMOND_EVENT_DURATION_DAYS} днів`;
         onMsg(
-          `Івент запущено на ${DIAMOND_EVENT_DURATION_DAYS} днів (${DIAMOND_EVENT_TOTAL} діамантів). Прогрес скинуто.`,
+          `Івент запущено до ${endLabel} (${DIAMOND_EVENT_TOTAL} діамантів). Прогрес скинуто.`,
         );
       } else if (action === "end") {
         onMsg("Івент завершено.");
@@ -171,9 +181,12 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
           type="button"
           disabled={busy}
           onClick={() => {
+            const endHint = draft.endAt
+              ? draft.endAt.replace("T", " ")
+              : `зараз + ${DIAMOND_EVENT_DURATION_DAYS} днів`;
             if (
               !window.confirm(
-                `Почати івент на ${DIAMOND_EVENT_DURATION_DAYS} днів? Усі збори та фініші буде скинуто.`,
+                `Почати івент?\n\nБудуть використані дати зі форми нижче.\nКінець: ${endHint}\n\nУсі збори та фініші буде скинуто.`,
               )
             ) {
               return;
@@ -222,9 +235,10 @@ export function AdminDiamondCms({ onMsg, onErr }: Props) {
         className="space-y-4"
       >
         <p className="text-xs text-[var(--mc-text-muted)]">
-          Рівно {DIAMOND_EVENT_TOTAL} діамантів на сайті (скроляться зі
-          сторінкою, частина в FAQ / картках магазину). Тривалість старту:{" "}
-          {DIAMOND_EVENT_DURATION_DAYS} днів (тиждень + 3 дні). Видно лише
+          Рівно {DIAMOND_EVENT_TOTAL} діамантів на сайті. «Почати івент»
+          бере дати зі форми нижче (якщо «Кінець» порожній — старт +{" "}
+          {DIAMOND_EVENT_DURATION_DAYS} днів). Можна лише «Зберегти текст /
+          дати», щоб змінити термін без скидання прогресу. Видно лише
           залогіненим; у адмінці діаманти не показуються.
         </p>
 

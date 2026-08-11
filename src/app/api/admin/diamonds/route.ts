@@ -55,7 +55,19 @@ export async function PUT(req: Request) {
     const action = typeof b.action === "string" ? b.action : "save";
 
     if (action === "start") {
-      const event = await startDiamondEvent();
+      const startAt =
+        b.startAt === null || b.startAt === ""
+          ? null
+          : typeof b.startAt === "string"
+            ? b.startAt
+            : null;
+      const endAt =
+        b.endAt === null || b.endAt === ""
+          ? null
+          : typeof b.endAt === "string"
+            ? b.endAt
+            : null;
+      const event = await startDiamondEvent({ startAt, endAt });
       return NextResponse.json({ event });
     }
     if (action === "end") {

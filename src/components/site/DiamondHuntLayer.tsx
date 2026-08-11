@@ -18,8 +18,9 @@ type Spot = {
   slot?: string;
   top: number;
   left: number;
-  size: "sm" | "md";
+  size: "xs" | "sm" | "md" | "lg";
   opacity: number;
+  rotate?: number;
 };
 
 type StatePayload = {
@@ -34,6 +35,20 @@ type StatePayload = {
   blurb?: string;
 };
 
+const SIZE_CLASS: Record<Spot["size"], string> = {
+  xs: "size-5 sm:size-6",
+  sm: "size-7 sm:size-8",
+  md: "size-9 sm:size-10",
+  lg: "size-11 sm:size-12",
+};
+
+const SIZE_PX: Record<Spot["size"], number> = {
+  xs: 20,
+  sm: 28,
+  md: 38,
+  lg: 48,
+};
+
 function DiamondButton({
   spot,
   busy,
@@ -43,7 +58,8 @@ function DiamondButton({
   busy: boolean;
   onCollect: (id: string) => void;
 }) {
-  const sz = spot.size === "sm" ? "size-8 sm:size-9" : "size-10 sm:size-11";
+  const size = spot.size in SIZE_CLASS ? spot.size : "md";
+  const rotate = typeof spot.rotate === "number" ? spot.rotate : 0;
   return (
     <button
       type="button"
@@ -57,21 +73,20 @@ function DiamondButton({
       className={cn(
         "pointer-events-auto absolute -translate-x-1/2 -translate-y-1/2",
         "lc-focus-ring touch-manipulation rounded-full",
-        sz,
+        SIZE_CLASS[size],
         "lc-diamond-float",
         "transition-[filter,transform] hover:brightness-125 active:scale-90",
-        "drop-shadow-[0_0_10px_rgba(80,200,255,0.65)]",
+        "drop-shadow-[0_0_10px_rgba(80,200,255,0.55)]",
       )}
       style={{
         top: `${spot.top}%`,
         left: `${spot.left}%`,
-        opacity: Math.max(0.75, spot.opacity),
+        opacity: Math.max(0.62, Math.min(1, spot.opacity)),
+        ["--lc-diamond-rot" as string]: `${rotate}deg`,
+        animationDelay: `${(spot.id.charCodeAt(spot.id.length - 1) % 12) * 0.11}s`,
       }}
     >
-      <DiamondIcon
-        size={spot.size === "sm" ? 32 : 44}
-        className="size-full"
-      />
+      <DiamondIcon size={SIZE_PX[size]} className="size-full" />
     </button>
   );
 }
@@ -226,19 +241,15 @@ export function DiamondHuntLayer() {
       {slotSpots.map((s) => {
         const host = s.slot ? slotHosts[s.slot] : null;
         if (!host) return null;
-        const spotForSlot: Spot = {
-          ...s,
-          top: s.top || 50,
-          left: s.left || 50,
-        };
-        // Make host relative for absolute button
+        const top = Number.isFinite(s.top) ? s.top : 50;
+        const left = Number.isFinite(s.left) ? s.left : 50;
         if (getComputedStyle(host).position === "static") {
           host.style.position = "relative";
         }
         return createPortal(
           <DiamondButton
             key={s.id}
-            spot={{ ...spotForSlot, top: 50, left: 50 }}
+            spot={{ ...s, top, left }}
             busy={busyId === s.id}
             onCollect={onCollect}
           />,
