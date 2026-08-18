@@ -31,7 +31,7 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    if (dataUrl.length > 900_000) {
+    if (dataUrl.length > 1_400_000) {
       return NextResponse.json(
         { error: "Фото занадто велике." },
         { status: 400 },

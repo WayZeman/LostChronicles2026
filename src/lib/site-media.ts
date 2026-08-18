@@ -37,7 +37,7 @@ export async function storeDataUrlAsMedia(dataUrl: string): Promise<string> {
   }
   const mime = m[1]!.toLowerCase().replace("image/jpg", "image/jpeg");
   const b64 = m[2]!;
-  if (b64.length > 700_000) {
+  if (b64.length > 1_050_000) {
     throw new Error("Фото занадто велике.");
   }
   const id = randomUUID().replace(/-/g, "");

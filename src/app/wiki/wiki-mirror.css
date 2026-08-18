@@ -30,7 +30,7 @@
 
 .wiki-mirror b,
 .wiki-mirror strong {
-  color: rgb(248 250 252);
+  /* Без фіксованого color — інакше перебиває фарбування тексту з редактора */
   font-weight: 600;
 }
 
