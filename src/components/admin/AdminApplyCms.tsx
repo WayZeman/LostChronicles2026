@@ -22,6 +22,7 @@ type ApplicationItem = {
   createdAt: string;
   answers: Record<string, string | string[]>;
   serverStatus?: "pending" | "accepted" | "rejected";
+  ingameRank?: "promoted" | "demoted" | "failed" | null;
 };
 
 const inputClass =
@@ -627,9 +628,19 @@ export function AdminApplyCms({ mode }: { mode: "edit" | "view" }) {
                         <span className="truncate text-sm text-[var(--mc-text)]">
                           {a.nickname || "—"}
                         </span>
-                        {a.serverStatus === "accepted" ? (
+                        {a.serverStatus === "accepted" &&
+                        a.ingameRank === "promoted" ? (
                           <span className="text-[11px] font-semibold text-[var(--mc-net-green)]">
                             на сервері
+                          </span>
+                        ) : a.serverStatus === "accepted" &&
+                          a.ingameRank === "failed" ? (
+                          <span className="text-[11px] font-semibold text-amber-300/90">
+                            помилка сервера
+                          </span>
+                        ) : a.serverStatus === "accepted" ? (
+                          <span className="text-[11px] font-semibold text-sky-300/90">
+                            очікує сервер
                           </span>
                         ) : a.serverStatus === "rejected" ? (
                           <span className="text-[11px] font-semibold text-rose-300/90">

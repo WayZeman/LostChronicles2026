@@ -9,6 +9,7 @@ import {
   applicationServerStatusEmoji,
   applicationServerStatusLabelUk,
   type ApplicationAnswers,
+  type ApplicationIngameRank,
   type ApplicationServerStatus,
 } from "@/lib/applications";
 
@@ -21,6 +22,7 @@ export type ApplicationNotifyPayload = {
   questions: ApplyQuestion[];
   nickname?: string;
   serverStatus?: ApplicationServerStatus;
+  ingameRank?: ApplicationIngameRank;
   /** new = сповіщення про подачу; view = перегляд /anketa */
   kind?: "new" | "view";
 };
@@ -59,8 +61,9 @@ export function formatApplicationTelegramText(
 
   if (kind === "view" || a.serverStatus) {
     const status = a.serverStatus || "pending";
+    const rank = a.ingameRank ?? null;
     out.push(
-      `${applicationServerStatusEmoji(status)} Статус: ${applicationServerStatusLabelUk(status)}`,
+      `${applicationServerStatusEmoji(status, rank)} Статус: ${applicationServerStatusLabelUk(status, rank)}`,
     );
   }
 

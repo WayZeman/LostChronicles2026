@@ -38,8 +38,8 @@ export function anketaHelpText(): string {
     "📋 Команди анкет (сайт /apply)\n\n" +
     "/anketa — остання анкета\n" +
     "/anketa 12 — анкета №12 (+ статус)\n" +
-    "/add server 12 — прийняти на сервер\n" +
-    "/deny server 12 — не прийнято\n" +
+    "/add server 12 — прийняти + LuckPerms promote ranks\n" +
+    "/deny server 12 — відхилити + LuckPerms demote ranks\n" +
     "/clear server 12 — скинути статус\n" +
     "/count — скільки анкет у базі\n" +
     "/delete 12 — що буде видалено\n" +
@@ -50,7 +50,9 @@ export function anketaHelpText(): string {
     "/help — ця підказка\n\n" +
     "Коротко також: /add 12 · /deny 12\n\n" +
     "Статуси в анкеті:\n" +
-    "✅ На сервері · ❌ Не прийнято · ⏳ Очікує рішення\n\n" +
+    "✅ На сервері — після підтвердження Minecraft\n" +
+    "⏳ Прийнято, очікує сервер · ⚠️ Не вдалося додати\n" +
+    "❌ Не прийнято · ⏳ Очікує рішення\n\n" +
     "№1 = перша (найстаріша), найбільший № = остання.\n" +
     "Після видалення номери зсуваються."
   );
@@ -255,10 +257,18 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
       return true;
     }
 
+    const nick = updated.row.nickname || "—";
+    const rank = updated.row.ingameRank;
+    const waitHint =
+      status === "accepted"
+        ? "\nСервер підтвердить LuckPerms. «На сервері» з’явиться тільки після відповіді плагіна."
+        : status === "rejected"
+          ? "\nЯкщо гравця вже додавали плагіном — сервер зніме ранг і напише сюди."
+          : "";
     await reply(
-      `${applicationServerStatusEmoji(status)} Анкета #${updated.ordinal} / ${updated.total}\n` +
-        `👤 Нік: ${updated.row.nickname || "—"}\n` +
-        `Статус: ${applicationServerStatusLabelUk(status)}\n\n` +
+      `${applicationServerStatusEmoji(status, rank)} Анкета #${updated.ordinal} / ${updated.total}\n` +
+        `👤 Нік: ${nick}\n` +
+        `Статус: ${applicationServerStatusLabelUk(status, rank)}${waitHint}\n\n` +
         `Перегляд: /anketa ${updated.ordinal}`,
     );
     return true;
@@ -349,6 +359,7 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
         questions,
         nickname: last.row.nickname,
         serverStatus: last.row.serverStatus,
+        ingameRank: last.row.ingameRank,
         kind: "view",
       }),
     );
@@ -373,6 +384,7 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
         questions,
         nickname: found.row.nickname,
         serverStatus: found.row.serverStatus,
+        ingameRank: found.row.ingameRank,
         kind: "view",
       }),
     );

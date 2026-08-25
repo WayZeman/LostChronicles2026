@@ -4,11 +4,23 @@ import {
   formatAnswerValue,
   pickAnswerByLabelHint,
 } from "@/lib/application-form-config";
+import {
+  normalizeIngameRank,
+  type ApplicationIngameRank,
+  type ApplicationServerStatus,
+} from "@/lib/application-status";
+
+export type {
+  ApplicationIngameRank,
+  ApplicationServerStatus,
+} from "@/lib/application-status";
+export {
+  applicationServerStatusEmoji,
+  applicationServerStatusLabelUk,
+  normalizeIngameRank,
+} from "@/lib/application-status";
 
 export type ApplicationAnswers = Record<string, string | string[]>;
-
-/** Рішення по анкеті: на сервері / відхилено / ще без рішення. */
-export type ApplicationServerStatus = "pending" | "accepted" | "rejected";
 
 export type ApplicationRow = {
   id: number;
@@ -20,6 +32,8 @@ export type ApplicationRow = {
   email: string;
   serverStatus: ApplicationServerStatus;
   serverStatusAt: string | null;
+  /** Підтвердження LuckPerms з Minecraft. */
+  ingameRank: ApplicationIngameRank;
 };
 
 function rowsOf(r: unknown): Record<string, unknown>[] {
@@ -34,22 +48,6 @@ function normalizeServerStatus(raw: unknown): ApplicationServerStatus {
     .toLowerCase();
   if (s === "accepted" || s === "rejected") return s;
   return "pending";
-}
-
-export function applicationServerStatusLabelUk(
-  status: ApplicationServerStatus,
-): string {
-  if (status === "accepted") return "На сервері";
-  if (status === "rejected") return "Не прийнято";
-  return "Очікує рішення";
-}
-
-export function applicationServerStatusEmoji(
-  status: ApplicationServerStatus,
-): string {
-  if (status === "accepted") return "✅";
-  if (status === "rejected") return "❌";
-  return "⏳";
 }
 
 async function ensureApplicationsTable(): Promise<void> {
@@ -92,6 +90,10 @@ async function ensureApplicationsTable(): Promise<void> {
   await sql`
     CREATE INDEX IF NOT EXISTS applications_server_status_idx
       ON applications (server_status)
+  `;
+  await sql`
+    ALTER TABLE applications
+      ADD COLUMN IF NOT EXISTS ingame_rank TEXT
   `;
   ensured = true;
 }
@@ -183,6 +185,7 @@ function mapRow(
       if (v == null || v === "") return null;
       return String(v);
     })(),
+    ingameRank: normalizeIngameRank(row.ingameRank ?? row.ingame_rank),
     ...summary,
   };
 }
@@ -232,6 +235,7 @@ export async function createApplication(input: {
       answers_json,
       server_status AS "serverStatus",
       server_status_at AS "serverStatusAt",
+      ingame_rank AS "ingameRank",
       created_at AS "createdAt"
   `);
   const row = rows[0];
@@ -261,6 +265,7 @@ export async function listApplications(
       answers_json,
       COALESCE(server_status, 'pending') AS "serverStatus",
       server_status_at AS "serverStatusAt",
+      ingame_rank AS "ingameRank",
       created_at AS "createdAt"
     FROM applications
     ORDER BY id DESC
@@ -290,6 +295,7 @@ export async function getApplicationById(
       answers_json,
       COALESCE(server_status, 'pending') AS "serverStatus",
       server_status_at AS "serverStatusAt",
+      ingame_rank AS "ingameRank",
       created_at AS "createdAt"
     FROM applications
     WHERE id = ${id}
@@ -326,6 +332,7 @@ export async function getApplicationByOrdinal(
       answers_json,
       COALESCE(server_status, 'pending') AS "serverStatus",
       server_status_at AS "serverStatusAt",
+      ingame_rank AS "ingameRank",
       created_at AS "createdAt"
     FROM applications
     ORDER BY id ASC
@@ -397,10 +404,101 @@ export async function setApplicationServerStatusByOrdinal(
     UPDATE applications
     SET
       server_status = ${status},
-      server_status_at = NOW()
+      server_status_at = NOW(),
+      ingame_rank = CASE
+        WHEN ${status} = 'accepted' AND ingame_rank = 'failed' THEN NULL
+        ELSE ingame_rank
+      END
     WHERE id = ${found.row.id}
   `;
   return getApplicationByOrdinal(ordinal, questions);
+}
+
+export type IngameJobAction = "promote" | "demote";
+
+export type IngameJob = {
+  id: number;
+  ordinal: number;
+  nickname: string;
+  action: IngameJobAction;
+};
+
+/** Заявки, які Minecraft-плагін ще не синхронізував з LuckPerms. */
+export async function listPendingIngameJobs(
+  limit = 15,
+): Promise<IngameJob[]> {
+  await ensureApplicationsTable();
+  await backfillExistingAcceptedRanks();
+  const sql = getSql();
+  const safeLimit = Math.min(50, Math.max(1, Math.floor(limit)));
+  const rows = rowsOf(await sql`
+    SELECT
+      a.id,
+      a.nickname,
+      a.server_status AS "serverStatus",
+      a.ingame_rank AS "ingameRank",
+      (SELECT COUNT(*)::int FROM applications b WHERE b.id <= a.id) AS ordinal
+    FROM applications a
+    WHERE
+      (
+        a.server_status = 'accepted'
+        AND COALESCE(a.ingame_rank, '') NOT IN ('promoted', 'failed')
+      )
+      OR (
+        a.server_status = 'rejected'
+        AND a.ingame_rank = 'promoted'
+      )
+    ORDER BY a.id ASC
+    LIMIT ${safeLimit}
+  `);
+
+  const jobs: IngameJob[] = [];
+  for (const row of rows) {
+    const id = Number(row.id);
+    const ordinal = Number(row.ordinal);
+    const nickname = String(row.nickname ?? "").trim();
+    const status = normalizeServerStatus(row.serverStatus);
+    if (!Number.isFinite(id) || !Number.isFinite(ordinal) || ordinal < 1) {
+      continue;
+    }
+    const action: IngameJobAction =
+      status === "rejected" ? "demote" : "promote";
+    jobs.push({ id, ordinal, nickname, action });
+  }
+  return jobs;
+}
+
+export async function ackIngameJob(
+  id: number,
+  action: IngameJobAction,
+  ok: boolean,
+): Promise<{ nickname: string; ordinal: number } | null> {
+  if (!Number.isFinite(id) || id < 1) return null;
+  await ensureApplicationsTable();
+  const sql = getSql();
+  let rank: string;
+  if (ok) {
+    rank = action === "promote" ? "promoted" : "demoted";
+  } else if (action === "promote") {
+    rank = "failed";
+  } else {
+    // demote не вдався — лишаємо promoted, щоб плагін спробував ще
+    return null;
+  }
+
+  const rows = rowsOf(await sql`
+    UPDATE applications
+    SET ingame_rank = ${rank}
+    WHERE id = ${id}
+    RETURNING id, nickname
+  `);
+  const row = rows[0];
+  if (!row) return null;
+  const ordinalInfo = await getOrdinalForApplicationId(Number(row.id));
+  return {
+    nickname: String(row.nickname ?? "").trim(),
+    ordinal: ordinalInfo?.ordinal ?? 0,
+  };
 }
 
 export async function countApplications(): Promise<number> {
@@ -408,4 +506,34 @@ export async function countApplications(): Promise<number> {
   const sql = getSql();
   const rows = rowsOf(await sql`SELECT COUNT(*)::int AS c FROM applications`);
   return Number(rows[0]?.c ?? 0);
+}
+
+/**
+ * Один раз позначає вже прийнятих гравців як синхронізованих,
+ * щоб плагін не зробив повторний /lp promote тим, кого вже додавали вручну.
+ */
+async function backfillExistingAcceptedRanks(): Promise<void> {
+  const sql = getSql();
+  await sql`
+    CREATE TABLE IF NOT EXISTS anketa_ingame_meta (
+      k TEXT PRIMARY KEY,
+      v TEXT NOT NULL
+    )
+  `;
+  const rows = rowsOf(
+    await sql`SELECT v FROM anketa_ingame_meta WHERE k = 'backfill' LIMIT 1`,
+  );
+  if (rows.length > 0) return;
+  await sql`
+    UPDATE applications
+    SET ingame_rank = 'promoted'
+    WHERE server_status = 'accepted'
+      AND ingame_rank IS NULL
+      AND COALESCE(server_status_at, created_at) < NOW() - INTERVAL '5 minutes'
+  `;
+  await sql`
+    INSERT INTO anketa_ingame_meta (k, v)
+    VALUES ('backfill', '1')
+    ON CONFLICT (k) DO NOTHING
+  `;
 }
