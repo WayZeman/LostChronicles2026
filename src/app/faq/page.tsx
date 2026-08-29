@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/accordion";
 import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
-import { lcPageMainClass } from "@/components/site/lc-page-shell";
+import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
 import { getCachedFaqItems } from "@/lib/public-content-cache";
 import { cn } from "@/lib/utils";
@@ -39,13 +39,7 @@ export default async function FAQPage() {
 
   return (
     <div className={lcPageMainClass} role="main">
-      <DiamondPageRoot
-        className={cn(
-          "site-container relative z-10 mx-auto w-full max-w-4xl",
-          "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-8",
-          "pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-4 sm:pb-16 sm:pt-10 md:py-16",
-        )}
-      >
+      <DiamondPageRoot className={lcPageContainerClass}>
         <header className="mb-6 text-center sm:mb-8 md:mb-12">
           <h1 className="lc-hero-title lc-hero-display text-balance text-[clamp(1.5rem,4.2vw,1.625rem)] leading-tight text-[var(--mc-text)] sm:text-3xl md:text-4xl">
             Часті запитання

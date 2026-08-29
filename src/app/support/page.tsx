@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
-import { lcPageMainClass } from "@/components/site/lc-page-shell";
+import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SupportOrderCards } from "@/components/support/SupportOrderCards";
 import { SupportSupportersSection } from "@/components/support/SupportSupportersSection";
 import {
@@ -49,13 +49,7 @@ export default async function SupportPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <DiamondPageRoot
-        className={cn(
-          "site-container relative z-10 mx-auto w-full max-w-5xl",
-          "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(7rem,env(safe-area-inset-bottom,0px))] pt-5",
-          "pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-4 sm:pb-28 sm:pt-8 md:pt-10",
-        )}
-      >
+      <DiamondPageRoot className={cn(lcPageContainerClass, "pb-24 sm:pb-28")}>
         <SoftAppear>
           <header className="relative mb-6 text-center sm:mb-8">
             <DiamondSlot

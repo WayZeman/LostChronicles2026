@@ -153,6 +153,9 @@
   --mc-frame-edge: #1a1a1a;
   --mc-frame-hi: #5a5a5a;
   --mc-frame-lo: #141414;
+
+  /* Ширина основного «вікна» = нижня навігація */
+  --lc-site-shell-width: min(calc(100vw - 1rem), 64rem);
   --mc-btn-face: #6f6f6f;
   --mc-btn-face-top: #8b8b8b;
   --mc-btn-face-bot: #5a5a5a;
@@ -888,7 +891,7 @@ nav[aria-label="Головна навігація"] span {
   left: 50%;
   bottom: 0;
   z-index: 100;
-  width: min(calc(100vw - 1rem), 64rem);
+  width: var(--lc-site-shell-width);
   overflow: hidden;
   background: var(--mc-nav-bg);
   padding-top: 0.35rem;
@@ -899,9 +902,17 @@ nav[aria-label="Головна навігація"] span {
 }
 
 @media (min-width: 640px) {
-  .lc-bottom-nav {
-    width: min(calc(100vw - 1.5rem), 64rem);
+  :root {
+    --lc-site-shell-width: min(calc(100vw - 1.5rem), 64rem);
   }
+}
+
+/* Основне «вікно» контенту — та сама ширина, що й нижнє меню */
+.site-container {
+  box-sizing: border-box;
+  width: var(--lc-site-shell-width);
+  max-width: var(--lc-site-shell-width);
+  margin-inline: auto;
 }
 
 /* Вдавлений слот */

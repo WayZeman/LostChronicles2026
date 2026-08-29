@@ -6,7 +6,7 @@ import {
   DiamondSlotStrip,
 } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
-import { lcPageMainClass } from "@/components/site/lc-page-shell";
+import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
   fetchTelegramNewsPosts,
   getTelegramNewsFallbackUrl,
@@ -27,13 +27,7 @@ export default async function NewsListPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <DiamondPageRoot
-        className={cn(
-          "site-container relative z-10 mx-auto w-full max-w-3xl",
-          "px-[max(0.75rem,env(safe-area-inset-left,0px))] pb-[max(2.5rem,env(safe-area-inset-bottom,0px))] pt-6",
-          "pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-4 sm:pb-12 sm:pt-10 md:py-14",
-        )}
-      >
+      <DiamondPageRoot className={lcPageContainerClass}>
         {!posts ? (
           <p
             className={cn(
