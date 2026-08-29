@@ -16,7 +16,7 @@ import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-
 import { cn } from "@/lib/utils";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_APPLY_PATH } from "@/data/lost-chronicles-faq";
-import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
+import { LC_DEFAULT_JAVA_SERVER_HOST, LC_DEFAULT_BEDROCK_ADDRESS } from "@/lib/lc-server-defaults";
 import {
   getConnectSettings,
   getSupportSettings,
@@ -37,7 +37,7 @@ export default async function Home() {
     ip: process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST,
     version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.11",
     bedrockAddress:
-      process.env.NEXT_PUBLIC_BEDROCK_ADDRESS?.trim() || "play.lost-chronicles.site",
+      process.env.NEXT_PUBLIC_BEDROCK_ADDRESS?.trim() || LC_DEFAULT_BEDROCK_ADDRESS,
     bedrockPort: process.env.NEXT_PUBLIC_BEDROCK_PORT?.trim() || "19132",
   };
   let support: {

@@ -1,6 +1,6 @@
 import { getSql } from "@/lib/db";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
-import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
+import { LC_DEFAULT_JAVA_SERVER_HOST, LC_DEFAULT_BEDROCK_ADDRESS } from "@/lib/lc-server-defaults";
 import {
   isSuperAdminNick,
   normalizeRole,
@@ -375,7 +375,7 @@ async function ensureCmsTables(): Promise<void> {
     java_version: process.env.NEXT_PUBLIC_SERVER_VERSION?.trim() || "1.21.11",
     bedrock_address:
       process.env.NEXT_PUBLIC_BEDROCK_ADDRESS?.trim() ||
-      "play.lost-chronicles.site",
+      LC_DEFAULT_BEDROCK_ADDRESS,
     bedrock_port: process.env.NEXT_PUBLIC_BEDROCK_PORT?.trim() || "19132",
     mono_jar_url:
       process.env.NEXT_PUBLIC_MONO_JAR_URL?.trim() ||
@@ -549,7 +549,7 @@ export async function getConnectSettings(): Promise<SiteConnectSettings> {
     bedrockAddress:
       (await getSetting("bedrock_address")) ||
       process.env.NEXT_PUBLIC_BEDROCK_ADDRESS?.trim() ||
-      "play.lost-chronicles.site",
+      LC_DEFAULT_BEDROCK_ADDRESS,
     bedrockPort:
       (await getSetting("bedrock_port")) ||
       process.env.NEXT_PUBLIC_BEDROCK_PORT?.trim() ||

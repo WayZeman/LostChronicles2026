@@ -1,6 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authRequiredPath, buildOAuthNextFromPath } from "@/lib/auth-paths";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth-session";
+import {
+  LC_LEGACY_MARKETING_HOSTS,
+  LC_MARKETING_HOST,
+} from "@/lib/lc-domains";
+
+function redirectToCanonicalHost(req: NextRequest): NextResponse | null {
+  const host =
+    req.headers.get("x-forwarded-host")?.split(",")[0]?.trim().toLowerCase() ||
+    req.headers.get("host")?.split(":")[0]?.trim().toLowerCase() ||
+    "";
+
+  const isLegacy = (LC_LEGACY_MARKETING_HOSTS as readonly string[]).includes(
+    host,
+  );
+  const isWwwCanonical = host === `www.${LC_MARKETING_HOST}`;
+
+  if (!isLegacy && !isWwwCanonical) return null;
+
+  const url = req.nextUrl.clone();
+  url.protocol = "https:";
+  url.host = LC_MARKETING_HOST;
+  return NextResponse.redirect(url, 301);
+}
 
 /** Створення пропозиції / адмінка / редагування вікі — лише для авторизованих. */
 function isAuthRequiredPath(pathname: string): boolean {
@@ -27,6 +50,9 @@ function withDevNoStore(response: NextResponse): NextResponse {
 }
 
 export default async function proxy(req: NextRequest) {
+  const canonicalRedirect = redirectToCanonicalHost(req);
+  if (canonicalRedirect) return canonicalRedirect;
+
   const { pathname, search } = req.nextUrl;
 
   if (!isAuthRequiredPath(pathname)) {

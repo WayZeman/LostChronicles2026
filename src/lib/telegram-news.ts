@@ -1,4 +1,5 @@
 import { LC_DEFAULT_TELEGRAM_URL } from "@/data/lc-social-defaults";
+import { LC_MARKETING_SITE_ORIGIN } from "@/lib/lc-domains";
 
 const FEED_REVALIDATE_SECONDS = 120;
 const DEFAULT_TOPIC_URL = "https://t.me/lostchronicles23/10";
@@ -248,7 +249,7 @@ export async function fetchTelegramNewsPosts(
     const res = await fetch(url, {
       headers: {
         "User-Agent":
-          "Mozilla/5.0 (compatible; LostChroniclesBot/1.0; +https://lost-chronicles.site)",
+          `Mozilla/5.0 (compatible; LostChroniclesBot/1.0; +${LC_MARKETING_SITE_ORIGIN})`,
         "Accept-Language": "uk,en;q=0.8",
       },
       next: { revalidate: FEED_REVALIDATE_SECONDS },

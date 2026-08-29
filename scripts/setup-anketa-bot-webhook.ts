@@ -9,11 +9,12 @@
  *   npx tsx --env-file=.env.local scripts/setup-anketa-bot-webhook.ts
  */
 import { setupAnketaTelegramWebhook } from "../src/lib/anketa-telegram-bot";
+import { getLcMarketingSiteUrl } from "../src/lib/site-base-url";
 
 async function main() {
   const base =
     process.env.NEXT_PUBLIC_SITE_URL?.trim() ||
-    "https://www.lost-chronicles.site";
+    getLcMarketingSiteUrl();
   const webhookUrl = `${base.replace(/\/$/, "")}/api/telegram/anketa`;
   console.log("webhookUrl", webhookUrl);
   const result = await setupAnketaTelegramWebhook(webhookUrl);

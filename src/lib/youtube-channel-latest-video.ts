@@ -2,6 +2,7 @@ import {
   LC_PROMO_YOUTUBE_WATCH_URL,
   LC_YOUTUBE_UPLOADS_CHANNEL_ID,
 } from "@/data/lc-youtube-promo";
+import { LC_MARKETING_SITE_ORIGIN } from "@/lib/lc-domains";
 
 const FEED_REVALIDATE_SECONDS = 300;
 
@@ -135,7 +136,7 @@ export async function getYoutubeChannelFeedEntries(
     const feedUrl = `https://www.youtube.com/feeds/videos.xml?channel_id=${encodeURIComponent(channelId)}`;
     const res = await fetch(feedUrl, {
       next: { revalidate: FEED_REVALIDATE_SECONDS },
-      headers: { "User-Agent": "LostChroniclesSite/1.0 (+https://lost-chronicles.site)" },
+      headers: { "User-Agent": `LostChroniclesSite/1.0 (+${LC_MARKETING_SITE_ORIGIN})` },
     });
 
     if (!res.ok) return [];

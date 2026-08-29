@@ -1,3 +1,4 @@
+import { LC_MARKETING_HOST } from "@/lib/lc-domains";
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
 
 /**
@@ -47,9 +48,10 @@ const LC_SEO_TOPIC_KEYWORDS: string[] = [
   "Minecraft RP",
   "Minecraft RP Україна",
   "майнкрафт сервер Україна",
-  "play.lost-chronicles.site",
-  "lost-chronicles.site",
   LC_DEFAULT_JAVA_SERVER_HOST,
+  LC_MARKETING_HOST,
+  "lost-chronicles.site",
+  "play.lost-chronicles.site",
 ];
 
 export const LC_SEO_META_KEYWORDS: string[] = [
@@ -65,11 +67,9 @@ export const LC_SEO_META_KEYWORDS: string[] = [
  * Meta / OG / Twitter: одна думка + вигода + дія (CTR у видачі та у стрічці).
  * Довжина ~ до 155–160 символів для мобільної видачі Google.
  */
-export const LC_SEO_DESCRIPTION_SHORT =
-  "Lost Chronicles (Лост Хроніклс) — Minecraft Java/Bedrock, RP в Україні. IP play.lost-chronicles.site. Заявка, вікі, карта; Discord і Telegram.";
+export const LC_SEO_DESCRIPTION_SHORT = `Lost Chronicles (Лост Хроніклс) — Minecraft Java/Bedrock, RP в Україні. IP ${LC_DEFAULT_JAVA_SERVER_HOST}. Заявка, вікі, карта; Discord і Telegram.`;
 
-export const LC_SEO_DESCRIPTION_STRUCTURED =
-  "Офіційний український Minecraft-проєкт Lost Chronicles: сервери Java та Bedrock, спільнота та рольовий світ. На сайті — анкета для входу, вікі, динамічна карта та новини. IP: play.lost-chronicles.site. Бренд також шукають як «Лост Хроніклс» або Lost Chronikles.";
+export const LC_SEO_DESCRIPTION_STRUCTURED = `Офіційний український Minecraft-проєкт Lost Chronicles: сервери Java та Bedrock, спільнота та рольовий світ. На сайті — анкета для входу, вікі, динамічна карта та новини. IP: ${LC_DEFAULT_JAVA_SERVER_HOST}. Бренд також шукають як «Лост Хроніклс» або Lost Chronikles.`;
 
 /** Заголовок за замовчуванням: бренд на початку (SMM/вкладки/закладки). */
 export const LC_SEO_SITE_TITLE_DEFAULT =

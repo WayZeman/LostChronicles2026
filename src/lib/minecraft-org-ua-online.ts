@@ -3,6 +3,7 @@
  * `var xValues = ['YYYY-MM-DD HH:mm', ...]` та `var yValues = [0, -1, ...]`
  * (-1 = сервер офлайн, як на сайті).
  */
+import { LC_MARKETING_SITE_ORIGIN } from "@/lib/lc-domains";
 
 export type OumHistoryPeriod = "day" | "week" | "month" | "all";
 
@@ -138,7 +139,7 @@ export async function fetchOumOnlineHistory(
     next: { revalidate: 300 },
     headers: {
       "User-Agent":
-        "LostChroniclesSite/1.0 (+https://lost-chronicles.site; public stats)",
+        `LostChroniclesSite/1.0 (+${LC_MARKETING_SITE_ORIGIN}; public stats)`,
       Accept: "text/html,application/xhtml+xml;q=0.9,*/*;q=0.8",
     },
   });

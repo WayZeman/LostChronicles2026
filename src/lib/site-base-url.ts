@@ -1,3 +1,5 @@
+import { LC_MARKETING_SITE_ORIGIN } from "@/lib/lc-domains";
+
 /**
  * Публічний URL сайту для SEO (metadataBase, sitemap, JSON-LD).
  * Без завершального /. Не повертає localhost — щоб sitemap/OG не «тікали» на dev.
@@ -8,7 +10,7 @@ export function getLcMarketingSiteUrl(): string {
   if (explicit) return explicit;
   const vercel = process.env.VERCEL_URL?.replace(/\/$/, "").trim() || "";
   if (vercel) return `https://${vercel}`;
-  return "https://lost-chronicles2026.vercel.app";
+  return LC_MARKETING_SITE_ORIGIN;
 }
 
 /** Canonical site origin for OAuth redirects and proposal links (no trailing slash). */
