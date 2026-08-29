@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import {
   Bold,
+  BookOpen,
   Code2,
   Heading2,
   Heading3,
@@ -20,6 +21,10 @@ import {
 } from "lucide-react";
 import { compressImageFile } from "@/lib/compress-image";
 import { cn } from "@/lib/utils";
+import {
+  WikiPageLinkPicker,
+  type WikiPageOption,
+} from "@/components/wiki/WikiPageLinkPicker";
 
 type Mode = "visual" | "html";
 
@@ -117,6 +122,8 @@ export function WikiPageEditor({
   const [mode, setMode] = useState<Mode>(initialMode);
   const [uploading, setUploading] = useState(false);
   const [colorOpen, setColorOpen] = useState(false);
+  const [wikiLinkOpen, setWikiLinkOpen] = useState(false);
+  const [wikiLinkQuery, setWikiLinkQuery] = useState("");
   const [selectedImg, setSelectedImg] = useState<HTMLImageElement | null>(null);
   const [imgAlt, setImgAlt] = useState("");
 
@@ -164,6 +171,7 @@ export function WikiPageEditor({
       primed.current = false;
       setSelectedImg(null);
       setColorOpen(false);
+      setWikiLinkOpen(false);
     }
     if (next === "visual" && mode === "html") {
       primed.current = false;
@@ -193,6 +201,42 @@ export function WikiPageEditor({
       }
     }
     emitFromVisual();
+  }
+
+  function openWikiLinkPicker() {
+    rememberSelection();
+    const text = window.getSelection()?.toString().trim() ?? "";
+    if (!text) {
+      window.alert(
+        "Спочатку виділи текст, який стане посиланням на сторінку вікі.",
+      );
+      return;
+    }
+    setWikiLinkQuery(text);
+    setWikiLinkOpen(true);
+    setColorOpen(false);
+    setSelectedImg(null);
+  }
+
+  function applyWikiPageLink(page: WikiPageOption) {
+    const href = `/wiki/${encodeURIComponent(page.slug)}`;
+    focusVisual();
+    restoreSelection(ref.current, savedRangeRef.current);
+    runCmd("createLink", href);
+    const sel = window.getSelection();
+    if (sel?.anchorNode) {
+      const node =
+        sel.anchorNode.nodeType === Node.ELEMENT_NODE
+          ? (sel.anchorNode as HTMLElement)
+          : sel.anchorNode.parentElement;
+      const a = node?.closest?.("a");
+      if (a) {
+        a.removeAttribute("target");
+        a.removeAttribute("rel");
+      }
+    }
+    emitFromVisual();
+    setWikiLinkOpen(false);
   }
 
   function setBlock(tag: string) {
@@ -559,12 +603,35 @@ export function WikiPageEditor({
               disabled={locked}
               onMouseDown={(e) => {
                 e.preventDefault();
+                setWikiLinkOpen(false);
                 addLink();
               }}
               className={toolBtn}
             >
               <Link2 className="size-3.5" aria-hidden />
             </button>
+            <div className="relative">
+              <button
+                type="button"
+                title="Прив'язати до сторінки вікі"
+                aria-label="Прив'язати до сторінки вікі"
+                aria-expanded={wikiLinkOpen}
+                disabled={locked}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  openWikiLinkPicker();
+                }}
+                className={cn(toolBtn, wikiLinkOpen && "bg-white/[0.08]")}
+              >
+                <BookOpen className="size-3.5" aria-hidden />
+              </button>
+              <WikiPageLinkPicker
+                open={wikiLinkOpen}
+                initialQuery={wikiLinkQuery}
+                onPick={applyWikiPageLink}
+                onClose={() => setWikiLinkOpen(false)}
+              />
+            </div>
             <button
               type="button"
               title="Прибрати посилання"
