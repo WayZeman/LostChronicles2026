@@ -206,15 +206,6 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
         : 0;
     return Math.max(seriesMax, live) + 1;
   }, [chartValues, payload?.liveOnline]);
-  const peakOnline = useMemo(() => {
-    if (payload && typeof payload.allTimePeak === "number") {
-      return payload.allTimePeak;
-    }
-    if (chartValues.length === 0) return null;
-    const onlyOnlineValues = chartValues.filter((v) => v >= 0);
-    if (onlyOnlineValues.length === 0) return null;
-    return Math.max(...onlyOnlineValues);
-  }, [chartValues, payload]);
 
   const animMs =
     motionTier === "none" ? 0 : motionTier === "light" ? 580 : 1650;
@@ -384,11 +375,24 @@ export function HeroOnlineHistoryChart({ embedded = false }: Props) {
           />
         )}
       </div>
-      {peakOnline != null ? (
-        <p className="mt-3 hidden text-center text-sm font-semibold text-[var(--mc-net-green)] sm:block md:text-base">
-          Пік онлайну: <span className="tabular-nums">{peakOnline}</span>{" "}
-          {ukPlayersWord(peakOnline)}
-        </p>
+      {payload != null && payload.liveOnline != null ? (
+        <div className="mt-3 hidden text-center sm:block">
+          {payload.liveProbe === "api-offline" ? (
+            <p className="text-sm font-semibold text-[var(--mc-text-muted)] md:text-base">
+              Сервер зараз офлайн.
+            </p>
+          ) : payload.liveOnline === 0 ? (
+            <p className="text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+              Зараз нікого немає онлайн.
+            </p>
+          ) : (
+            <p className="text-sm font-semibold text-[var(--mc-net-green)] md:text-base">
+              Зараз онлайн:{" "}
+              <span className="tabular-nums">{payload.liveOnline}</span>{" "}
+              {ukPlayersWord(payload.liveOnline)}
+            </p>
+          )}
+        </div>
       ) : null}
     </div>
   );
