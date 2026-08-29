@@ -22,14 +22,17 @@ type Props = {
   title?: string;
   description?: string;
   placeholder?: string;
+  /** Початковий запит з ?q= (SEO SearchAction). */
+  defaultQuery?: string;
 };
 
 export function WikiSearchBox({
   className,
   embedded = false,
   placeholder = "Пошук…",
+  defaultQuery = "",
 }: Props) {
-  const [query, setQuery] = useState("");
+  const [query, setQuery] = useState(defaultQuery);
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [touched, setTouched] = useState(false);

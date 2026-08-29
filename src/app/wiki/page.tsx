@@ -1,3 +1,5 @@
+import type { Metadata } from "next";
+
 import { getCachedWikiHomeTree } from "@/lib/public-content-cache";
 import { seedWikiStructureIfEmpty } from "@/lib/wiki-structure";
 import {
@@ -8,11 +10,25 @@ import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { WikiSearchBox } from "@/components/wiki/WikiSearchBox";
 import { WikiHomeStructured } from "@/components/wiki/WikiHomeStructured";
+import { LC_SEO_WIKI_TITLE } from "@/data/lc-seo-terms";
+import { buildLcPageMetadata } from "@/lib/seo";
 
 /** Публічна вікі: ISR ~1 хв + data cache (див. public-content-cache). */
 export const revalidate = 60;
 
-export default async function WikiIndexPage() {
+export const metadata: Metadata = buildLcPageMetadata({
+  title: LC_SEO_WIKI_TITLE,
+  description:
+    "Офіційна вікі Lost Chronicles: лор світу, правила сервера, гайди для гравців Minecraft Java/Bedrock. Пошук по статтях.",
+  path: "/wiki",
+});
+
+export default async function WikiIndexPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ q?: string }>;
+}) {
+  const { q } = await searchParams;
   await seedWikiStructureIfEmpty();
   const tree = await getCachedWikiHomeTree();
 
@@ -29,6 +45,7 @@ export default async function WikiIndexPage() {
               <WikiSearchBox
                 embedded
                 placeholder="Шукати державу, місто, гравця…"
+                defaultQuery={typeof q === "string" ? q : ""}
               />
             </div>
           }

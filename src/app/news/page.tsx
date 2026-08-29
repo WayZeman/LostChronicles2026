@@ -14,11 +14,14 @@ import {
 } from "@/lib/telegram-news";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = {
-  title: "Новини — Lost Chronicles",
+import { buildLcPageMetadata } from "@/lib/seo";
+
+export const metadata: Metadata = buildLcPageMetadata({
+  title: "Новини Lost Chronicles — оголошення Minecraft-сервера",
   description:
-    "Офіційні новини та оголошення сервера Lost Chronicles з Telegram.",
-};
+    "Офіційні новини та оголошення українського Minecraft-сервера Lost Chronicles з Telegram: події, оновлення, RP.",
+  path: "/news",
+});
 
 export default async function NewsListPage() {
   const topic = getTelegramNewsTopic();

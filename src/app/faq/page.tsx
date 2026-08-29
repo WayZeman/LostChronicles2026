@@ -1,17 +1,32 @@
+import type { Metadata } from "next";
+
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { FaqJsonLd } from "@/components/site/FaqJsonLd";
 import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
+import {
+  LC_SEO_DESCRIPTION_SHORT,
+  LC_SEO_FAQ_TITLE,
+} from "@/data/lc-seo-terms";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
 import { getCachedFaqItems } from "@/lib/public-content-cache";
+import { buildLcPageMetadata } from "@/lib/seo";
+import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 import { cn } from "@/lib/utils";
 
 export const revalidate = 120;
+
+export const metadata: Metadata = buildLcPageMetadata({
+  title: LC_SEO_FAQ_TITLE,
+  description: `Відповіді про вхід на сервер Lost Chronicles: IP, версія Minecraft, анкета, Discord, правила. ${LC_SEO_DESCRIPTION_SHORT}`,
+  path: "/faq",
+});
 
 const FAQ_DIAMOND_SLOTS = 12;
 
@@ -37,8 +52,17 @@ export default async function FAQPage() {
     /* fallback to static FAQ */
   }
 
+  const siteUrl = getLcMarketingSiteUrl();
+
   return (
     <div className={lcPageMainClass} role="main">
+      <FaqJsonLd
+        siteUrl={siteUrl}
+        items={faqs.map((f) => ({
+          question: f.question,
+          answerHtml: f.answer,
+        }))}
+      />
       <DiamondPageRoot className={lcPageContainerClass}>
         <header className="mb-6 text-center sm:mb-8 md:mb-12">
           <h1 className="lc-hero-title lc-hero-display text-balance text-[clamp(1.5rem,4.2vw,1.625rem)] leading-tight text-[var(--mc-text)] sm:text-3xl md:text-4xl">

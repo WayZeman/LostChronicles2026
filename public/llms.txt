@@ -1,0 +1,38 @@
+# Lost Chronicles — llms.txt
+# Офіційний опис для пошукових систем та AI-агентів
+# https://llmstxt.org/
+
+> Lost Chronicles — український Minecraft-сервер Java та Bedrock з рольовим (RP) світом.
+> Офіційний сайт: https://lost-chronicles.co.ua
+> IP сервера (Java/Bedrock): play.lost-chronicles.co.ua
+
+## Про проєкт
+
+Lost Chronicles (Лост Хроніклс) — українська Minecraft-спільнота з вайтлистом, лором, економікою та RP-подіями.
+Сайт містить анкету для входу, вікі з правилами та лором, динамічну карту світу (BlueMap), новини з Telegram і голосування за пропозиції гравців.
+
+## Ключові сторінки
+
+- Головна: https://lost-chronicles.co.ua/
+- FAQ (як зайти, IP, версія): https://lost-chronicles.co.ua/faq
+- Анкета / вайтлист: https://lost-chronicles.co.ua/apply
+- Вікі: https://lost-chronicles.co.ua/wiki
+- Карта світу: https://lost-chronicles.co.ua/map
+- Новини: https://lost-chronicles.co.ua/news
+- Пропозиції гравців: https://lost-chronicles.co.ua/proposals
+- Підтримка сервера: https://lost-chronicles.co.ua/support
+
+## Альтернативні назви (пошук)
+
+Lost Chronicles, Лост Хроніклс, Lost Chronikles, LC Minecraft, lost chronicles minecraft ukraine,
+майнкрафт сервер україна, lost-chronicles.co.ua
+
+## Соцмережі
+
+Дискорд, Telegram, YouTube, TikTok, Instagram — посилання на головній сторінці сайту.
+
+## Технічне
+
+- Мова сайту: українська (uk-UA)
+- Sitemap: https://lost-chronicles.co.ua/sitemap.xml
+- Robots: https://lost-chronicles.co.ua/robots.txt

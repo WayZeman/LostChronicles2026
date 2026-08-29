@@ -18,6 +18,7 @@ import {
   LC_SEO_SITE_TITLE_DEFAULT,
 } from "@/data/lc-seo-terms";
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
+import { LC_OG_IMAGE_PATH } from "@/lib/seo";
 import "./globals.css";
 
 const notoSans = Noto_Sans({
@@ -87,27 +88,36 @@ export const metadata: Metadata = {
     siteName: "Lost Chronicles",
     images: [
       {
-        url: "/logo.png",
-        width: 597,
-        height: 595,
-        alt: "Lost Chronicles — логотип українського Minecraft-сервера",
+        url: LC_OG_IMAGE_PATH,
+        width: 1200,
+        height: 630,
+        alt: "Lost Chronicles — український Minecraft-сервер Java та Bedrock",
       },
     ],
   },
-  /** Квадратний логотип: summary краще рендериться у стрічці, ніж summary_large_image з обрізанням. */
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: siteTitleDefault,
     description: siteDescription,
-    images: ["/logo.png"],
+    images: [LC_OG_IMAGE_PATH],
   },
+  category: "games",
   ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
     ? {
         verification: {
           google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
+          ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim()
+            ? { other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION.trim() } }
+            : {}),
         },
       }
-    : {}),
+    : process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim()
+      ? {
+          verification: {
+            other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION.trim() },
+          },
+        }
+      : {}),
 };
 
 export default function RootLayout({
@@ -125,6 +135,8 @@ export default function RootLayout({
         <link rel="preconnect" href="https://mc-heads.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://ely.by" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
+        <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
+        <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs.txt" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var p=location.pathname;if(p==="/"||p===""){document.documentElement.classList.add("lc-intro-pending");}else{document.documentElement.classList.add("lc-intro-skip");}})();`,

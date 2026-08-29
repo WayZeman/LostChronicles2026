@@ -6,14 +6,18 @@ import { lcPageContainerClass, lcPageMainMapClass } from "@/components/site/lc-p
 import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 
+import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
+import { buildLcPageMetadata } from "@/lib/seo";
+
 /** BlueMap. Перевизначення: NEXT_PUBLIC_MAP_URL у .env / Vercel (у лапках, якщо є # у hash). */
 const DEFAULT_MAP_URL =
   "http://142.132.211.240:25553/#world:0:0:0:1500:0:0:0:1:flat";
 
-export const metadata: Metadata = {
-  title: "Мапа — Lost Chronicles",
-  description: "Мапа світу сервера Lost Chronicles (BlueMap).",
-};
+export const metadata: Metadata = buildLcPageMetadata({
+  title: "Карта світу Lost Chronicles — BlueMap Minecraft",
+  description: `Інтерактивна карта світу сервера Lost Chronicles (BlueMap). Оглянь території перед грою. IP: ${LC_DEFAULT_JAVA_SERVER_HOST}.`,
+  path: "/map",
+});
 
 export default function MapPage() {
   const mapUrl = process.env.NEXT_PUBLIC_MAP_URL?.trim() || DEFAULT_MAP_URL;

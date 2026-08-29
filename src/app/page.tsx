@@ -16,18 +16,19 @@ import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-
 import { cn } from "@/lib/utils";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
 import { LC_APPLY_PATH } from "@/data/lost-chronicles-faq";
+import { LC_SEO_DESCRIPTION_SHORT, LC_SEO_SITE_TITLE_DEFAULT } from "@/data/lc-seo-terms";
 import { LC_DEFAULT_JAVA_SERVER_HOST, LC_DEFAULT_BEDROCK_ADDRESS } from "@/lib/lc-server-defaults";
 import {
   getConnectSettings,
   getSupportSettings,
 } from "@/lib/site-content";
-import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
+import { buildLcPageMetadata } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  alternates: {
-    canonical: `${getLcMarketingSiteUrl()}/`,
-  },
-};
+export const metadata: Metadata = buildLcPageMetadata({
+  title: LC_SEO_SITE_TITLE_DEFAULT,
+  description: LC_SEO_DESCRIPTION_SHORT,
+  path: "/",
+});
 
 /** Інакше NEXT_PUBLIC_* «запікається» в статичний HTML під час build і не оновиться без перезбірки. */
 export const dynamic = "force-dynamic";

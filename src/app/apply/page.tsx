@@ -5,23 +5,21 @@ import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import { SoftAppear } from "@/components/site/SoftAppear";
+import { LC_SEO_APPLY_TITLE, LC_SEO_DESCRIPTION_SHORT } from "@/data/lc-seo-terms";
 import {
   DEFAULT_APPLY_FORM_CONFIG,
   getApplyFormConfig,
 } from "@/lib/application-form-config";
-import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
+import { buildLcPageMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Анкета — Lost Chronicles",
-  description:
-    "Заявка на вайтлист українського Minecraft-сервера Lost Chronicles.",
-  alternates: {
-    canonical: `${getLcMarketingSiteUrl()}/apply`,
-  },
-};
+export const metadata: Metadata = buildLcPageMetadata({
+  title: LC_SEO_APPLY_TITLE,
+  description: `Подай анкету на вайтлист українського Minecraft RP-сервера Lost Chronicles. ${LC_SEO_DESCRIPTION_SHORT}`,
+  path: "/apply",
+});
 
 export default async function ApplyPage() {
   let config = DEFAULT_APPLY_FORM_CONFIG;

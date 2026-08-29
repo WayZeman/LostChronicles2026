@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
@@ -26,8 +27,19 @@ import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { WikiCategoryView } from "@/components/wiki/WikiCategoryView";
 import { WikiArticleView } from "@/components/wiki/WikiArticleView";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
+import { buildWikiSlugMetadata } from "@/lib/seo-wiki-meta";
 
 export const revalidate = 60;
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const meta = await buildWikiSlugMetadata(slug);
+  return meta ?? {};
+}
 
 const WIKI_SUB_STRIP = ["wiki-sub-0", "wiki-sub-1", "wiki-sub-2", "wiki-sub-3"];
 

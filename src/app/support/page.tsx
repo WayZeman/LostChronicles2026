@@ -12,12 +12,16 @@ import {
 import { listSupportersLeaderboard } from "@/lib/support-orders";
 import { cn } from "@/lib/utils";
 
+import { buildLcPageMetadata } from "@/lib/seo";
+
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Магазин підтримки — Lost Chronicles",
-  description: "Бонуси за підтримку сервера Lost Chronicles.",
-};
+export const metadata: Metadata = buildLcPageMetadata({
+  title: "Магазин підтримки Lost Chronicles — бонуси Minecraft",
+  description:
+    "Підтримай український Minecraft-сервер Lost Chronicles і отримай ігрові бонуси. Оплата через Monobank.",
+  path: "/support",
+});
 
 export default async function SupportPage() {
   let cards: Awaited<ReturnType<typeof listSupportCards>> = [];
