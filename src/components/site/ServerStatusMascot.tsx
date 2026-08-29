@@ -4,6 +4,15 @@ import Image from "next/image";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
+function markImageLoaded(
+  img: HTMLImageElement | null,
+  setLoaded: (loaded: boolean) => void,
+) {
+  if (img?.complete && img.naturalWidth > 0) {
+    setLoaded(true);
+  }
+}
+
 type LivePayload = {
   liveOnline?: number | null;
   liveProbe?: "plan" | "api" | "api-offline" | "env-fallback";
@@ -24,6 +33,19 @@ function statusFromLive(data: LivePayload | null): Status {
  */
 export function ServerStatusMascot({ className }: { className?: string }) {
   const [status, setStatus] = useState<Status>("unknown");
+  const [imageLoaded, setImageLoaded] = useState(false);
+
+  const ready = status !== "unknown";
+  const src =
+    status === "offline"
+      ? "/server-status-offline.png?v=8"
+      : "/server-status-online.png?v=8";
+  const alt =
+    status === "offline" ? "Сервер офлайн" : "Сервер онлайн";
+
+  useEffect(() => {
+    setImageLoaded(false);
+  }, [src]);
 
   useEffect(() => {
     let cancelled = false;
@@ -49,14 +71,6 @@ export function ServerStatusMascot({ className }: { className?: string }) {
     };
   }, []);
 
-  const ready = status !== "unknown";
-  const src =
-    status === "offline"
-      ? "/server-status-offline.png?v=8"
-      : "/server-status-online.png?v=8";
-  const alt =
-    status === "offline" ? "Сервер офлайн" : "Сервер онлайн";
-
   return (
     <div
       className={cn(
@@ -66,7 +80,7 @@ export function ServerStatusMascot({ className }: { className?: string }) {
       )}
       aria-hidden={!ready}
     >
-      {/* Резервуємо місце, щоб панель не стрибала після відповіді API */}
+      {/* Резервуємо місце без видимого placeholder до завантаження PNG */}
       <div className="relative aspect-[512/748] w-full">
         {ready ? (
           <Image
@@ -74,16 +88,16 @@ export function ServerStatusMascot({ className }: { className?: string }) {
             alt={alt}
             width={512}
             height={748}
-            className="lc-stream-in h-auto w-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]"
+            className={cn(
+              "h-auto w-full drop-shadow-[0_8px_16px_rgba(0,0,0,0.55)]",
+              imageLoaded ? "lc-stream-in" : "opacity-0",
+            )}
             priority
             unoptimized
+            onLoad={(event) => markImageLoaded(event.currentTarget, setImageLoaded)}
+            ref={(node) => markImageLoaded(node, setImageLoaded)}
           />
-        ) : (
-          <div
-            className="lc-skeleton-breathe absolute inset-0 rounded-md bg-white/[0.06]"
-            aria-hidden
-          />
-        )}
+        ) : null}
       </div>
     </div>
   );
