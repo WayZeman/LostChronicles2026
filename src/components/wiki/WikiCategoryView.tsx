@@ -6,7 +6,6 @@ import type {
   WikiCategoryPageRow,
 } from "@/lib/wiki-structure";
 import { SoftAppear } from "@/components/site/SoftAppear";
-import { DiamondSlot } from "@/components/site/DiamondSlot";
 import {
   wikiAccentForSlug,
   wikiPagesChip,
@@ -79,10 +78,6 @@ export function WikiCategoryView({
 
       <SoftAppear>
         <header className="relative overflow-hidden border border-white/10 bg-black/30 px-4 py-5 text-center sm:px-6 sm:py-6 sm:text-left">
-          <DiamondSlot
-            id="wiki-sub-0"
-            className="!absolute !right-3 !top-3 !z-[5]"
-          />
           <span
             className={cn("absolute inset-y-0 left-0 w-1.5", accent.bar)}
             aria-hidden
@@ -203,12 +198,6 @@ export function WikiCategoryView({
 
               return (
                 <article key={p.id} className={cardClass}>
-                  {pageIdx < 3 ? (
-                    <DiamondSlot
-                      id={`wiki-pagecard-${pageIdx}`}
-                      className="!absolute !bottom-3 !right-3 !z-[5]"
-                    />
-                  ) : null}
                   {editMode && onOpenPage ? (
                     <button
                       type="button"

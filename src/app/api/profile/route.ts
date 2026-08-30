@@ -3,7 +3,7 @@ import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import {
   getUserProfileFields,
   updateUserProfileFields,
-} from "@/lib/diamond-hunt";
+} from "@/lib/user-profile-fields";
 import { canEditWiki, isAdminRole } from "@/lib/admin-role";
 import {
   gameNicknameError,

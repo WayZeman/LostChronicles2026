@@ -3,7 +3,6 @@ import Image from "next/image";
 import { ExternalLink, Map as MapIcon } from "lucide-react";
 
 import { lcPageContainerClass, lcPageMainMapClass } from "@/components/site/lc-page-shell";
-import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 
 import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
@@ -24,13 +23,9 @@ export default function MapPage() {
 
   return (
     <main className={lcPageMainMapClass}>
-      <DiamondPageRoot className={lcPageContainerClass}>
+      <div className={lcPageContainerClass}>
         <WikiContentFrame>
           <div className="relative flex flex-col items-center text-center">
-            <DiamondSlot
-              id="map-header"
-              className="!absolute !right-2 !top-0"
-            />
             <h2 className="lc-section-title text-xl uppercase md:text-2xl">
               Перейти до карти
             </h2>
@@ -48,10 +43,6 @@ export default function MapPage() {
             </div>
 
             <div className="relative mt-6 md:mt-8">
-              <DiamondSlot
-                id="map-cta"
-                className="!absolute !-right-2 !-top-3 sm:!-right-6"
-              />
               <a
                 href={mapUrl}
                 target="_blank"
@@ -65,7 +56,7 @@ export default function MapPage() {
             </div>
           </div>
         </WikiContentFrame>
-      </DiamondPageRoot>
+      </div>
     </main>
   );
 }

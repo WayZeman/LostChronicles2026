@@ -7,7 +7,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { FaqJsonLd } from "@/components/site/FaqJsonLd";
-import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
@@ -27,8 +26,6 @@ export const metadata: Metadata = buildLcPageMetadata({
   description: `Відповіді про вхід на сервер Lost Chronicles: IP, версія Minecraft, анкета, Discord, правила. ${LC_SEO_DESCRIPTION_SHORT}`,
   path: "/faq",
 });
-
-const FAQ_DIAMOND_SLOTS = 12;
 
 export default async function FAQPage() {
   let faqs = LOST_CHRONICLES_FAQ.map((item) => ({
@@ -63,7 +60,7 @@ export default async function FAQPage() {
           answerHtml: f.answer,
         }))}
       />
-      <DiamondPageRoot className={lcPageContainerClass}>
+      <div className={lcPageContainerClass}>
         <header className="mb-6 text-center sm:mb-8 md:mb-12">
           <h1 className="lc-hero-title lc-hero-display text-balance text-[clamp(1.5rem,4.2vw,1.625rem)] leading-tight text-[var(--mc-text)] sm:text-3xl md:text-4xl">
             Часті запитання
@@ -81,7 +78,7 @@ export default async function FAQPage() {
             "overflow-hidden p-1.5 sm:p-4 md:p-5",
           )}
         >
-          {faqs.map((faq, index) => (
+          {faqs.map((faq) => (
             <AccordionItem
               key={faq.id}
               value={faq.id}
@@ -97,52 +94,25 @@ export default async function FAQPage() {
                   "pt-2.5 sm:pt-4",
                 )}
               >
-                <div className="relative">
-                  <div
-                    className={cn(
-                      "prose prose-neutral max-w-none break-words text-left",
-                      "prose-p:my-2 prose-p:text-[var(--mc-text)] prose-p:leading-relaxed sm:prose-p:my-2.5",
-                      "prose-ul:my-2.5 prose-ul:list-inside prose-ul:pl-0 sm:prose-ul:my-3 sm:prose-ul:list-outside sm:prose-ul:pl-5",
-                      "prose-ol:my-2.5 prose-ol:list-inside prose-ol:pl-0 sm:prose-ol:my-3 sm:prose-ol:list-outside sm:prose-ol:pl-5",
-                      "prose-li:my-0.5 prose-li:text-[var(--mc-text)] prose-li:leading-relaxed prose-li:marker:text-[var(--mc-net-green)] sm:prose-li:my-1",
-                      "prose-headings:text-[var(--mc-text)] prose-strong:text-[var(--mc-text)] prose-strong:font-semibold",
-                      "prose-em:text-[var(--mc-text-muted)] prose-em:not-italic",
-                      "prose-code:break-all prose-code:rounded-md prose-code:bg-[var(--mc-surface-elevated)] prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.8em] prose-code:font-normal prose-code:text-[var(--mc-text)] prose-code:before:content-none prose-code:after:content-none sm:prose-code:break-words sm:prose-code:text-[0.85em]",
-                      "prose-a:break-words prose-a:font-semibold prose-a:text-[var(--mc-net-green)] prose-a:no-underline prose-a:underline-offset-2 hover:prose-a:underline",
-                    )}
-                    dangerouslySetInnerHTML={{ __html: faq.answer }}
-                  />
-                  {index < FAQ_DIAMOND_SLOTS ? (
-                    <DiamondSlot
-                      id={`faq-ans-${index}`}
-                      className="!relative !mx-auto !mt-3 !mb-1 !block !size-8"
-                    />
-                  ) : null}
-                </div>
+                <div
+                  className={cn(
+                    "prose prose-neutral max-w-none break-words text-left",
+                    "prose-p:my-2 prose-p:text-[var(--mc-text)] prose-p:leading-relaxed sm:prose-p:my-2.5",
+                    "prose-ul:my-2.5 prose-ul:list-inside prose-ul:pl-0 sm:prose-ul:my-3 sm:prose-ul:list-outside sm:prose-ul:pl-5",
+                    "prose-ol:my-2.5 prose-ol:list-inside prose-ol:pl-0 sm:prose-ol:my-3 sm:prose-ol:list-outside sm:prose-ol:pl-5",
+                    "prose-li:my-0.5 prose-li:text-[var(--mc-text)] prose-li:leading-relaxed prose-li:marker:text-[var(--mc-net-green)] sm:prose-li:my-1",
+                    "prose-headings:text-[var(--mc-text)] prose-strong:text-[var(--mc-text)] prose-strong:font-semibold",
+                    "prose-em:text-[var(--mc-text-muted)] prose-em:not-italic",
+                    "prose-code:break-all prose-code:rounded-md prose-code:bg-[var(--mc-surface-elevated)] prose-code:px-1.5 prose-code:py-0.5 prose-code:text-[0.8em] prose-code:font-normal prose-code:text-[var(--mc-text)] prose-code:before:content-none prose-code:after:content-none sm:prose-code:break-words sm:prose-code:text-[0.85em]",
+                    "prose-a:break-words prose-a:font-semibold prose-a:text-[var(--mc-net-green)] prose-a:no-underline prose-a:underline-offset-2 hover:prose-a:underline",
+                  )}
+                  dangerouslySetInnerHTML={{ __html: faq.answer }}
+                />
               </AccordionContent>
             </AccordionItem>
           ))}
         </Accordion>
-
-        {faqs.length < FAQ_DIAMOND_SLOTS ? (
-          <div className="relative mt-6 min-h-[3rem]" aria-hidden>
-            {Array.from({ length: FAQ_DIAMOND_SLOTS - faqs.length }, (_, i) => {
-              const index = faqs.length + i;
-              return (
-                <DiamondSlot
-                  key={`faq-fallback-${index}`}
-                  id={`faq-ans-${index}`}
-                  className="!absolute !size-8"
-                  style={{
-                    top: `${20 + i * 18}%`,
-                    left: `${15 + ((i * 29) % 70)}%`,
-                  }}
-                />
-              );
-            })}
-          </div>
-        ) : null}
-      </DiamondPageRoot>
+      </div>
     </div>
   );
 }

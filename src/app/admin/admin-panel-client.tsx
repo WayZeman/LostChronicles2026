@@ -7,7 +7,6 @@ import { ArrowDown, ArrowUp, Ban, Clock, ExternalLink, Plus, Trash2, Upload } fr
 import { FaqRichEditor } from "@/components/admin/FaqRichEditor";
 import { AdminWikiCms } from "@/components/admin/AdminWikiCms";
 import { AdminApplyCms } from "@/components/admin/AdminApplyCms";
-import { AdminDiamondCms } from "@/components/admin/AdminDiamondCms";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -34,8 +33,7 @@ type Tab =
   | "voting"
   | "proposals"
   | "admins"
-  | "wiki"
-  | "diamonds";
+  | "wiki";
 
 type FaqDraft = { key: string; question: string; answer_html: string };
 
@@ -107,8 +105,7 @@ export function AdminPanelClient() {
     tabParam === "voting" ||
     tabParam === "proposals" ||
     tabParam === "admins" ||
-    tabParam === "wiki" ||
-    tabParam === "diamonds"
+    tabParam === "wiki"
       ? tabParam
       : "faq";
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -249,8 +246,7 @@ export function AdminPanelClient() {
         t === "voting" ||
         t === "proposals" ||
         t === "admins" ||
-        t === "wiki" ||
-        t === "diamonds"
+        t === "wiki"
       ) {
         setTab(t);
       }
@@ -576,7 +572,6 @@ export function AdminPanelClient() {
         { id: "voting", label: "Голосування" },
         { id: "proposals", label: "Пропозиції" },
         { id: "wiki", label: "Вікі" },
-        { id: "diamonds", label: "Діаманти" },
         { id: "admins", label: "Ролі" },
       ]
     : [{ id: "wiki", label: "Вікі" }];
@@ -1516,9 +1511,6 @@ export function AdminPanelClient() {
             ) : null}
 
             {tab === "wiki" ? <AdminWikiCms /> : null}
-            {tab === "diamonds" ? (
-              <AdminDiamondCms onMsg={setMsg} onErr={setErr} />
-            ) : null}
 
             {tab === "admins" ? (
               <ul className="space-y-2">

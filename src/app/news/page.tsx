@@ -1,10 +1,6 @@
 import type { Metadata } from "next";
 
 import { TelegramNewsFeed } from "@/components/news/TelegramNewsFeed";
-import {
-  DiamondPageRoot,
-  DiamondSlotStrip,
-} from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
@@ -30,7 +26,7 @@ export default async function NewsListPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <DiamondPageRoot className={lcPageContainerClass}>
+      <div className={lcPageContainerClass}>
         {!posts ? (
           <p
             className={cn(
@@ -51,19 +47,9 @@ export default async function NewsListPage() {
             .
           </p>
         ) : (
-          <>
-            <TelegramNewsFeed posts={posts} topicUrl={topic.topicUrl} />
-            {posts.length < 3 ? (
-              <DiamondSlotStrip
-                ids={Array.from(
-                  { length: 3 - posts.length },
-                  (_, i) => `news-post-${posts.length + i}`,
-                )}
-              />
-            ) : null}
-          </>
+          <TelegramNewsFeed posts={posts} topicUrl={topic.topicUrl} />
         )}
-      </DiamondPageRoot>
+      </div>
     </main>
   );
 }

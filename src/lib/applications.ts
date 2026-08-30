@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { wakeMinecraftAnketaSync } from "@/lib/minecraft-anketa-wake";
 import type { ApplyQuestion } from "@/lib/application-form-config";
 import {
   formatAnswerValue,
@@ -411,6 +412,9 @@ export async function setApplicationServerStatusByOrdinal(
       END
     WHERE id = ${found.row.id}
   `;
+  if (status === "accepted" || status === "rejected") {
+    void wakeMinecraftAnketaSync(`status_${status}`);
+  }
   return getApplicationByOrdinal(ordinal, questions);
 }
 

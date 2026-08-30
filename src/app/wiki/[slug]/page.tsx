@@ -19,10 +19,6 @@ import {
   lcPageContainerClass,
   lcPageMainClass,
 } from "@/components/site/lc-page-shell";
-import {
-  DiamondPageRoot,
-  DiamondSlotStrip,
-} from "@/components/site/DiamondSlot";
 import { WikiContentFrame } from "@/components/wiki/WikiContentFrame";
 import { WikiCategoryView } from "@/components/wiki/WikiCategoryView";
 import { WikiArticleView } from "@/components/wiki/WikiArticleView";
@@ -40,8 +36,6 @@ export async function generateMetadata({
   const meta = await buildWikiSlugMetadata(slug);
   return meta ?? {};
 }
-
-const WIKI_SUB_STRIP = ["wiki-sub-0", "wiki-sub-1", "wiki-sub-2", "wiki-sub-3"];
 
 export default async function WikiArticlePage({
   params,
@@ -61,7 +55,7 @@ export default async function WikiArticlePage({
 
     return (
       <main className={lcPageMainClass}>
-        <DiamondPageRoot className={lcPageContainerClass}>
+        <div className={lcPageContainerClass}>
           <div className="mb-5 sm:mb-8">
             <Link
               href="/wiki"
@@ -78,8 +72,7 @@ export default async function WikiArticlePage({
               rewriteWikiLinksToLocal={false}
             />
           </WikiContentFrame>
-          <DiamondSlotStrip ids={["rp-news-0", "rp-news-1", "rp-news-2"]} />
-        </DiamondPageRoot>
+        </div>
       </main>
     );
   }
@@ -94,7 +87,7 @@ export default async function WikiArticlePage({
       if (page) {
         return (
           <main className={lcPageMainClass}>
-            <DiamondPageRoot className={lcPageContainerClass}>
+            <div className={lcPageContainerClass}>
               <WikiContentFrame>
                 <WikiArticleView
                   title={page.title}
@@ -104,10 +97,7 @@ export default async function WikiArticlePage({
                   socialLinks={parseSocialLinks(page.social_links_raw)}
                 />
               </WikiContentFrame>
-              <DiamondSlotStrip
-                ids={["wiki-pagecard-0", "wiki-pagecard-1", "wiki-pagecard-2"]}
-              />
-            </DiamondPageRoot>
+            </div>
           </main>
         );
       }
@@ -115,12 +105,11 @@ export default async function WikiArticlePage({
 
     return (
       <main className={lcPageMainClass}>
-        <DiamondPageRoot className={lcPageContainerClass}>
+        <div className={lcPageContainerClass}>
           <WikiContentFrame>
             <WikiCategoryView category={category} />
           </WikiContentFrame>
-          <DiamondSlotStrip ids={["wiki-sub-1", "wiki-sub-2", "wiki-sub-3"]} />
-        </DiamondPageRoot>
+        </div>
       </main>
     );
   }
@@ -130,7 +119,7 @@ export default async function WikiArticlePage({
 
   return (
     <main className={lcPageMainClass}>
-      <DiamondPageRoot className={lcPageContainerClass}>
+      <div className={lcPageContainerClass}>
         <WikiContentFrame>
           <WikiArticleView
             title={page.title}
@@ -140,10 +129,7 @@ export default async function WikiArticlePage({
             socialLinks={parseSocialLinks(page.social_links_raw)}
           />
         </WikiContentFrame>
-        <DiamondSlotStrip
-          ids={["wiki-pagecard-0", "wiki-pagecard-1", "wiki-pagecard-2"]}
-        />
-      </DiamondPageRoot>
+      </div>
     </main>
   );
 }

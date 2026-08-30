@@ -9,11 +9,6 @@ import {
   type ProposalListCardData,
 } from "@/components/proposals/ProposalListCard";
 import { SoftAppear } from "@/components/site/SoftAppear";
-import {
-  DiamondPageRoot,
-  DiamondSlot,
-  DiamondSlotStrip,
-} from "@/components/site/DiamondSlot";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
   isProposalVotingOpenClient,
@@ -74,13 +69,9 @@ export function ProposalsListClient() {
 
   return (
     <main className={lcPageMainClass}>
-      <DiamondPageRoot className={lcPageContainerClass}>
+      <div className={lcPageContainerClass}>
         <SoftAppear>
           <header className="relative mb-4 sm:mb-7">
-            <DiamondSlot
-              id="prop-header"
-              className="!absolute !right-0 !top-0"
-            />
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
               <div className="min-w-0 text-center sm:text-left">
                 <h1 className="lc-hero-title text-balance text-[1.75rem] font-black leading-tight tracking-tight text-[var(--mc-text)] sm:text-4xl">
@@ -242,28 +233,14 @@ export function ProposalsListClient() {
           </SoftAppear>
         ) : (
           <ul className="lc-stagger grid gap-3 sm:gap-4">
-            {visible.map((p, idx) => (
+            {visible.map((p) => (
               <li key={p.id} className="relative min-w-0">
-                {idx < 3 ? (
-                  <DiamondSlot
-                    id={`prop-card-${idx}`}
-                    className="!absolute !right-2 !top-2 !z-[5]"
-                  />
-                ) : null}
                 <ProposalListCard proposal={p} />
               </li>
             ))}
           </ul>
         )}
-        {visible.length < 3 ? (
-          <DiamondSlotStrip
-            ids={Array.from(
-              { length: 3 - visible.length },
-              (_, i) => `prop-card-${visible.length + i}`,
-            )}
-          />
-        ) : null}
-      </DiamondPageRoot>
+      </div>
     </main>
   );
 }

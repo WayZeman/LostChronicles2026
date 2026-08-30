@@ -1,7 +1,6 @@
 import { ArrowUpRight } from "lucide-react";
 
 import { SoftAppear } from "@/components/site/SoftAppear";
-import { DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import {
   formatTelegramNewsDate,
@@ -34,10 +33,6 @@ export function TelegramNewsFeed({ posts, topicUrl }: Props) {
     <div className="mx-auto w-full min-w-0 max-w-3xl">
       <SoftAppear>
         <header className="relative mb-5 flex flex-col gap-3 sm:mb-9 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
-          <DiamondSlot
-            id="news-header"
-            className="!absolute !left-0 !top-0 sm:!-left-1"
-          />
           <h1 className="lc-hero-title lc-hero-display text-balance text-center text-[1.75rem] leading-tight text-[var(--mc-text)] sm:text-left sm:text-4xl">
             Новини
           </h1>
@@ -64,12 +59,6 @@ export function TelegramNewsFeed({ posts, topicUrl }: Props) {
 
           return (
             <li key={post.id} className="relative min-w-0">
-              {postIdx < 3 ? (
-                <DiamondSlot
-                  id={`news-post-${postIdx}`}
-                  className="!absolute !right-2 !top-2 !z-[5]"
-                />
-              ) : null}
               <a
                 href={post.url}
                 target="_blank"

@@ -4,9 +4,6 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { ExternalLink } from "lucide-react";
 import { HeroAuthGreeting } from "@/components/site/HeroAuthGreeting";
-import { DiamondHuntCounter } from "@/components/site/DiamondHuntCounter";
-import { DiamondHuntLeaderboard } from "@/components/site/DiamondHuntLeaderboard";
-import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { HeroBedrockPanel } from "@/components/site/HeroBedrockPanel";
 import { HeroJoinPanel } from "@/components/site/HeroJoinPanel";
 import { HeroServerOverviewPanel } from "@/components/site/HeroServerOverviewPanel";
@@ -75,7 +72,7 @@ export default async function Home() {
 
   return (
     <main className={lcPageMainClass}>
-      <DiamondPageRoot className={lcPageContainerHomeClass}>
+      <div className={lcPageContainerHomeClass}>
         <section className="am-reveal relative z-10 flex flex-col items-center pt-0 text-center md:pt-0">
           <h1 className="sr-only">Lost Chronicles — Ukrainian Minecraft Server</h1>
 
@@ -101,7 +98,6 @@ export default async function Home() {
           </div>
 
           <HeroAuthGreeting />
-          <DiamondHuntCounter />
 
           {voteUrl ? (
             <div className="relative z-10 mt-5 flex flex-wrap justify-center gap-3">
@@ -122,10 +118,6 @@ export default async function Home() {
           className="am-reveal am-delay-1 relative mt-12 flex w-full flex-col gap-6 sm:mt-10 md:mt-12 md:gap-8"
           aria-label="Онлайн та підключення до сервера"
         >
-          <DiamondSlot
-            id="home-online"
-            className="!absolute !right-2 !top-2 !z-[5] sm:!right-4"
-          />
           <Suspense
             fallback={
               <div
@@ -142,18 +134,12 @@ export default async function Home() {
             <HeroServerOverviewPanel />
           </Suspense>
 
-          <DiamondHuntLeaderboard />
-
           <div
             className={cn(
               lcGlassPanelClass,
               "lc-interactive-panel-static relative",
             )}
           >
-            <DiamondSlot
-              id="home-join"
-              className="!absolute !left-2 !top-2 !z-[5]"
-            />
             <h2 className="lc-section-title text-center text-lg uppercase md:text-xl">
               Підключитися до сервера
             </h2>
@@ -185,28 +171,16 @@ export default async function Home() {
               </div>
             }
           >
-            <div className="relative">
-              <DiamondSlot
-                id="home-social"
-                className="!absolute !right-3 !top-3 !z-[5]"
-              />
-              <HeroSocialPanel />
-            </div>
+            <HeroSocialPanel />
           </Suspense>
         </div>
 
-        <div className="relative">
-          <DiamondSlot
-            id="home-support"
-            className="!absolute !left-3 !top-4 !z-[5]"
-          />
-          <SupportMonobankSection
-            jarUrl={support.jarUrl}
-            blurb={support.blurb}
-            catalogLinks={support.catalogLinks}
-          />
-        </div>
-      </DiamondPageRoot>
+        <SupportMonobankSection
+          jarUrl={support.jarUrl}
+          blurb={support.blurb}
+          catalogLinks={support.catalogLinks}
+        />
+      </div>
     </main>
   );
 }

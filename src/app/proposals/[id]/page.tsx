@@ -11,7 +11,6 @@ import { ProposalVoteButtons } from "@/components/proposals/ProposalVoteButtons"
 import { ProposalVoters } from "@/components/proposals/ProposalVoters";
 import type { ProposalVoter } from "@/components/proposals/ProposalVoters";
 import { SoftAppear } from "@/components/site/SoftAppear";
-import { DiamondPageRoot, DiamondSlot } from "@/components/site/DiamondSlot";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
@@ -649,7 +648,7 @@ export default function ProposalDetailPage() {
 
   return (
     <main className={lcPageMainClass}>
-      <DiamondPageRoot
+      <div
         className={cn(
           "site-container mx-auto w-full max-w-2xl",
           "px-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))]",
@@ -672,10 +671,6 @@ export default function ProposalDetailPage() {
               "relative flex flex-col gap-5 !p-4 sm:!p-6 sm:gap-6 md:!p-8 md:gap-7",
             )}
           >
-            <DiamondSlot
-              id="prop-detail-header"
-              className="!absolute !right-3 !top-3"
-            />
             <header className="flex flex-col gap-3 border-b border-white/[0.08] pb-5 sm:pb-6 md:flex-row md:items-start md:justify-between md:gap-4">
               <div className="min-w-0 flex-1 text-center md:text-left">
                 <h1 className="lc-hero-title text-balance text-2xl font-bold leading-snug tracking-tight text-[var(--mc-text)] min-[400px]:text-[1.75rem] md:text-3xl">
@@ -690,10 +685,6 @@ export default function ProposalDetailPage() {
             </header>
 
             <div className="relative flex flex-col items-center gap-1.5 sm:flex-row sm:justify-between">
-              <DiamondSlot
-                id="prop-detail-body"
-                className="!absolute !left-0 !top-0"
-              />
               <p className="text-center text-sm text-[var(--mc-text)] sm:text-left">
                 {proposal.author_username}
               </p>
@@ -723,10 +714,6 @@ export default function ProposalDetailPage() {
               aria-label="Голосування"
               className="lc-vote-match-stage relative space-y-3 p-3 sm:space-y-4 sm:p-4"
             >
-              <DiamondSlot
-                id="prop-detail-vote"
-                className="!absolute !right-2 !top-2"
-              />
               {(proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE ? (
                 <ProposalChoiceBar
                   options={proposal.options ?? []}
@@ -979,7 +966,7 @@ export default function ProposalDetailPage() {
           )}
         </section>
         </SoftAppear>
-      </DiamondPageRoot>
+      </div>
     </main>
   );
 }
