@@ -4,5 +4,49 @@
       "path": "/api/mono-check",
       "schedule": "0 6 * * *"
     }
+  ],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "lost-chronicles.site" }],
+      "destination": "https://lost-chronicles.co.ua/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.lost-chronicles.site" }],
+      "destination": "https://lost-chronicles.co.ua/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "lost-chronicles.pp.ua" }],
+      "destination": "https://lost-chronicles.co.ua/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.lost-chronicles.pp.ua" }],
+      "destination": "https://lost-chronicles.co.ua/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "lost-chronicles.com" }],
+      "destination": "https://lost-chronicles.co.ua/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.lost-chronicles.com" }],
+      "destination": "https://lost-chronicles.co.ua/:path*",
+      "permanent": true
+    },
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.lost-chronicles.co.ua" }],
+      "destination": "https://lost-chronicles.co.ua/:path*",
+      "permanent": true
+    }
   ]
 }
