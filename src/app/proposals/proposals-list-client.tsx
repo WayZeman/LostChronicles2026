@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlusCircle } from "lucide-react";
@@ -8,6 +7,8 @@ import {
   ProposalListCard,
   type ProposalListCardData,
 } from "@/components/proposals/ProposalListCard";
+import { MigrationPageNotice } from "@/components/site/MigrationPageNotice";
+import { RestrictedFeatureLink } from "@/components/site/MigrationRestriction";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import {
@@ -70,6 +71,7 @@ export function ProposalsListClient() {
   return (
     <main className={lcPageMainClass}>
       <div className={lcPageContainerClass}>
+        <MigrationPageNotice feature="proposals" />
         <SoftAppear>
           <header className="relative mb-4 sm:mb-7">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
@@ -81,13 +83,14 @@ export function ProposalsListClient() {
                   Від {PROPOSAL_MIN_VOTES_FOR_RESULT} голосів для результату
                 </p>
               </div>
-              <Link
+              <RestrictedFeatureLink
+                feature="proposals"
                 href="/proposals/new"
                 className="lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full items-center justify-center gap-2 px-5 text-sm font-bold touch-manipulation sm:mx-0 sm:w-auto"
               >
                 <PlusCircle className="size-4 opacity-90" aria-hidden />
                 Створити
-              </Link>
+              </RestrictedFeatureLink>
             </div>
 
             <div
@@ -212,13 +215,14 @@ export function ProposalsListClient() {
               <p className="text-sm text-[var(--mc-text-muted)]">
                 Голосувань ще немає.
               </p>
-              <Link
+              <RestrictedFeatureLink
+                feature="proposals"
                 href="/proposals/new"
                 className="lc-focus-ring lc-btn-accent mt-4 inline-flex min-h-11 w-full max-w-xs items-center justify-center gap-2 px-5 text-sm font-bold touch-manipulation"
               >
                 <PlusCircle className="size-4 opacity-90" aria-hidden />
                 Створити перше
-              </Link>
+              </RestrictedFeatureLink>
             </div>
           </SoftAppear>
         ) : visible.length === 0 ? (

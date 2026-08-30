@@ -151,6 +151,12 @@ const CONTENT_HTML = `
   <li><b>Липень–серпень</b> — реєстрації поселень; «Ломбард чудес»; публічний список підтримки; відновлення спавну (08.08).</li>
 </ul>
 
+<h2>XIV. Новий домен сайту <span>(серпень 2026)</span></h2>
+<ul>
+  <li><b>30.08</b> — офіційний сайт переїхав на <code>lost-chronicles.co.ua</code>; IP сервера — <code>play.lost-chronicles.co.ua</code>.</li>
+  <li>До <b>1 вересня</b> включно частина функцій (вхід, вікі, пропозиції) тимчасово обмежена під час перенесення бази даних і OAuth.</li>
+</ul>
+
 <p>
   <i>Джерело: експорт гілки «Новини»
   <a href="https://t.me/lostchronicles23/10" target="_blank" rel="noopener noreferrer">t.me/lostchronicles23/10</a>.

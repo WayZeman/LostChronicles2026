@@ -8,8 +8,6 @@ export function getLcMarketingSiteUrl(): string {
   const explicit =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "").trim() || "";
   if (explicit) return explicit;
-  const vercel = process.env.VERCEL_URL?.replace(/\/$/, "").trim() || "";
-  if (vercel) return `https://${vercel}`;
   return LC_MARKETING_SITE_ORIGIN;
 }
 
@@ -18,6 +16,7 @@ export function getSiteBaseUrl(): string {
   const fromEnv =
     process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "").trim() || "";
   if (fromEnv) return fromEnv;
+  if (process.env.NODE_ENV === "production") return LC_MARKETING_SITE_ORIGIN;
   if (process.env.VERCEL_URL)
     return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
   return "http://localhost:3000";

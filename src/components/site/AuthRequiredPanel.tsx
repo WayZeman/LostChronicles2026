@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { discordLoginPath, googleLoginPath } from "@/lib/auth-paths";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { useMigrationRestriction } from "@/components/site/MigrationRestriction";
+import { LC_RESTRICTION_INFO } from "@/lib/lc-migration";
 import { cn } from "@/lib/utils";
 
 function IconDiscord({ className }: { className?: string }) {
@@ -67,6 +71,8 @@ export function AuthRequiredPanel({
   homeHref = "/",
   errorCode,
 }: Props) {
+  const { isRestricted, showRestriction } = useMigrationRestriction();
+  const authRestricted = isRestricted("auth");
   const desc =
     description ??
     `Щоб переглянути ${contentLabel}, увійди через Discord або Google. На телефоні Discord часто запропонує відкрити застосунок — підтверди, і пароль вводити не треба.`;
@@ -91,21 +97,58 @@ export function AuthRequiredPanel({
         </p>
       ) : null}
 
+      {authRestricted ? (
+        <div
+          className="mt-4 rounded-[var(--radius)] border border-amber-500/40 bg-amber-500/10 px-3 py-3 text-left text-sm text-amber-50"
+          role="status"
+        >
+          <p className="font-bold text-amber-100">
+            {LC_RESTRICTION_INFO.auth.title}
+          </p>
+          <p className="mt-1.5 leading-relaxed text-amber-50/95">
+            {LC_RESTRICTION_INFO.auth.reason}
+          </p>
+        </div>
+      ) : null}
+
       <div className="mt-7 flex w-full flex-col items-center gap-3">
-        <a
-          href={discordLoginPath(nextPath)}
-          className="lc-focus-ring mc-btn-primary min-h-12 w-full max-w-sm px-6 py-3 text-sm"
-        >
-          <IconDiscord className="size-5 shrink-0 text-[var(--mc-green-ink)]" />
-          Увійти через Discord
-        </a>
-        <a
-          href={googleLoginPath(nextPath)}
-          className="lc-focus-ring mc-btn-secondary min-h-12 w-full max-w-sm px-6 py-3 text-sm"
-        >
-          <IconGoogle className="size-5 shrink-0" />
-          Увійти через Google
-        </a>
+        {authRestricted ? (
+          <>
+            <button
+              type="button"
+              onClick={() => showRestriction("auth")}
+              className="lc-focus-ring mc-btn-primary min-h-12 w-full max-w-sm px-6 py-3 text-sm opacity-80"
+            >
+              <IconDiscord className="size-5 shrink-0 text-[var(--mc-green-ink)]" />
+              Увійти через Discord
+            </button>
+            <button
+              type="button"
+              onClick={() => showRestriction("auth")}
+              className="lc-focus-ring mc-btn-secondary min-h-12 w-full max-w-sm px-6 py-3 text-sm opacity-80"
+            >
+              <IconGoogle className="size-5 shrink-0" />
+              Увійти через Google
+            </button>
+          </>
+        ) : (
+          <>
+            <a
+              href={discordLoginPath(nextPath)}
+              className="lc-focus-ring mc-btn-primary min-h-12 w-full max-w-sm px-6 py-3 text-sm"
+            >
+              <IconDiscord className="size-5 shrink-0 text-[var(--mc-green-ink)]" />
+              Увійти через Discord
+            </a>
+            <a
+              href={googleLoginPath(nextPath)}
+              className="lc-focus-ring mc-btn-secondary min-h-12 w-full max-w-sm px-6 py-3 text-sm"
+            >
+              <IconGoogle className="size-5 shrink-0" />
+              Увійти через Google
+            </a>
+          </>
+        )}
       </div>
 
       <p className="mt-4 text-xs leading-relaxed text-[var(--mc-text-muted)]">

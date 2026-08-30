@@ -62,6 +62,7 @@ const LC_SEO_TOPIC_KEYWORDS: string[] = [
   "play.lost-chronicles.co.ua",
   "lost-chronicles.co.ua",
   "lost-chronicles.site",
+  "lost-chronicles.pp.ua",
 ];
 
 export const LC_SEO_META_KEYWORDS: string[] = [

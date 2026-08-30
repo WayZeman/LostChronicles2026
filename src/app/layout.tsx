@@ -5,10 +5,12 @@ import { DeferVercelMetrics } from "@/components/DeferVercelMetrics";
 import { GoogleAnalytics } from "@/components/GoogleAnalytics";
 import { Navbar } from "@/components/Navbar";
 import { DailyVoteNudge } from "@/components/site/DailyVoteNudge";
+import { MigrationRestrictionProvider } from "@/components/site/MigrationRestriction";
 import { RouteEnter } from "@/components/site/RouteEnter";
 import { SiteAtmosphere } from "@/components/site/SiteAtmosphere";
 import { SiteIntroCurtain } from "@/components/site/SiteIntroCurtain";
 import { SiteJsonLd } from "@/components/site/SiteJsonLd";
+import { SiteMigrationBanner } from "@/components/site/SiteMigrationBanner";
 import {
   LC_SEO_DESCRIPTION_SHORT,
   LC_SEO_META_KEYWORDS,
@@ -145,22 +147,25 @@ export default function RootLayout({
       >
         <GoogleAnalytics />
         <SiteJsonLd siteUrl={siteUrl} />
-        <SiteIntroCurtain />
-        <DailyVoteNudge />
-        <div className="mc-net-backdrop" aria-hidden>
-          <div className="mc-bg-blob-layer">
-            <span className="mc-bg-blob mc-bg-blob-1" />
-            <span className="mc-bg-blob mc-bg-blob-2" />
-            <span className="mc-bg-blob mc-bg-blob-3" />
-            <span className="mc-bg-blob mc-bg-blob-4" />
-            <span className="mc-bg-blob mc-bg-blob-5" />
+        <MigrationRestrictionProvider>
+          <SiteMigrationBanner />
+          <SiteIntroCurtain />
+          <DailyVoteNudge />
+          <div className="mc-net-backdrop" aria-hidden>
+            <div className="mc-bg-blob-layer">
+              <span className="mc-bg-blob mc-bg-blob-1" />
+              <span className="mc-bg-blob mc-bg-blob-2" />
+              <span className="mc-bg-blob mc-bg-blob-3" />
+              <span className="mc-bg-blob mc-bg-blob-4" />
+              <span className="mc-bg-blob mc-bg-blob-5" />
+            </div>
           </div>
-        </div>
-        <SiteAtmosphere />
-        <Navbar />
-        <div className="lc-page-enter relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] [&>*:only-child]:flex [&>*:only-child]:min-h-0 [&>*:only-child]:w-full [&>*:only-child]:flex-1 [&>*:only-child]:flex-col [&>*:only-child]:pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
-          <RouteEnter>{children}</RouteEnter>
-        </div>
+          <SiteAtmosphere />
+          <Navbar />
+          <div className="lc-page-enter relative z-10 flex min-h-0 flex-1 flex-col bg-transparent pb-[calc(6.25rem+env(safe-area-inset-bottom,0px))] [&>*:only-child]:flex [&>*:only-child]:min-h-0 [&>*:only-child]:w-full [&>*:only-child]:flex-1 [&>*:only-child]:flex-col [&>*:only-child]:pt-[max(0.75rem,env(safe-area-inset-top,0px))]">
+            <RouteEnter>{children}</RouteEnter>
+          </div>
+        </MigrationRestrictionProvider>
         <DeferVercelMetrics />
       </body>
     </html>

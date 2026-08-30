@@ -11,4 +11,8 @@ export const LC_PLAY_HOST = `play.${LC_MARKETING_HOST}`;
 export const LC_LEGACY_MARKETING_HOSTS = [
   "lost-chronicles.site",
   "www.lost-chronicles.site",
+  "lost-chronicles.pp.ua",
+  "www.lost-chronicles.pp.ua",
+  "lost-chronicles.com",
+  "www.lost-chronicles.com",
 ] as const;

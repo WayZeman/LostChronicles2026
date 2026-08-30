@@ -17,7 +17,7 @@ const fetchInit = () =>
     headers: {
       Accept: "application/json",
       "User-Agent":
-        "LostChroniclesSite/1.0 (one-time wiki import; +https://lost-chronicles.com)",
+        "LostChroniclesSite/1.0 (one-time wiki import; +https://lost-chronicles.co.ua)",
     },
   }) as const;
 

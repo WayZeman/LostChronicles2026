@@ -14,6 +14,7 @@ import {
   notifyAuthMeChanged,
 } from "@/lib/auth-me-events";
 import { gameNicknameError } from "@/lib/game-nickname";
+import { useMigrationRestriction } from "@/components/site/MigrationRestriction";
 import { cn } from "@/lib/utils";
 
 type AuthUser = {
@@ -29,6 +30,7 @@ type AuthUser = {
 export function HeroAuthGreeting() {
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
+  const { isRestricted, showRestriction } = useMigrationRestriction();
 
   const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
   const [open, setOpen] = useState(false);
@@ -140,14 +142,25 @@ export function HeroAuthGreeting() {
   }
 
   if (!user) {
+    const authRestricted = isRestricted("auth");
     return (
       <div className="lc-stream-in relative z-10 mt-2.5 flex justify-center">
-        <Link
-          href="/auth-required?next=%2F"
-          className="lc-focus-ring lc-login-soft-pulse inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-[var(--mc-text-subtle)] underline-offset-2 transition-colors hover:text-[var(--mc-text-muted)] hover:underline"
-        >
-          УВІЙТИ
-        </Link>
+        {authRestricted ? (
+          <button
+            type="button"
+            onClick={() => showRestriction("auth")}
+            className="lc-focus-ring lc-login-soft-pulse inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-[var(--mc-text-subtle)] underline-offset-2 transition-colors hover:text-[var(--mc-text-muted)] hover:underline"
+          >
+            УВІЙТИ
+          </button>
+        ) : (
+          <Link
+            href="/auth-required?next=%2F"
+            className="lc-focus-ring lc-login-soft-pulse inline-flex items-center rounded-md px-2 py-1 text-xs font-medium text-[var(--mc-text-subtle)] underline-offset-2 transition-colors hover:text-[var(--mc-text-muted)] hover:underline"
+          >
+            УВІЙТИ
+          </Link>
+        )}
       </div>
     );
   }
