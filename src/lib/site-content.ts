@@ -463,13 +463,13 @@ export async function replaceFaqItems(
   return listFaqItems();
 }
 
-async function loadSiteSettingsMap(): Promise<Map<string, string>> {
+async function loadSiteSettingsMap(): Promise<Record<string, string>> {
   await ensureCmsTables();
   const sql = getSql();
   const rows = rowsOf(await sql`SELECT key, value FROM site_settings`);
-  const map = new Map<string, string>();
+  const map: Record<string, string> = {};
   for (const r of rows) {
-    map.set(String(r.key), String(r.value ?? ""));
+    map[String(r.key)] = String(r.value ?? "");
   }
   return map;
 }
@@ -496,7 +496,7 @@ export function revalidateSiteSettingsCache(): void {
 
 async function getSetting(key: string): Promise<string | null> {
   const map = await getCachedSiteSettingsMap();
-  const v = map.get(key);
+  const v = map[key];
   return v == null || v === "" ? null : v;
 }
 
