@@ -401,7 +401,15 @@ async function sendProposalEndingSoonReminders(): Promise<number> {
       AND ends_at > NOW()
       AND ends_at <= NOW() + INTERVAL '1 hour'
       AND ending_soon_notified_at IS NULL
-    RETURNING id, title, ends_at
+    RETURNING
+      id,
+      title,
+      ends_at,
+      (
+        SELECT COUNT(*)::int
+        FROM votes v
+        WHERE v.proposal_id = proposals.id
+      ) AS total_votes
   `);
   if (rows.length === 0) return 0;
 
@@ -409,6 +417,7 @@ async function sendProposalEndingSoonReminders(): Promise<number> {
     id: num(r.id),
     title: String(r.title ?? ""),
     ends_at: asDate(r.ends_at),
+    total_votes: num(r.total_votes),
   }));
 
   try {

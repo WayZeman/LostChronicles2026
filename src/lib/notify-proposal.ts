@@ -394,7 +394,17 @@ export type ProposalEndingSoonNotifyRow = {
   id: number;
   title: string;
   ends_at: Date;
+  total_votes: number;
 };
+
+function formatVotesNeededUk(totalVotes: number): string {
+  const need = Math.max(0, PROPOSAL_MIN_VOTES_FOR_RESULT - totalVotes);
+  if (need === 0) {
+    return `Кворум зібрано (${totalVotes}/${PROPOSAL_MIN_VOTES_FOR_RESULT})`;
+  }
+  const word = need === 1 ? "голос" : need >= 2 && need <= 4 ? "голоси" : "голосів";
+  return `Не вистачає ${need} ${word} для результату (${totalVotes}/${PROPOSAL_MIN_VOTES_FOR_RESULT})`;
+}
 
 function formatProposalEndsAtKyiv(endsAt: Date): string {
   return endsAt.toLocaleString("uk-UA", {
@@ -412,10 +422,12 @@ export async function notifyProposalEndingSoonDiscord(params: {
   title: string;
   proposalId: number;
   endsAt: Date;
+  totalVotes: number;
 }): Promise<boolean> {
   const link = proposalUrl(params.proposalId);
   const title = escapeDiscordBoldFragment(truncateTitle(params.title));
   const endsLabel = formatProposalEndsAtKyiv(params.endsAt);
+  const quorumLine = formatVotesNeededUk(params.totalVotes);
 
   return postDiscordWebhook({
     embeds: [
@@ -423,7 +435,8 @@ export async function notifyProposalEndingSoonDiscord(params: {
         title: "За годину завершується голосування",
         description:
           `**${title}**\n\n` +
-          `Завершення о **${endsLabel}**\n\n` +
+          `Завершення о **${endsLabel}**\n` +
+          `${quorumLine}\n\n` +
           `[Голосувати на сайті ↗️](${link})`,
         color: 0xfee75c,
         footer: { text: "Lost Chronicles" },
@@ -436,16 +449,19 @@ export async function notifyProposalEndingSoonTelegram(params: {
   title: string;
   proposalId: number;
   endsAt: Date;
+  totalVotes: number;
 }): Promise<boolean> {
   const link = proposalUrl(params.proposalId);
   const title = escapeTelegramHtml(truncateTitle(params.title));
   const endsLabel = escapeTelegramHtml(formatProposalEndsAtKyiv(params.endsAt));
+  const quorumLine = escapeTelegramHtml(formatVotesNeededUk(params.totalVotes));
   const safeLink = escapeTelegramHtml(link);
 
   const html =
     `<b>За годину завершується голосування</b>\n\n` +
     `<b>${title}</b>\n\n` +
-    `Завершення о <b>${endsLabel}</b>\n\n` +
+    `Завершення о <b>${endsLabel}</b>\n` +
+    `${quorumLine}\n\n` +
     `<a href="${safeLink}">Голосувати на сайті ↗️</a>\n\n` +
     `<i>Lost Chronicles</i>`;
 
@@ -462,11 +478,13 @@ export async function notifyProposalEndingSoonBatch(
         title: row.title,
         proposalId: row.id,
         endsAt: row.ends_at,
+        totalVotes: row.total_votes,
       }),
       notifyProposalEndingSoonTelegram({
         title: row.title,
         proposalId: row.id,
         endsAt: row.ends_at,
+        totalVotes: row.total_votes,
       }),
     ]);
   }
