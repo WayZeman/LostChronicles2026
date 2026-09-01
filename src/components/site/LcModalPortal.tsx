@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 
 type LcModalPortalProps = {
@@ -21,20 +21,23 @@ export function LcModalPortal({
 }: LcModalPortalProps) {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setMounted(true);
   }, []);
 
   useEffect(() => {
     if (!open) return;
-    const prevOverflow = document.body.style.overflow;
+    const prevBodyOverflow = document.body.style.overflow;
+    const prevHtmlOverflow = document.documentElement.style.overflow;
     document.body.style.overflow = "hidden";
+    document.documentElement.style.overflow = "hidden";
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      document.body.style.overflow = prevOverflow;
+      document.body.style.overflow = prevBodyOverflow;
+      document.documentElement.style.overflow = prevHtmlOverflow;
       window.removeEventListener("keydown", onKeyDown);
     };
   }, [open, onClose]);
@@ -43,7 +46,16 @@ export function LcModalPortal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[300] flex items-center justify-center overscroll-contain bg-black/75 p-3 sm:p-4"
+      className="overscroll-contain bg-black/75 p-3 sm:p-4"
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        minHeight: "100dvh",
+      }}
       role="dialog"
       aria-modal="true"
       aria-labelledby={ariaLabelledBy}
