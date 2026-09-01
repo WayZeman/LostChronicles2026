@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, useTransition } from "react";
 import { ShoppingBag, ShoppingCart, Trash2, X } from "lucide-react";
 
+import { LcModalPortal } from "@/components/site/LcModalPortal";
 import { AUTH_ME_CHANGED_EVENT } from "@/lib/auth-me-events";
 import { authRequiredPath } from "@/lib/auth-paths";
 import {
@@ -500,12 +501,10 @@ export function SupportOrderCards({ cards }: Props) {
       ) : null}
 
       {tierPick ? (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 sm:p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="support-tier-title"
-          onClick={() => setTierPick(null)}
+        <LcModalPortal
+          open
+          onClose={() => setTierPick(null)}
+          ariaLabelledBy="support-tier-title"
         >
           <div
             className={cn(
@@ -556,17 +555,14 @@ export function SupportOrderCards({ cards }: Props) {
               ))}
             </ul>
           </div>
-        </div>
+        </LcModalPortal>
       ) : null}
 
-      {cartOpen ? (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 sm:p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="support-cart-title"
-          onClick={() => setCartOpen(false)}
-        >
+      <LcModalPortal
+        open={cartOpen}
+        onClose={() => setCartOpen(false)}
+        ariaLabelledBy="support-cart-title"
+      >
           <div
             className={cn(
               modalShell,
@@ -707,17 +703,13 @@ export function SupportOrderCards({ cards }: Props) {
               </div>
             </div>
           </div>
-        </div>
-      ) : null}
+      </LcModalPortal>
 
-      {phase.kind !== "idle" ? (
-        <div
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-black/75 p-3 sm:p-4"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="support-checkout-title"
-          onClick={closeOverlay}
-        >
+      <LcModalPortal
+        open={phase.kind !== "idle"}
+        onClose={closeOverlay}
+        ariaLabelledBy="support-checkout-title"
+      >
           <div
             className={cn(
               modalShell,
@@ -782,7 +774,7 @@ export function SupportOrderCards({ cards }: Props) {
                   </button>
                 </div>
               </>
-            ) : (
+            ) : phase.kind === "done" ? (
               <>
                 <h3
                   id="support-checkout-title"
@@ -819,10 +811,9 @@ export function SupportOrderCards({ cards }: Props) {
                   </button>
                 </div>
               </>
-            )}
+            ) : null}
           </div>
-        </div>
-      ) : null}
+      </LcModalPortal>
     </>
   );
 }
