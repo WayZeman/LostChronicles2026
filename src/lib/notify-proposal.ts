@@ -420,12 +420,13 @@ export async function notifyProposalEndingSoonDiscord(params: {
   return postDiscordWebhook({
     embeds: [
       {
+        title: "За годину завершується голосування",
         description:
-          `**За годину завершується голосування**\n\n` +
-          `${title}\n\n` +
-          `Завершення о ${endsLabel}\n\n` +
+          `**${title}**\n\n` +
+          `Завершення о **${endsLabel}**\n\n` +
           `[Голосувати на сайті ↗️](${link})`,
         color: 0xfee75c,
+        footer: { text: "Lost Chronicles" },
       },
     ],
   });
@@ -442,10 +443,11 @@ export async function notifyProposalEndingSoonTelegram(params: {
   const safeLink = escapeTelegramHtml(link);
 
   const html =
-    `За годину завершується голосування\n\n` +
-    `${title}\n\n` +
-    `Завершення о ${endsLabel}\n\n` +
-    `<a href="${safeLink}">Голосувати на сайті ↗️</a>`;
+    `<b>За годину завершується голосування</b>\n\n` +
+    `<b>${title}</b>\n\n` +
+    `Завершення о <b>${endsLabel}</b>\n\n` +
+    `<a href="${safeLink}">Голосувати на сайті ↗️</a>\n\n` +
+    `<i>Lost Chronicles</i>`;
 
   return postTelegramHtml(html);
 }
