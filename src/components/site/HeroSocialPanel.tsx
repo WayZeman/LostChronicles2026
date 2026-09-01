@@ -38,8 +38,8 @@ export async function HeroSocialPanel() {
             height={1024}
             decoding="async"
             className={cn(
-              "pointer-events-none absolute inset-0 z-0 h-full w-full",
-              "object-cover object-[20%_center] select-none sm:object-left",
+              "pointer-events-none absolute inset-x-0 top-3 z-0 h-[calc(100%+1.25rem)] w-full sm:top-4 sm:h-[calc(100%+1.5rem)]",
+              "object-cover object-[20%_top] select-none sm:object-left-top",
             )}
             aria-hidden
           />
