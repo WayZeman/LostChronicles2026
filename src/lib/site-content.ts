@@ -70,6 +70,223 @@ export type FaqItemRecord = {
   answer_html: string;
 };
 
+type SupportCardSeed = {
+  order: number;
+  title: string;
+  description: string;
+  image: string;
+  price: string;
+  qty: boolean;
+  tiers?: SupportPriceTier[];
+};
+
+const SUPPORT_CARD_SEEDS: SupportCardSeed[] = [
+  {
+    order: 1,
+    title: "Музична платівка",
+    description:
+      "На платівку буде накладено будь-яку пісню, яку ви забажаєте, якщо вона не порушує правил серверу.",
+    image: "/support-vinyl.jpg",
+    price: "25 ₴",
+    qty: true,
+  },
+  {
+    order: 2,
+    title: "Команда /pay",
+    description: "Плати на відстані діамантами.",
+    image: "/support-pay.jpg",
+    price: "20 ₴",
+    qty: false,
+  },
+  {
+    order: 3,
+    title: "Власна моделька",
+    description:
+      "Ви можете завантажити на сервер свою модельку. Рідкісні модельки коштують - 20грн, епічні - 40. Легендарні\\унікальні - 50грн.",
+    image: "/support-model.jpg",
+    price: "від 20 ₴",
+    qty: true,
+    tiers: [
+      { label: "Рідкісна", price_label: "20 ₴" },
+      { label: "Епічна", price_label: "40 ₴" },
+      { label: "Легендарна", price_label: "50 ₴" },
+    ],
+  },
+  {
+    order: 4,
+    title: "Зміна стилю нікнейму",
+    description:
+      "Зроби себе унікальним та виділись серед інших, градієнт або зміна нікнейму.",
+    image: "/support-nick-style.jpg",
+    price: "10 ₴",
+    qty: true,
+  },
+  {
+    order: 5,
+    title: "Нагодуй гравця",
+    description:
+      "Команда /feed — нагодуй будь-кого раз на годину. Ціна за 1 команду.",
+    image: "/support-cmd-feed.jpg",
+    price: "25 ₴",
+    qty: true,
+  },
+  {
+    order: 6,
+    title: "Наковальня будь-де",
+    description:
+      "Команда /anvil — відкрий наковальню де завгодно. Ціна за 1 команду.",
+    image: "/support-cmd-anvil.jpg",
+    price: "25 ₴",
+    qty: true,
+  },
+  {
+    order: 7,
+    title: "Ендерчест будь-де",
+    description:
+      "Команда /enderchest — відкрий свій ендерчест будь-де раз на годину. Ціна за 1 команду.",
+    image: "/support-cmd-enderchest.jpg",
+    price: "25 ₴",
+    qty: true,
+  },
+  {
+    order: 8,
+    title: "Телепорт на спавн",
+    description:
+      "Команда /spawn — миттєво перенесись на спавн раз на 2 години. Ціна за 1 команду.",
+    image: "/support-cmd-spawn.jpg",
+    price: "25 ₴",
+    qty: true,
+  },
+  {
+    order: 9,
+    title: "Кастомний підпис предмета",
+    description:
+      "Кастомна назва (підпис) для твого предмета в грі — зроби його унікальним.",
+    image: "/support-item-rename.jpg",
+    price: "15 ₴",
+    qty: true,
+  },
+];
+
+let supportCardsSchemaEnsured = false;
+
+async function ensureSupportCardsTable(
+  sql: ReturnType<typeof getSql>,
+): Promise<void> {
+  if (supportCardsSchemaEnsured) return;
+  await sql`
+    CREATE TABLE IF NOT EXISTS support_cards (
+      id SERIAL PRIMARY KEY,
+      sort_order INT NOT NULL DEFAULT 0,
+      title VARCHAR(200) NOT NULL,
+      description TEXT NOT NULL,
+      image_url TEXT NOT NULL,
+      price_label VARCHAR(64) NOT NULL,
+      button_url TEXT NOT NULL DEFAULT '',
+      quantity_enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      price_tiers TEXT NOT NULL DEFAULT '[]',
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    )
+  `;
+  await sql`
+    ALTER TABLE support_cards
+    ADD COLUMN IF NOT EXISTS quantity_enabled BOOLEAN NOT NULL DEFAULT TRUE
+  `;
+  await sql`
+    ALTER TABLE support_cards
+    ADD COLUMN IF NOT EXISTS price_tiers TEXT NOT NULL DEFAULT '[]'
+  `;
+  await sql`
+    CREATE INDEX IF NOT EXISTS support_cards_sort_idx
+    ON support_cards (sort_order, id)
+  `;
+  supportCardsSchemaEnsured = true;
+}
+
+async function patchSupportRenameCard(
+  sql: ReturnType<typeof getSql>,
+): Promise<void> {
+  const title = "Кастомний підпис предмета";
+  const description =
+    "Кастомна назва (підпис) для твого предмета в грі — зроби його унікальним.";
+  const image = "/support-item-rename.jpg";
+  const price = "15 ₴";
+  const tiersJson = JSON.stringify([{ label: "", price_label: price }]);
+  await sql`
+    INSERT INTO support_cards (
+      sort_order, title, description, image_url, price_label, price_tiers,
+      button_url, quantity_enabled
+    )
+    SELECT
+      COALESCE((SELECT MAX(sort_order) FROM support_cards), 0) + 1,
+      ${title},
+      ${description},
+      ${image},
+      ${price},
+      ${tiersJson},
+      ${""},
+      ${true}
+    WHERE NOT EXISTS (
+      SELECT 1 FROM support_cards
+      WHERE lower(trim(title)) = lower(${title})
+    )
+  `;
+  await sql`
+    UPDATE support_cards
+    SET
+      image_url = ${image},
+      description = ${description},
+      price_label = ${price},
+      price_tiers = ${tiersJson},
+      updated_at = NOW()
+    WHERE lower(trim(title)) = lower(${title})
+      AND (
+        image_url IS DISTINCT FROM ${image}
+        OR price_label IS DISTINCT FROM ${price}
+      )
+  `;
+}
+
+/** Seed дефолтний каталог, якщо таблиця порожня (не затирає адмін-контент). */
+async function seedSupportCardsIfEmpty(
+  sql: ReturnType<typeof getSql>,
+): Promise<void> {
+  const cardCount = rowsOf(
+    await sql`SELECT COUNT(*)::int AS c FROM support_cards`,
+  );
+  if (num(cardCount[0]?.c) !== 0) return;
+
+  for (const s of SUPPORT_CARD_SEEDS) {
+    const tiersJson = JSON.stringify(
+      s.tiers?.length ? s.tiers : [{ label: "", price_label: s.price }],
+    );
+    await sql`
+      INSERT INTO support_cards (
+        sort_order, title, description, image_url, price_label, price_tiers,
+        button_url, quantity_enabled
+      )
+      VALUES (
+        ${s.order},
+        ${s.title},
+        ${s.description},
+        ${s.image},
+        ${s.price},
+        ${tiersJson},
+        ${""},
+        ${s.qty}
+      )
+    `;
+  }
+}
+
+async function ensureSupportCardsReady(
+  sql: ReturnType<typeof getSql>,
+): Promise<void> {
+  await ensureSupportCardsTable(sql);
+  await seedSupportCardsIfEmpty(sql);
+  await patchSupportRenameCard(sql);
+}
+
 async function ensureCmsTables(): Promise<void> {
   if (cmsEnsured) return;
   const sql = getSql();
@@ -119,165 +336,8 @@ async function ensureCmsTables(): Promise<void> {
     }
   }
 
-  // Каталог підтримки: seed лише якщо таблиця порожня (не затираємо адмін-контент)
-  const cardCount = rowsOf(
-    await sql`SELECT COUNT(*)::int AS c FROM support_cards`,
-  );
-  if (num(cardCount[0]?.c) === 0) {
-    const seeds = [
-      {
-        order: 1,
-        title: "Музична платівка",
-        description:
-          "На платівку буде накладено будь-яку пісню, яку ви забажаєте, якщо вона не порушує правил серверу.",
-        image: "/support-vinyl.jpg",
-        price: "25 ₴",
-        qty: true,
-      },
-      {
-        order: 2,
-        title: "Команда /pay",
-        description: "Плати на відстані діамантами.",
-        image: "/support-pay.jpg",
-        price: "20 ₴",
-        qty: false,
-      },
-      {
-        order: 3,
-        title: "Власна моделька",
-        description:
-          "Ви можете завантажити на сервер свою модельку. Рідкісні модельки коштують - 20грн, епічні - 40. Легендарні\\унікальні - 50грн.",
-        image: "/support-model.jpg",
-        price: "від 20 ₴",
-        qty: true,
-        tiers: [
-          { label: "Рідкісна", price_label: "20 ₴" },
-          { label: "Епічна", price_label: "40 ₴" },
-          { label: "Легендарна", price_label: "50 ₴" },
-        ],
-      },
-      {
-        order: 4,
-        title: "Зміна стилю нікнейму",
-        description:
-          "Зроби себе унікальним та виділись серед інших, градієнт або зміна нікнейму.",
-        image: "/support-nick-style.jpg",
-        price: "10 ₴",
-        qty: true,
-      },
-      {
-        order: 5,
-        title: "Нагодуй гравця",
-        description:
-          "Команда /feed — нагодуй будь-кого раз на годину. Ціна за 1 команду.",
-        image: "/support-cmd-feed.jpg",
-        price: "25 ₴",
-        qty: true,
-      },
-      {
-        order: 6,
-        title: "Наковальня будь-де",
-        description:
-          "Команда /anvil — відкрий наковальню де завгодно. Ціна за 1 команду.",
-        image: "/support-cmd-anvil.jpg",
-        price: "25 ₴",
-        qty: true,
-      },
-      {
-        order: 7,
-        title: "Ендерчест будь-де",
-        description:
-          "Команда /enderchest — відкрий свій ендерчест будь-де раз на годину. Ціна за 1 команду.",
-        image: "/support-cmd-enderchest.jpg",
-        price: "25 ₴",
-        qty: true,
-      },
-      {
-        order: 8,
-        title: "Телепорт на спавн",
-        description:
-          "Команда /spawn — миттєво перенесись на спавн раз на 2 години. Ціна за 1 команду.",
-        image: "/support-cmd-spawn.jpg",
-        price: "25 ₴",
-        qty: true,
-      },
-      {
-        order: 9,
-        title: "Кастомний підпис предмета",
-        description:
-          "Кастомна назва (підпис) для твого предмета в грі — зроби його унікальним.",
-        image: "/support-item-rename.jpg",
-        price: "15 ₴",
-        qty: true,
-      },
-    ] as const;
-    for (const s of seeds) {
-      const tiersJson = JSON.stringify(
-        "tiers" in s && Array.isArray(s.tiers)
-          ? s.tiers
-          : [{ label: "", price_label: s.price }],
-      );
-      await sql`
-        INSERT INTO support_cards (
-          sort_order, title, description, image_url, price_label, price_tiers,
-          button_url, quantity_enabled
-        )
-        VALUES (
-          ${s.order},
-          ${s.title},
-          ${s.description},
-          ${s.image},
-          ${s.price},
-          ${tiersJson},
-          ${""},
-          ${s.qty}
-        )
-      `;
-    }
-  }
-
-  // Товар «Кастомний підпис предмета» — додати, якщо ще немає (не затирає адмін-каталог)
-  {
-    const title = "Кастомний підпис предмета";
-    const description =
-      "Кастомна назва (підпис) для твого предмета в грі — зроби його унікальним.";
-    const image = "/support-item-rename.jpg";
-    const price = "15 ₴";
-    const tiersJson = JSON.stringify([{ label: "", price_label: price }]);
-    await sql`
-      INSERT INTO support_cards (
-        sort_order, title, description, image_url, price_label, price_tiers,
-        button_url, quantity_enabled
-      )
-      SELECT
-        COALESCE((SELECT MAX(sort_order) FROM support_cards), 0) + 1,
-        ${title},
-        ${description},
-        ${image},
-        ${price},
-        ${tiersJson},
-        ${""},
-        ${true}
-      WHERE NOT EXISTS (
-        SELECT 1 FROM support_cards
-        WHERE lower(trim(title)) = lower(${title})
-      )
-    `;
-    await sql`
-      UPDATE support_cards
-      SET
-        image_url = ${image},
-        description = ${description},
-        price_label = ${price},
-        price_tiers = ${tiersJson},
-        updated_at = NOW()
-      WHERE lower(trim(title)) = lower(${title})
-        AND (
-          image_url IS DISTINCT FROM ${image}
-          OR price_label IS DISTINCT FROM ${price}
-        )
-    `;
-  }
+  // Каталог підтримки: схема + seed, якщо порожньо
+  await ensureSupportCardsReady(sql);
 
   // Seed settings defaults
   const defaults: Record<string, string> = {
@@ -550,8 +610,8 @@ export type SupportCardInput = {
 };
 
 export async function listSupportCards(): Promise<SupportCardRecord[]> {
-  await ensureCmsTables();
   const sql = getSql();
+  await ensureSupportCardsReady(sql);
   const rows = rowsOf(await sql`
     SELECT
       id, sort_order, title, description, image_url, price_label, price_tiers,
@@ -575,8 +635,8 @@ export async function listSupportCards(): Promise<SupportCardRecord[]> {
 export async function replaceSupportCards(
   items: SupportCardInput[],
 ): Promise<SupportCardRecord[]> {
-  await ensureCmsTables();
   const sql = getSql();
+  await ensureSupportCardsTable(sql);
   await sql`DELETE FROM support_cards`;
   for (const item of items) {
     const tiers = normalizePriceTiers(item.price_tiers ?? []);

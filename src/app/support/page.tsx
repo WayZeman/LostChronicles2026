@@ -28,11 +28,13 @@ export default async function SupportPage() {
   let leaderboard: Awaited<ReturnType<typeof listSupportersLeaderboard>> = [];
 
   try {
-    const [list, support] = await Promise.all([
-      listSupportCards(),
-      getSupportSettings(),
-    ]);
-    cards = list;
+    cards = await listSupportCards();
+  } catch (e) {
+    console.error("[support] listSupportCards failed", e);
+  }
+
+  try {
+    const support = await getSupportSettings();
     if (
       support.blurb.trim() &&
       support.blurb.trim() !==
@@ -40,8 +42,8 @@ export default async function SupportPage() {
     ) {
       blurb = support.blurb.trim();
     }
-  } catch {
-    /* empty / fallback */
+  } catch (e) {
+    console.error("[support] getSupportSettings failed", e);
   }
 
   try {
