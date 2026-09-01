@@ -1,6 +1,7 @@
 import { getSql } from "@/lib/db";
 import { normalizeRole, type UserRole } from "@/lib/admin-role";
 import {
+  notifyProposalEndingSoonBatch,
   notifyProposalResultsBatch,
   notifyProposalTieExtendedBatch,
   type ProposalExpiredNotifyRow,
@@ -78,6 +79,10 @@ async function ensurePollSchema(): Promise<void> {
   await sql`
     ALTER TABLE proposals
     ADD COLUMN IF NOT EXISTS cancel_reason TEXT
+  `;
+  await sql`
+    ALTER TABLE proposals
+    ADD COLUMN IF NOT EXISTS ending_soon_notified_at TIMESTAMPTZ
   `;
   pollSchemaEnsured = true;
 }
@@ -261,7 +266,8 @@ async function reopenTiedClosedProposals(): Promise<number> {
     UPDATE proposals
     SET
       status = 'active',
-      ends_at = NOW() + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
+      ends_at = NOW() + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS}),
+      ending_soon_notified_at = NULL
     WHERE id = ANY(${reopenIds})
       AND status = 'closed'
   `;
@@ -339,7 +345,9 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
     const extendIds = toExtend.map((x) => x.id);
     await sql`
       UPDATE proposals
-      SET ends_at = GREATEST(ends_at, NOW()) + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS})
+      SET
+        ends_at = GREATEST(ends_at, NOW()) + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS}),
+        ending_soon_notified_at = NULL
       WHERE id = ANY(${extendIds})
         AND status = 'active'
     `;
@@ -418,8 +426,37 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   return closed;
 }
 
+/** Сповіщення в Discord/Telegram, коли до ends_at лишилась ≤1 год. */
+async function sendProposalEndingSoonReminders(): Promise<number> {
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    UPDATE proposals
+    SET ending_soon_notified_at = NOW()
+    WHERE status = 'active'
+      AND ends_at > NOW()
+      AND ends_at <= NOW() + INTERVAL '1 hour'
+      AND ending_soon_notified_at IS NULL
+    RETURNING id, title, ends_at
+  `);
+  if (rows.length === 0) return 0;
+
+  const batch = rows.map((r) => ({
+    id: num(r.id),
+    title: String(r.title ?? ""),
+    ends_at: asDate(r.ends_at),
+  }));
+
+  try {
+    await notifyProposalEndingSoonBatch(batch);
+  } catch (e) {
+    console.error("[proposals] ending-soon notify failed:", e);
+  }
+  return batch.length;
+}
+
 async function syncProposalLifecycle(): Promise<void> {
   await reopenTiedClosedProposals();
+  await sendProposalEndingSoonReminders();
   await expireActiveProposals();
 }
 
@@ -916,11 +953,15 @@ export async function setUserChoiceVote(params: {
   return true;
 }
 
-/** Для cron: reopen ties + expire (те саме, що й при завантаженні списку). */
-export async function runExpireProposalsUpdate(): Promise<number> {
+/** Для cron: нагадування, reopen ties + expire (те саме, що й при завантаженні списку). */
+export async function runExpireProposalsUpdate(): Promise<{
+  closed: number;
+  endingSoonNotified: number;
+}> {
   await reopenTiedClosedProposals();
+  const endingSoonNotified = await sendProposalEndingSoonReminders();
   const closed = await expireActiveProposals();
-  return closed.length;
+  return { closed: closed.length, endingSoonNotified };
 }
 
 export type ProposalCommentRow = {

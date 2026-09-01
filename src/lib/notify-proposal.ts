@@ -390,6 +390,89 @@ export type ProposalTieExtendedNotifyRow = {
   title: string;
 };
 
+export type ProposalEndingSoonNotifyRow = {
+  id: number;
+  title: string;
+  ends_at: Date;
+};
+
+function formatProposalEndsAtKyiv(endsAt: Date): string {
+  return endsAt.toLocaleString("uk-UA", {
+    timeZone: "Europe/Kyiv",
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
+/** За ~1 год до завершення голосування. */
+export async function notifyProposalEndingSoonDiscord(params: {
+  title: string;
+  proposalId: number;
+  endsAt: Date;
+}): Promise<boolean> {
+  const link = proposalUrl(params.proposalId);
+  const title = escapeDiscordBoldFragment(truncateTitle(params.title));
+  const endsLabel = formatProposalEndsAtKyiv(params.endsAt);
+
+  return postDiscordWebhook({
+    embeds: [
+      {
+        title: "За годину завершується голосування",
+        description:
+          `**${title}**\n\n` +
+          `Завершення о **${endsLabel}** (за київським часом).\n\n` +
+          `[Голосувати на сайті ↗](${link})`,
+        color: 0xfee75c,
+        footer: { text: "Lost Chronicles" },
+      },
+    ],
+  });
+}
+
+export async function notifyProposalEndingSoonTelegram(params: {
+  title: string;
+  proposalId: number;
+  endsAt: Date;
+}): Promise<boolean> {
+  const link = proposalUrl(params.proposalId);
+  const title = escapeTelegramHtml(truncateTitle(params.title));
+  const endsLabel = escapeTelegramHtml(formatProposalEndsAtKyiv(params.endsAt));
+  const safeLink = escapeTelegramHtml(link);
+
+  const html =
+    `<b>За годину завершується голосування</b>\n` +
+    `<i>Час добігати кінця — встигніть проголосувати</i>\n\n` +
+    `<b>${title}</b>\n\n` +
+    `Завершення о <b>${endsLabel}</b> (за київським часом).\n\n` +
+    `<a href="${safeLink}">Голосувати на сайті ↗</a>\n\n` +
+    `<i>Lost Chronicles</i>`;
+
+  return postTelegramHtml(html);
+}
+
+export async function notifyProposalEndingSoonBatch(
+  rows: ProposalEndingSoonNotifyRow[],
+): Promise<void> {
+  if (rows.length === 0) return;
+  for (const row of rows) {
+    await Promise.all([
+      notifyProposalEndingSoonDiscord({
+        title: row.title,
+        proposalId: row.id,
+        endsAt: row.ends_at,
+      }),
+      notifyProposalEndingSoonTelegram({
+        title: row.title,
+        proposalId: row.id,
+        endsAt: row.ends_at,
+      }),
+    ]);
+  }
+}
+
 /** Після автоматичного закриття (термін вичерпано) — послідовно, щоб не губити вебхуки. */
 export async function notifyProposalResultsBatch(
   rows: ProposalExpiredNotifyRow[],

@@ -3,6 +3,10 @@
     {
       "path": "/api/mono-check",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/close-proposals",
+      "schedule": "0 * * * *"
     }
   ],
   "redirects": [
