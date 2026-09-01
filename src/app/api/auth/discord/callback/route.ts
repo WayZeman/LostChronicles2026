@@ -40,9 +40,12 @@ function clearOAuthNextCookie(res: NextResponse): void {
 export async function GET(req: Request) {
   const base = getRequestOrigin(req);
   const redirectUri = buildDiscordRedirectUri(base);
+  const jar = await cookies();
   const fail = (error: string) => {
+    const nextStored = jar.get(OAUTH_NEXT_COOKIE)?.value;
+    const nextPath = sanitizeOAuthNextPath(nextStored) ?? "/proposals";
     const res = NextResponse.redirect(
-      `${base}${authRequiredPath("/proposals", error)}`,
+      `${base}${authRequiredPath(nextPath, error)}`,
     );
     clearOAuthStateCookie(res);
     clearOAuthNextCookie(res);
@@ -52,7 +55,6 @@ export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get("code");
   const state = searchParams.get("state");
-  const jar = await cookies();
   const stored = jar.get(OAUTH_STATE_COOKIE)?.value;
 
   if (!code || !state || !stored || state !== stored) {

@@ -591,7 +591,7 @@ export type SupportLeaderboardEntry = {
 };
 
 /**
- * Загальний рейтинг підтримки: усі ніки з paid/pending замовленнями.
+ * Загальний рейтинг підтримки: лише оплачені замовлення.
  */
 export async function listSupportersLeaderboard(): Promise<
   SupportLeaderboardEntry[]
@@ -614,7 +614,7 @@ export async function listSupportersLeaderboard(): Promise<
           SUM(amount_kopecks)::int AS total_kopecks,
           COUNT(*)::int AS orders
         FROM support_orders
-        WHERE status IN ('paid', 'pending')
+        WHERE status IN ('paid')
           AND TRIM(nickname) <> ''
           AND LOWER(TRIM(nickname)) NOT IN ('тест', 'test')
         GROUP BY LOWER(TRIM(nickname))

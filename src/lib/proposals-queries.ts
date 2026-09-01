@@ -1,5 +1,6 @@
 import { getSql } from "@/lib/db";
 import { normalizeRole, type UserRole } from "@/lib/admin-role";
+import { gameNicknameError } from "@/lib/game-nickname";
 import {
   notifyProposalEndingSoonBatch,
   notifyProposalResultsBatch,
@@ -411,6 +412,11 @@ async function syncProposalLifecycle(): Promise<void> {
   await expireActiveProposals();
 }
 
+/** Легке закриття прострочених active — без reopen/нагадувань (економія Neon). */
+export async function syncExpiredProposalsOnRead(): Promise<void> {
+  await expireActiveProposals();
+}
+
 export type ProposalQueryOptions = {
   /** Явно запустити закриття/нагадування (cron, мутації). Читання — без lifecycle. */
   syncLifecycle?: boolean;
@@ -512,21 +518,65 @@ export function isProposalVotingOpen(row: {
   return new Date(row.ends_at).getTime() > Date.now();
 }
 
-/** Дострокове закриття лише автором, поки статус active (незалежно від ends_at). */
+/** Дострокове закриття автором з тими ж правилами кворуму, що й cron. */
 export async function closeProposalByAuthor(
   proposalId: number,
   userId: number,
 ): Promise<boolean> {
   const sql = getSql();
   const rows = rowsOf(await sql`
-    UPDATE proposals
-    SET status = 'closed'
-    WHERE id = ${proposalId}
-      AND user_id = ${userId}
-      AND status = 'active'
+    SELECT
+      p.id,
+      p.title,
+      COALESCE(p.kind, 'yes_no') AS kind,
+      COALESCE(COUNT(v.id), 0)::int AS total_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 1 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS yes_votes,
+      COALESCE(SUM(CASE WHEN v.vote = 0 AND v.option_id IS NULL THEN 1 ELSE 0 END), 0)::int AS no_votes
+    FROM proposals p
+    LEFT JOIN votes v ON v.proposal_id = p.id
+    WHERE p.id = ${proposalId}
+      AND p.user_id = ${userId}
+      AND p.status = 'active'
+    GROUP BY p.id, p.title, p.kind
+    LIMIT 1
+  `);
+  const row = rows[0];
+  if (!row) return false;
+
+  const id = num(row.id);
+  const kind = mapKind(row.kind);
+  const total = num(row.total_votes);
+  const yes = num(row.yes_votes);
+  const no = num(row.no_votes);
+
+  if (total < PROPOSAL_MIN_VOTES_FOR_RESULT) {
+    const updated = rowsOf(await sql`
+      UPDATE proposals SET status = 'cancelled'
+      WHERE id = ${id} AND user_id = ${userId} AND status = 'active'
+      RETURNING id
+    `);
+    return updated.length > 0;
+  }
+
+  const tied = await isQuorumTie({ id, kind, yes, no, total });
+  if (tied) {
+    const updated = rowsOf(await sql`
+      UPDATE proposals
+      SET
+        ends_at = GREATEST(ends_at, NOW()) + make_interval(days => ${PROPOSAL_TIE_EXTENSION_DAYS}),
+        ending_soon_notified_at = NULL
+      WHERE id = ${id} AND user_id = ${userId} AND status = 'active'
+      RETURNING id
+    `);
+    return updated.length > 0;
+  }
+
+  const updated = rowsOf(await sql`
+    UPDATE proposals SET status = 'closed'
+    WHERE id = ${id} AND user_id = ${userId} AND status = 'active'
     RETURNING id
   `);
-  return rows.length > 0;
+  return updated.length > 0;
 }
 
 export type AdminProposalListItem = {
@@ -704,12 +754,7 @@ export async function getUserPublicById(id: number): Promise<{
       ? null
       : String(r.game_nickname);
   const username = String(r.username ?? "");
-  let role = normalizeRole(r.role);
-  const nickLower = (gameNickname ?? username).trim().toLowerCase();
-  if (nickLower === "way_zeman" && role !== "admin") {
-    await sql`UPDATE users SET role = 'admin' WHERE id = ${id}`;
-    role = "admin";
-  }
+  const role = normalizeRole(r.role);
   return {
     id: num(r.id),
     username,
@@ -747,6 +792,10 @@ export async function updateUserProfile(params: {
 
   if (params.gameNickname !== undefined) {
     const nick = params.gameNickname.trim();
+    const nickErr = gameNicknameError(nick);
+    if (nickErr) {
+      return { ok: false, error: nickErr };
+    }
     try {
       await sql`
         UPDATE users

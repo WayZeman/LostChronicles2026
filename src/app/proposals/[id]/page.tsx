@@ -165,6 +165,7 @@ export default function ProposalDetailPage() {
   const [proposal, setProposal] = useState<ProposalDetail | null>(null);
   const [me, setMe] = useState<Me | undefined>(undefined);
   const [notFound, setNotFound] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [voteBusy, setVoteBusy] = useState(false);
   const [closeBusy, setCloseBusy] = useState(false);
   const [deleteBusy, setDeleteBusy] = useState(false);
@@ -184,6 +185,7 @@ export default function ProposalDetailPage() {
 
   const loadProposal = useCallback(async () => {
     if (!id) return;
+    setLoadFailed(false);
     try {
       const res = await fetch(`/api/proposals/${id}`, {
         credentials: "include",
@@ -194,6 +196,7 @@ export default function ProposalDetailPage() {
         return;
       }
       if (!res.ok) {
+        setLoadFailed(true);
         setProposal(null);
         return;
       }
@@ -201,6 +204,7 @@ export default function ProposalDetailPage() {
       setProposal(data.proposal);
       setNotFound(false);
     } catch {
+      setLoadFailed(true);
       setProposal(null);
     }
   }, [id]);
@@ -651,7 +655,22 @@ export default function ProposalDetailPage() {
     return (
       <main className={lcPageMainClass}>
         <div className="site-container mx-auto max-w-2xl px-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] py-12">
-          <div className={cn(lcGlassPanelClass, "h-56 animate-pulse")} />
+          {loadFailed ? (
+            <div className={cn(lcGlassPanelClass, "space-y-4 p-6 text-center")}>
+              <p className="text-[var(--mc-text-muted)]">
+                Не вдалося завантажити голосування. Спробуй ще раз.
+              </p>
+              <button
+                type="button"
+                onClick={() => void loadProposal()}
+                className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center px-5 text-sm font-bold"
+              >
+                Повторити
+              </button>
+            </div>
+          ) : (
+            <div className={cn(lcGlassPanelClass, "h-56 animate-pulse")} />
+          )}
         </div>
       </main>
     );

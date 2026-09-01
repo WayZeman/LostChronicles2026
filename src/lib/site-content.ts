@@ -370,32 +370,36 @@ async function ensureCmsTables(): Promise<void> {
       AND value = ${"Голос у каталогах або донат — обидва варіанти допомагають."}
   `;
 
-  // Власник
-  await sql`
-    UPDATE users
-    SET role = 'admin'
-    WHERE role IS DISTINCT FROM 'admin'
-      AND (
-        lower(trim(coalesce(game_nickname, ''))) = 'way_zeman'
-        OR lower(trim(coalesce(username, ''))) = 'way_zeman'
-        OR lower(replace(trim(coalesce(username, '')), ' ', '_')) LIKE 'way_zeman%'
-      )
-  `;
+  // Власник: лише явні ID з env (без ескалації за ніком)
+  const superIds = (process.env.SUPER_ADMIN_USER_IDS ?? "")
+    .split(",")
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isInteger(n) && n > 0);
+  if (superIds.length > 0) {
+    await sql`
+      UPDATE users
+      SET role = 'admin'
+      WHERE id = ANY(${superIds})
+        AND role IS DISTINCT FROM 'admin'
+    `;
+  }
 
   cmsEnsured = true;
 }
 
 export async function promoteSuperAdmins(): Promise<void> {
+  const superIds = (process.env.SUPER_ADMIN_USER_IDS ?? "")
+    .split(",")
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isInteger(n) && n > 0);
+  if (superIds.length === 0) return;
   await ensureCmsTables();
   const sql = getSql();
   await sql`
     UPDATE users
     SET role = 'admin'
-    WHERE role IS DISTINCT FROM 'admin'
-      AND (
-        lower(trim(coalesce(game_nickname, ''))) = 'way_zeman'
-        OR lower(trim(coalesce(username, ''))) = 'way_zeman'
-      )
+    WHERE id = ANY(${superIds})
+      AND role IS DISTINCT FROM 'admin'
   `;
 }
 

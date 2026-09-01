@@ -16,10 +16,14 @@ function expectedSecret(): string {
   );
 }
 
-/** Telegram webhook: команди /anketa для заявок з сайту. */
+/** POST = Telegram webhook. У production секрет обовʼязковий. */
 export async function POST(req: Request) {
   const expected = expectedSecret();
-  if (expected) {
+  if (!expected) {
+    if (process.env.NODE_ENV === "production") {
+      return NextResponse.json({ error: "Webhook not configured" }, { status: 503 });
+    }
+  } else {
     const got = req.headers.get("x-telegram-bot-api-secret-token") || "";
     if (got !== expected) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });

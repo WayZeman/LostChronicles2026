@@ -7,6 +7,7 @@ import {
   listProposalVoters,
   setUserChoiceVote,
   setUserVote,
+  syncExpiredProposalsOnRead,
   userHasGameNickname,
 } from "@/lib/proposals-queries";
 import { resolveUserAvatarUrl } from "@/lib/user-avatar";
@@ -84,6 +85,7 @@ export async function POST(
       );
     }
 
+    await syncExpiredProposalsOnRead();
     const p = await getProposalForUser(id, userId);
     if (!p) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

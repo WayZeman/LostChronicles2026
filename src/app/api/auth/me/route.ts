@@ -42,7 +42,7 @@ export async function GET() {
     });
   } catch {
     return NextResponse.json(
-      { error: "Database unavailable", user: null },
+      { error: "Database unavailable", user: null, unavailable: true },
       { status: 503 },
     );
   }

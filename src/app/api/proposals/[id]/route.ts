@@ -6,6 +6,7 @@ import {
   getProposalForUser,
   isProposalVotingOpen,
   listProposalVoters,
+  syncExpiredProposalsOnRead,
 } from "@/lib/proposals-queries";
 import { resolveUserAvatarUrl } from "@/lib/user-avatar";
 
@@ -60,6 +61,7 @@ export async function GET(
 
   try {
     const userId = await getSessionUserIdFromCookies();
+    await syncExpiredProposalsOnRead();
     const p = await getProposalForUser(id, userId);
     if (!p) {
       return NextResponse.json({ error: "Not found" }, { status: 404 });

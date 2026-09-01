@@ -15,6 +15,12 @@ type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, ctx: Ctx) {
   try {
+    const userId = await requireWikiEditorUserId(
+      await getSessionUserIdFromCookies(),
+    );
+    if (!userId) {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
     const id = Number((await ctx.params).id);
     if (!Number.isFinite(id)) {
       return NextResponse.json({ error: "Bad id" }, { status: 400 });

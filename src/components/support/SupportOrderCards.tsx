@@ -5,6 +5,7 @@ import { ShoppingBag, ShoppingCart, Trash2, X } from "lucide-react";
 
 import { LcModalPortal } from "@/components/site/LcModalPortal";
 import { AUTH_ME_CHANGED_EVENT } from "@/lib/auth-me-events";
+import { fetchAuthMe } from "@/lib/fetch-auth-me";
 import { authRequiredPath } from "@/lib/auth-paths";
 import {
   effectivePriceTiers,
@@ -122,25 +123,16 @@ export function SupportOrderCards({ cards }: Props) {
 
   useEffect(() => {
     async function loadMe() {
-      try {
-        const res = await fetch("/api/auth/me", { credentials: "include" });
-        const data = (await res.json()) as {
-          user?: {
-            gameNickname: string | null;
-            needsNickname: boolean;
-          } | null;
-        };
-        setMe(
-          data.user
-            ? {
-                gameNickname: data.user.gameNickname,
-                needsNickname: Boolean(data.user.needsNickname),
-              }
-            : null,
-        );
-      } catch {
-        setMe(null);
-      }
+      const { user, unavailable } = await fetchAuthMe();
+      if (unavailable) return;
+      setMe(
+        user
+          ? {
+              gameNickname: user.gameNickname,
+              needsNickname: Boolean(user.needsNickname),
+            }
+          : null,
+      );
     }
     void loadMe();
     const onChange = () => void loadMe();

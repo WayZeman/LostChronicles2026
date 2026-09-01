@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { authorizeCronRequest } from "@/lib/cron-auth";
 import {
   notifySupportOrderPaidTelegram,
   notifyUnmatchedDonationTelegram,
@@ -81,7 +82,10 @@ async function notifyDiscordDonation(
  * Перевірка балансу банки Monobank:
  * зіставляє приріст з pending-замовленнями /support і шле в Telegram (@serveranketbot).
  */
-export async function GET() {
+export async function GET(req: Request) {
+  const denied = authorizeCronRequest(req);
+  if (denied) return denied;
+
   const token = process.env.MONO_TOKEN?.trim();
   const jarId = process.env.MONO_JAR_ID?.trim();
   const webhook = process.env.DISCORD_WEBHOOK?.trim();
