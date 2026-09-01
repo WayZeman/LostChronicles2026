@@ -47,9 +47,21 @@ export function ProposalsListClient() {
     const id = requestAnimationFrame(() => {
       void load();
     });
-    const t = setInterval(() => void load(), 8000);
+
+    const POLL_MS = 45_000;
+    const tick = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") void load();
+    };
+
+    document.addEventListener("visibilitychange", onVis);
+    const t = setInterval(tick, POLL_MS);
+
     return () => {
       cancelAnimationFrame(id);
+      document.removeEventListener("visibilitychange", onVis);
       clearInterval(t);
     };
   }, [load]);

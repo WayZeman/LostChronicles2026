@@ -38,7 +38,7 @@ export async function POST(
       );
     }
 
-    const p = await getProposalForUser(id, userId, { skipLifecycleSync: true });
+    const p = await getProposalForUser(id, userId);
     if (p) {
       const summary =
         p.kind === "choice"

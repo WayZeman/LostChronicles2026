@@ -285,8 +285,23 @@ export default function ProposalDetailPage() {
 
   useEffect(() => {
     if (!id || notFound) return;
-    const t = setInterval(() => void pollStats(), 4000);
-    return () => clearInterval(t);
+
+    const POLL_MS = 30_000;
+    const tick = () => {
+      if (document.visibilityState === "visible") void pollStats();
+    };
+    const onVis = () => {
+      if (document.visibilityState === "visible") void pollStats();
+    };
+
+    void pollStats();
+    document.addEventListener("visibilitychange", onVis);
+    const t = setInterval(tick, POLL_MS);
+
+    return () => {
+      document.removeEventListener("visibilitychange", onVis);
+      clearInterval(t);
+    };
   }, [id, notFound, pollStats]);
 
   const loadComments = useCallback(async () => {

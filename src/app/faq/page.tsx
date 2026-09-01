@@ -19,7 +19,7 @@ import { buildLcPageMetadata } from "@/lib/seo";
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 import { cn } from "@/lib/utils";
 
-export const revalidate = 120;
+export const revalidate = 300;
 
 export const metadata: Metadata = buildLcPageMetadata({
   title: LC_SEO_FAQ_TITLE,

@@ -26,64 +26,15 @@ function rowsOf(r: unknown): Record<string, unknown>[] {
 let authProviderColumnsEnsured = false;
 let pollSchemaEnsured = false;
 
-/** Discord + Google: discord_id nullable, google_id unique. */
+/** Discord + Google: колонки з db/migrations — без runtime DDL. */
 async function ensureAuthProviderColumns(): Promise<void> {
   if (authProviderColumnsEnsured) return;
-  const sql = getSql();
-  await sql`ALTER TABLE users ALTER COLUMN discord_id DROP NOT NULL`;
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS google_id VARCHAR(64)`;
-  await sql`ALTER TABLE users ALTER COLUMN avatar TYPE VARCHAR(512)`;
-  await sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS users_google_id_uidx
-    ON users (google_id)
-  `;
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS game_nickname VARCHAR(16)`;
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS custom_avatar TEXT`;
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20)`;
-  await sql`UPDATE users SET role = 'user' WHERE role IS NULL OR trim(role) = ''`;
-  await sql`
-    CREATE UNIQUE INDEX IF NOT EXISTS users_game_nickname_uidx
-    ON users (game_nickname)
-    WHERE game_nickname IS NOT NULL
-  `;
   authProviderColumnsEnsured = true;
 }
 
-/** kind + proposal_options + votes.option_id */
+/** kind + proposal_options: схема з db/migrations — без runtime DDL. */
 async function ensurePollSchema(): Promise<void> {
   if (pollSchemaEnsured) return;
-  const sql = getSql();
-  await sql`
-    ALTER TABLE proposals
-    ADD COLUMN IF NOT EXISTS kind VARCHAR(20) NOT NULL DEFAULT 'yes_no'
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS proposal_options (
-      id SERIAL PRIMARY KEY,
-      proposal_id INT NOT NULL REFERENCES proposals(id) ON DELETE CASCADE,
-      label VARCHAR(200) NOT NULL,
-      sort_order INT NOT NULL DEFAULT 0
-    )
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_proposal_options_proposal
-    ON proposal_options (proposal_id, sort_order, id)
-  `;
-  await sql`
-    ALTER TABLE votes
-    ADD COLUMN IF NOT EXISTS option_id INT REFERENCES proposal_options(id) ON DELETE CASCADE
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_votes_option ON votes (option_id)
-  `;
-  await sql`
-    ALTER TABLE proposals
-    ADD COLUMN IF NOT EXISTS cancel_reason TEXT
-  `;
-  await sql`
-    ALTER TABLE proposals
-    ADD COLUMN IF NOT EXISTS ending_soon_notified_at TIMESTAMPTZ
-  `;
   pollSchemaEnsured = true;
 }
 
@@ -460,12 +411,20 @@ async function syncProposalLifecycle(): Promise<void> {
   await expireActiveProposals();
 }
 
+export type ProposalQueryOptions = {
+  /** Явно запустити закриття/нагадування (cron, мутації). Читання — без lifecycle. */
+  syncLifecycle?: boolean;
+};
+
 export async function listProposalsForUser(
   currentUserId: number | null,
+  options?: ProposalQueryOptions,
 ): Promise<ProposalRow[]> {
   await ensureAuthProviderColumns();
   await ensurePollSchema();
-  await syncProposalLifecycle();
+  if (options?.syncLifecycle) {
+    await syncProposalLifecycle();
+  }
   const sql = getSql();
   const uid = currentUserId ?? 0;
   const rows = rowsOf(await sql`
@@ -504,11 +463,11 @@ export async function listProposalsForUser(
 export async function getProposalForUser(
   id: number,
   currentUserId: number | null,
-  opts?: { skipLifecycleSync?: boolean },
+  opts?: ProposalQueryOptions,
 ): Promise<ProposalRow | null> {
   await ensureAuthProviderColumns();
   await ensurePollSchema();
-  if (!opts?.skipLifecycleSync) {
+  if (opts?.syncLifecycle) {
     await syncProposalLifecycle();
   }
   const sql = getSql();
@@ -590,7 +549,6 @@ export type AdminProposalListItem = {
 export async function listProposalsForAdmin(): Promise<AdminProposalListItem[]> {
   await ensureAuthProviderColumns();
   await ensurePollSchema();
-  await syncProposalLifecycle();
   const sql = getSql();
   const rows = rowsOf(await sql`
     SELECT
@@ -1009,15 +967,6 @@ let commentParentColumnEnsured = false;
 
 async function ensureCommentParentColumn(): Promise<void> {
   if (commentParentColumnEnsured) return;
-  const sql = getSql();
-  await sql`
-    ALTER TABLE proposal_comments
-    ADD COLUMN IF NOT EXISTS parent_id INT
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS idx_proposal_comments_parent
-    ON proposal_comments (parent_id)
-  `;
   commentParentColumnEnsured = true;
 }
 

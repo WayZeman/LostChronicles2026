@@ -25,7 +25,7 @@ import { WikiArticleView } from "@/components/wiki/WikiArticleView";
 import { WikiMirrorHtml } from "@/components/wiki/WikiMirrorHtml";
 import { buildWikiSlugMetadata } from "@/lib/seo-wiki-meta";
 
-export const revalidate = 60;
+export const revalidate = 300;
 
 export async function generateMetadata({
   params,

@@ -10,8 +10,8 @@ import { listFaqItems } from "@/lib/site-content";
 export const WIKI_PUBLIC_CACHE_TAG = "wiki-public";
 export const FAQ_PUBLIC_CACHE_TAG = "faq-public";
 
-const WIKI_REVALIDATE_SEC = 60;
-const FAQ_REVALIDATE_SEC = 120;
+const WIKI_REVALIDATE_SEC = 300;
+const FAQ_REVALIDATE_SEC = 300;
 
 export const getCachedWikiHomeTree = unstable_cache(
   async () => getWikiHomeTree(),

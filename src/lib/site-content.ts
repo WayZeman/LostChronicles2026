@@ -1,4 +1,5 @@
 import { getSql } from "@/lib/db";
+import { revalidateTag, unstable_cache } from "next/cache";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
 import { LC_DEFAULT_JAVA_SERVER_HOST, LC_DEFAULT_BEDROCK_ADDRESS } from "@/lib/lc-server-defaults";
 import {
@@ -72,98 +73,8 @@ export type FaqItemRecord = {
 async function ensureCmsTables(): Promise<void> {
   if (cmsEnsured) return;
   const sql = getSql();
-  await sql`ALTER TABLE users ADD COLUMN IF NOT EXISTS role VARCHAR(20)`;
-  await sql`UPDATE users SET role = 'user' WHERE role IS NULL OR trim(role) = ''`;
-  await sql`
-    CREATE INDEX IF NOT EXISTS users_role_idx ON users (role)
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS faq_items (
-      id SERIAL PRIMARY KEY,
-      sort_order INT NOT NULL DEFAULT 0,
-      question VARCHAR(500) NOT NULL,
-      answer_html TEXT NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS faq_items_sort_idx ON faq_items (sort_order, id)
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS site_settings (
-      key VARCHAR(64) PRIMARY KEY,
-      value TEXT NOT NULL,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
 
-  await sql`
-    CREATE TABLE IF NOT EXISTS support_cards (
-      id SERIAL PRIMARY KEY,
-      sort_order INT NOT NULL DEFAULT 0,
-      title VARCHAR(200) NOT NULL,
-      description TEXT NOT NULL,
-      image_url TEXT NOT NULL,
-      price_label VARCHAR(64) NOT NULL,
-      button_url TEXT NOT NULL DEFAULT '',
-      quantity_enabled BOOLEAN NOT NULL DEFAULT TRUE,
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  await sql`
-    ALTER TABLE support_cards
-    ADD COLUMN IF NOT EXISTS quantity_enabled BOOLEAN NOT NULL DEFAULT TRUE
-  `;
-  await sql`
-    ALTER TABLE support_cards
-    ADD COLUMN IF NOT EXISTS price_tiers TEXT NOT NULL DEFAULT '[]'
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS support_cards_sort_idx
-    ON support_cards (sort_order, id)
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS support_orders (
-      id SERIAL PRIMARY KEY,
-      card_id INT REFERENCES support_cards(id) ON DELETE SET NULL,
-      card_title VARCHAR(200) NOT NULL,
-      price_label VARCHAR(64) NOT NULL,
-      amount_kopecks INT NOT NULL,
-      quantity INT NOT NULL DEFAULT 1,
-      nickname VARCHAR(64) NOT NULL,
-      note TEXT NOT NULL DEFAULT '',
-      status VARCHAR(20) NOT NULL DEFAULT 'pending',
-      paid_at TIMESTAMPTZ,
-      notified_at TIMESTAMPTZ,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  await sql`
-    ALTER TABLE support_orders
-    ADD COLUMN IF NOT EXISTS quantity INT NOT NULL DEFAULT 1
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS support_orders_pending_amount_idx
-    ON support_orders (status, amount_kopecks, created_at)
-  `;
-  await sql`
-    CREATE TABLE IF NOT EXISTS support_order_items (
-      id SERIAL PRIMARY KEY,
-      order_id INT NOT NULL REFERENCES support_orders(id) ON DELETE CASCADE,
-      card_id INT REFERENCES support_cards(id) ON DELETE SET NULL,
-      card_title VARCHAR(200) NOT NULL,
-      price_label VARCHAR(64) NOT NULL,
-      unit_kopecks INT NOT NULL,
-      quantity INT NOT NULL DEFAULT 1,
-      line_kopecks INT NOT NULL
-    )
-  `;
-  await sql`
-    CREATE INDEX IF NOT EXISTS support_order_items_order_idx
-    ON support_order_items (order_id)
-  `;
-
-  // Seed FAQ з коду, якщо таблиця порожня
+  // Seed / patch — схема лише через db/migrations (без runtime DDL).
   const faqCount = rowsOf(await sql`SELECT COUNT(*)::int AS c FROM faq_items`);
   if (num(faqCount[0]?.c) === 0) {
     for (const item of LOST_CHRONICLES_FAQ) {
@@ -492,14 +403,41 @@ export async function replaceFaqItems(
   return listFaqItems();
 }
 
-async function getSetting(key: string): Promise<string | null> {
+async function loadSiteSettingsMap(): Promise<Map<string, string>> {
   await ensureCmsTables();
   const sql = getSql();
-  const rows = rowsOf(await sql`
-    SELECT value FROM site_settings WHERE key = ${key} LIMIT 1
-  `);
-  const v = rows[0]?.value;
-  return v == null ? null : String(v);
+  const rows = rowsOf(await sql`SELECT key, value FROM site_settings`);
+  const map = new Map<string, string>();
+  for (const r of rows) {
+    map.set(String(r.key), String(r.value ?? ""));
+  }
+  return map;
+}
+
+const SITE_SETTINGS_CACHE_TAG = "site-settings";
+const SITE_SETTINGS_REVALIDATE_SEC = 300;
+
+const getCachedSiteSettingsMap = unstable_cache(
+  loadSiteSettingsMap,
+  ["site-settings-map-v1"],
+  {
+    revalidate: SITE_SETTINGS_REVALIDATE_SEC,
+    tags: [SITE_SETTINGS_CACHE_TAG],
+  },
+);
+
+export function revalidateSiteSettingsCache(): void {
+  try {
+    revalidateTag(SITE_SETTINGS_CACHE_TAG, { expire: 0 });
+  } catch {
+    /* ignore */
+  }
+}
+
+async function getSetting(key: string): Promise<string | null> {
+  const map = await getCachedSiteSettingsMap();
+  const v = map.get(key);
+  return v == null || v === "" ? null : v;
 }
 
 async function setSetting(key: string, value: string): Promise<void> {
@@ -512,6 +450,7 @@ async function setSetting(key: string, value: string): Promise<void> {
       value = EXCLUDED.value,
       updated_at = NOW()
   `;
+  revalidateSiteSettingsCache();
 }
 
 function parseCatalogLinks(raw: string | null): CatalogVoteLink[] {

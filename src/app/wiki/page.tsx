@@ -12,8 +12,8 @@ import { WikiHomeStructured } from "@/components/wiki/WikiHomeStructured";
 import { LC_SEO_WIKI_TITLE } from "@/data/lc-seo-terms";
 import { buildLcPageMetadata } from "@/lib/seo";
 
-/** Публічна вікі: ISR ~1 хв + data cache (див. public-content-cache). */
-export const revalidate = 60;
+/** Публічна вікі: ISR ~5 хв + data cache (див. public-content-cache). */
+export const revalidate = 300;
 
 export const metadata: Metadata = buildLcPageMetadata({
   title: LC_SEO_WIKI_TITLE,
