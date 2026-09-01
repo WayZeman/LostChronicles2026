@@ -1,11 +1,9 @@
 import type { MetadataRoute } from "next";
 
 import { LC_MARKETING_HOST } from "@/lib/lc-domains";
-import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
+import { lcSitemapPublicUrl } from "@/lib/lc-sitemap-entries";
 
 export default function robots(): MetadataRoute.Robots {
-  const base = getLcMarketingSiteUrl();
-
   return {
     rules: [
       {
@@ -22,7 +20,7 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
     ],
-    sitemap: `${base}/sitemap.xml`,
+    sitemap: lcSitemapPublicUrl(),
     host: LC_MARKETING_HOST,
   };
 }

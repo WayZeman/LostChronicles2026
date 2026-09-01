@@ -22,7 +22,12 @@ function redirectToCanonicalHost(req: NextRequest): NextResponse | null {
   const url = req.nextUrl.clone();
   url.protocol = "https:";
   url.host = LC_MARKETING_HOST;
-  return NextResponse.redirect(url, 301);
+  const response = NextResponse.redirect(url, 301);
+  response.headers.set(
+    "Link",
+    `<https://${LC_MARKETING_HOST}${req.nextUrl.pathname}${req.nextUrl.search}>; rel="canonical"`,
+  );
+  return response;
 }
 
 /** Створення пропозиції / адмінка / редагування вікі — лише для авторизованих. */
