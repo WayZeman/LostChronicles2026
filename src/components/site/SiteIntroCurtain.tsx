@@ -19,7 +19,7 @@ const CRITICAL_ASSETS = [
   "/lc-logo-hero-v2.png",
   "/bg-ivy-stone.jpg",
   "/bg-ivy-stone-portrait.jpg",
-  "/social-mascot.png?v=13",
+  "/social-mascot.png?v=14",
   "/server-online-zombie.png?v=3",
   "/server-status-online.png?v=8",
   "/server-status-offline.png?v=8",

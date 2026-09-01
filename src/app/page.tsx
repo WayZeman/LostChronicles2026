@@ -162,7 +162,7 @@ export default async function Home() {
                 className={cn(
                   lcGlassPanelClass,
                   "lc-interactive-panel-static relative overflow-hidden !p-0",
-                  "lc-skeleton-breathe min-h-[18.5rem] sm:min-h-[22.5rem] md:min-h-[26.5rem]",
+                  "lc-skeleton-breathe min-h-[18.5rem] sm:min-h-[30rem] md:min-h-[32rem]",
                 )}
                 aria-busy
                 aria-label="Завантаження соцмереж"

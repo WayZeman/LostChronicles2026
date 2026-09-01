@@ -22,30 +22,29 @@ export async function HeroSocialPanel() {
 
       <div
         className={cn(
-          "grid min-h-[18.5rem] sm:min-h-[22.5rem] md:min-h-[26.5rem]",
+          "grid min-h-[18.5rem] grid-cols-1",
           latestShort
-            ? "grid-cols-1 sm:grid-cols-[minmax(0,1fr)_auto] sm:grid-rows-[minmax(0,1fr)]"
-            : "grid-cols-1",
+            ? "sm:min-h-[30rem] md:min-h-[32rem] sm:grid-cols-[minmax(0,1fr)_auto] sm:grid-rows-[minmax(0,1fr)]"
+            : "sm:min-h-[30rem] md:min-h-[32rem]",
         )}
       >
-        {/* Ліва частина комірки — фото */}
-        <div className="relative min-h-0 min-w-0 overflow-hidden">
+        <div className="relative min-h-[18.5rem] min-w-0 overflow-hidden bg-[#1a2418]/80 sm:min-h-[30rem] md:min-h-[32rem]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="/social-mascot.png?v=13"
+            src="/social-mascot.png?v=14"
             alt=""
             width={1024}
             height={1024}
             decoding="async"
             className={cn(
-              "pointer-events-none absolute inset-x-0 top-3 z-0 h-[calc(100%+1.25rem)] w-full sm:top-4 sm:h-[calc(100%+1.5rem)]",
-              "object-cover object-[20%_top] select-none sm:object-left-top",
+              "pointer-events-none absolute inset-0 z-0 h-full w-full select-none",
+              "object-cover object-[54%_44%] sm:object-[55%_37%] md:object-[54%_35%]",
             )}
             aria-hidden
           />
 
-          {/* Соцмережі — тільки на фото, знизу по центру */}
-          <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center px-2 pb-3 sm:px-3 sm:pb-4">
+          {/* Іконки на траві внизу фото — не перекривають табличку */}
+          <div className="absolute inset-x-0 bottom-0 z-20 flex justify-center px-2 pb-1.5 sm:px-3 sm:pb-2.5 md:pb-3">
             <HeroSocialLinks hideTitle layout="row" />
           </div>
         </div>
