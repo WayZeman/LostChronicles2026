@@ -1,22 +1,25 @@
-import { LC_MARKETING_SITE_ORIGIN } from "@/lib/lc-domains";
+import {
+  LC_MARKETING_SITE_ORIGIN,
+  resolveLcMarketingSiteUrl,
+} from "@/lib/lc-domains";
 
 /**
  * Публічний URL сайту для SEO (metadataBase, sitemap, JSON-LD).
  * Без завершального /. Не повертає localhost — щоб sitemap/OG не «тікали» на dev.
  */
 export function getLcMarketingSiteUrl(): string {
-  const explicit =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "").trim() || "";
-  if (explicit) return explicit;
-  return LC_MARKETING_SITE_ORIGIN;
+  return resolveLcMarketingSiteUrl();
 }
 
 /** Canonical site origin for OAuth redirects and proposal links (no trailing slash). */
 export function getSiteBaseUrl(): string {
-  const fromEnv =
-    process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/$/, "").trim() || "";
-  if (fromEnv) return fromEnv;
-  if (process.env.NODE_ENV === "production") return LC_MARKETING_SITE_ORIGIN;
+  if (process.env.NODE_ENV === "production") {
+    return resolveLcMarketingSiteUrl();
+  }
+  const fromEnv = resolveLcMarketingSiteUrl();
+  if (fromEnv !== LC_MARKETING_SITE_ORIGIN || process.env.NEXT_PUBLIC_SITE_URL) {
+    return fromEnv;
+  }
   if (process.env.VERCEL_URL)
     return `https://${process.env.VERCEL_URL.replace(/\/$/, "")}`;
   return "http://localhost:3000";

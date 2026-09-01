@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { authRequiredPath, buildOAuthNextFromPath } from "@/lib/auth-paths";
 import { SESSION_COOKIE, verifySessionToken } from "@/lib/auth-session";
-import {
-  LC_LEGACY_MARKETING_HOSTS,
-  LC_MARKETING_HOST,
-} from "@/lib/lc-domains";
+import { isLegacyLcMarketingHost, LC_MARKETING_HOST } from "@/lib/lc-domains";
 
 function redirectToCanonicalHost(req: NextRequest): NextResponse | null {
   const host =
@@ -12,12 +9,7 @@ function redirectToCanonicalHost(req: NextRequest): NextResponse | null {
     req.headers.get("host")?.split(":")[0]?.trim().toLowerCase() ||
     "";
 
-  const isLegacy = (LC_LEGACY_MARKETING_HOSTS as readonly string[]).includes(
-    host,
-  );
-  const isWwwCanonical = host === `www.${LC_MARKETING_HOST}`;
-
-  if (!isLegacy && !isWwwCanonical) return null;
+  if (!isLegacyLcMarketingHost(host)) return null;
 
   const url = req.nextUrl.clone();
   url.protocol = "https:";

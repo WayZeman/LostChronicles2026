@@ -6,13 +6,11 @@
  *   SITEMAP_BASE=https://lost-chronicles.co.ua npx tsx scripts/ping-sitemap.ts
  */
 
-const base = (
-  process.env.SITEMAP_BASE ??
-  process.env.NEXT_PUBLIC_SITE_URL ??
-  "https://lost-chronicles.co.ua"
-)
-  .replace(/\/$/, "")
-  .trim();
+import { resolveLcMarketingSiteUrl } from "../src/lib/lc-domains";
+
+const base = resolveLcMarketingSiteUrl(
+  process.env.SITEMAP_BASE ?? process.env.NEXT_PUBLIC_SITE_URL,
+);
 
 const sitemapUrl = `${base}/sitemap.xml`;
 const robotsUrl = `${base}/robots.txt`;
