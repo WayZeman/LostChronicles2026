@@ -378,9 +378,22 @@ async function expireActiveProposals(): Promise<ProposalExpiredNotifyRow[]> {
   return closed;
 }
 
+let endingSoonColumnEnsured = false;
+
 /** Сповіщення в Discord/Telegram, коли до ends_at лишилась ≤1 год. */
 async function sendProposalEndingSoonReminders(): Promise<number> {
   const sql = getSql();
+  if (!endingSoonColumnEnsured) {
+    try {
+      await sql`
+        ALTER TABLE proposals
+        ADD COLUMN IF NOT EXISTS ending_soon_notified_at TIMESTAMPTZ
+      `;
+    } catch {
+      /* колонка вже є */
+    }
+    endingSoonColumnEnsured = true;
+  }
   const rows = rowsOf(await sql`
     UPDATE proposals
     SET ending_soon_notified_at = NOW()
@@ -412,9 +425,15 @@ async function syncProposalLifecycle(): Promise<void> {
   await expireActiveProposals();
 }
 
-/** Легке закриття прострочених active — без reopen/нагадувань (економія Neon). */
-export async function syncExpiredProposalsOnRead(): Promise<void> {
+/** Легка синхронізація при читанні: нагадування «за годину» + закриття прострочених. */
+export async function syncProposalsOnRead(): Promise<void> {
+  await sendProposalEndingSoonReminders();
   await expireActiveProposals();
+}
+
+/** @deprecated use syncProposalsOnRead */
+export async function syncExpiredProposalsOnRead(): Promise<void> {
+  await syncProposalsOnRead();
 }
 
 export type ProposalQueryOptions = {

@@ -17,7 +17,7 @@ import {
   createProposalRecord,
   getUserPublicById,
   listProposalsForUser,
-  syncExpiredProposalsOnRead,
+  syncProposalsOnRead,
   userHasGameNickname,
 } from "@/lib/proposals-queries";
 
@@ -48,7 +48,7 @@ function serializeProposal(p: Awaited<ReturnType<typeof listProposalsForUser>>[n
 export async function GET() {
   try {
     const userId = await getSessionUserIdFromCookies();
-    await syncExpiredProposalsOnRead();
+    await syncProposalsOnRead();
     const list = await listProposalsForUser(userId);
     return NextResponse.json({
       proposals: list.map(serializeProposal),
