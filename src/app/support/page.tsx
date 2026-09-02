@@ -48,8 +48,8 @@ export default async function SupportPage() {
 
   try {
     leaderboard = await listSupportersLeaderboard();
-  } catch {
-    /* рейтинг опційний */
+  } catch (e) {
+    console.error("[support] listSupportersLeaderboard failed", e);
   }
 
   return (

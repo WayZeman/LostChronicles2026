@@ -591,7 +591,8 @@ export type SupportLeaderboardEntry = {
 };
 
 /**
- * Загальний рейтинг підтримки: лише оплачені замовлення.
+ * Загальний рейтинг підтримки: оплачені + очікують підтвердження Monobank.
+ * Pending лишається в топі, доки mono-check не позначить paid (інакше список порожній).
  */
 export async function listSupportersLeaderboard(): Promise<
   SupportLeaderboardEntry[]
@@ -614,7 +615,7 @@ export async function listSupportersLeaderboard(): Promise<
           SUM(amount_kopecks)::int AS total_kopecks,
           COUNT(*)::int AS orders
         FROM support_orders
-        WHERE status IN ('paid')
+        WHERE status IN ('paid', 'pending')
           AND TRIM(nickname) <> ''
           AND LOWER(TRIM(nickname)) NOT IN ('тест', 'test')
         GROUP BY LOWER(TRIM(nickname))
