@@ -15,11 +15,6 @@ import {
   sendAnketaTelegramText,
 } from "@/lib/notify-application";
 import {
-  notifySupportOrderNotPaidTelegram,
-  notifySupportOrderPaidTelegram,
-  supportOrderToNotifyPayload,
-} from "@/lib/notify-support-order";
-import {
   getSupportOrderById,
   markSupportOrderNotPaid,
   markSupportOrderPaid,
@@ -183,9 +178,7 @@ async function handlePayCommand(
       return true;
     }
 
-    const payload = supportOrderToNotifyPayload(result.order);
     const total = formatUahFromKopecks(result.order.amount_kopecks);
-    await notifySupportOrderPaidTelegram(payload);
     await reply(
       `✅ Чек №${result.order.id} підтверджено\n` +
         `👤 ${result.order.nickname}\n` +
@@ -212,9 +205,6 @@ async function handlePayCommand(
     return true;
   }
 
-  await notifySupportOrderNotPaidTelegram(
-    supportOrderToNotifyPayload(result.order),
-  );
   await reply(
     `❌ Чек №${result.order.id} — оплата не підтверджена\n` +
       `👤 ${result.order.nickname}\n` +
@@ -366,14 +356,11 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
       return true;
     }
 
-    const notified = await notifySupportOrderNotPaidTelegram(
-      supportOrderToNotifyPayload(result.order),
+    await reply(
+      `❌ Чек №${result.order.id} — оплата не підтверджена\n` +
+        `👤 ${result.order.nickname}\n` +
+        `Сума не додана до топу підтримки`,
     );
-    if (!notified) {
-      await reply(
-        `Чек №${result.order.id} скасовано, але сповіщення в чат не пішло.`,
-      );
-    }
     return true;
   }
 
