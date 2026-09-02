@@ -16,9 +16,14 @@ import {
 } from "@/lib/notify-application";
 import {
   notifySupportOrderNotPaidTelegram,
+  notifySupportOrderPaidTelegram,
   supportOrderToNotifyPayload,
 } from "@/lib/notify-support-order";
-import { markSupportOrderNotPaid } from "@/lib/support-orders";
+import {
+  getSupportOrderById,
+  markSupportOrderNotPaid,
+  markSupportOrderPaid,
+} from "@/lib/support-orders";
 
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
 export const ANKETA_BOT_COMMANDS = [
@@ -28,6 +33,7 @@ export const ANKETA_BOT_COMMANDS = [
   { command: "clear", description: "Скинути статус: /clear server 3" },
   { command: "count", description: "Скільки анкет у базі" },
   { command: "delete", description: "Видалити: /delete 12 yes" },
+  { command: "pay", description: "Оплата чека: /pay 19 yes або no" },
   { command: "notpay", description: "Неоплачений чек: /notpay 10" },
   { command: "help", description: "Усі команди" },
 ] as const;
@@ -46,7 +52,10 @@ export function anketaHelpText(): string {
     "/delete 12 yes — видалити\n" +
     "/delete last yes — видалити останню\n\n" +
     "🛒 Магазин / підтримка\n\n" +
-    "/notpay 10 — чек №10 не оплачено (зняти з топу)\n\n" +
+    "/pay 19 — перегляд чека №19\n" +
+    "/pay 19 yes — оплату підтверджено (у топ)\n" +
+    "/pay 19 no — оплата не надійшла\n" +
+    "/notpay 10 — те саме, що /pay 10 no\n\n" +
     "/help — ця підказка\n\n" +
     "Коротко також: /add 12 · /deny 12\n\n" +
     "Статуси в анкеті:\n" +
@@ -60,6 +69,158 @@ export function anketaHelpText(): string {
 
 function helpText(): string {
   return anketaHelpText();
+}
+
+function formatUahFromKopecks(kopecks: number): string {
+  return (kopecks / 100).toLocaleString("uk-UA", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  });
+}
+
+function supportOrderStatusLabelUk(status: string): string {
+  switch (status) {
+    case "paid":
+      return "✅ оплачено";
+    case "pending":
+      return "⏳ очікує оплати";
+    case "cancelled":
+      return "❌ скасовано";
+    case "expired":
+      return "⌛ прострочено";
+    default:
+      return status;
+  }
+}
+
+async function formatSupportOrderPayPreview(orderId: number): Promise<string | null> {
+  const order = await getSupportOrderById(orderId);
+  if (!order) return null;
+  const total = formatUahFromKopecks(order.amount_kopecks);
+  const title =
+    order.items.length > 0
+      ? order.items.map((it) => it.card_title).join(", ")
+      : order.card_title;
+  return (
+    `🧾 Чек №${order.id}\n` +
+    `👤 ${order.nickname || "—"}\n` +
+    `📦 ${title}\n` +
+    `💵 ${total} ₴\n` +
+    `Статус: ${supportOrderStatusLabelUk(order.status)}\n\n` +
+    `Підтвердити оплату:\n/pay ${order.id} yes\n` +
+    `Оплата не надійшла:\n/pay ${order.id} no`
+  );
+}
+
+async function handlePayCommand(
+  arg: string,
+  reply: (body: string) => Promise<boolean>,
+): Promise<boolean> {
+  if (!arg) {
+    await reply(
+      "Вкажи номер чека:\n" +
+        "/pay 19 — перегляд\n" +
+        "/pay 19 yes — оплату підтверджено\n" +
+        "/pay 19 no — оплата не надійшла",
+    );
+    return true;
+  }
+
+  const m = arg.match(/^(\d+)(?:\s+(yes|y|no|n|так|ні|не))?$/i);
+  if (!m) {
+    await reply(
+      "Не зрозумів.\nПриклад: /pay 19 yes\n\n" + helpText(),
+    );
+    return true;
+  }
+
+  const orderId = parseInt(m[1], 10);
+  const decision = (m[2] || "").toLowerCase();
+
+  if (!decision) {
+    const preview = await formatSupportOrderPayPreview(orderId);
+    if (!preview) {
+      await reply(`Немає замовлення (чек) №${orderId}.`);
+      return true;
+    }
+    await reply(preview);
+    return true;
+  }
+
+  const approve = decision === "yes" || decision === "y" || decision === "так";
+  const reject =
+    decision === "no" || decision === "n" || decision === "ні" || decision === "не";
+
+  if (!approve && !reject) {
+    await reply(
+      "Вкажи yes або no:\n/pay 19 yes — оплачено\n/pay 19 no — не оплачено",
+    );
+    return true;
+  }
+
+  if (approve) {
+    const result = await markSupportOrderPaid(orderId);
+    if (!result.ok) {
+      if (result.reason === "not_found") {
+        await reply(`Немає замовлення (чек) №${orderId}.`);
+        return true;
+      }
+      if (result.reason === "already_paid") {
+        await reply(`Чек №${orderId} уже позначено як оплачений.`);
+        return true;
+      }
+      if (result.reason === "cancelled") {
+        await reply(
+          `Чек №${orderId} скасовано. Створіть нове замовлення або відновіть вручну в БД.`,
+        );
+        return true;
+      }
+      if (result.reason === "expired") {
+        await reply(`Чек №${orderId} прострочений (expired).`);
+        return true;
+      }
+      await reply(`Не вдалося підтвердити чек №${orderId}. Спробуй ще раз.`);
+      return true;
+    }
+
+    const payload = supportOrderToNotifyPayload(result.order);
+    const total = formatUahFromKopecks(result.order.amount_kopecks);
+    await notifySupportOrderPaidTelegram(payload);
+    await reply(
+      `✅ Чек №${result.order.id} підтверджено\n` +
+        `👤 ${result.order.nickname}\n` +
+        `💵 ${total} ₴ — додано до топу підтримки`,
+    );
+    return true;
+  }
+
+  const result = await markSupportOrderNotPaid(orderId);
+  if (!result.ok) {
+    if (result.reason === "not_found") {
+      await reply(`Немає замовлення (чек) №${orderId}.`);
+      return true;
+    }
+    if (result.reason === "already_cancelled") {
+      await reply(`Чек №${orderId} уже позначено як неоплачений.`);
+      return true;
+    }
+    if (result.reason === "expired") {
+      await reply(`Чек №${orderId} уже прострочений (expired) і не в топі.`);
+      return true;
+    }
+    await reply(`Не вдалося оновити чек №${orderId}. Спробуй ще раз.`);
+    return true;
+  }
+
+  await notifySupportOrderNotPaidTelegram(
+    supportOrderToNotifyPayload(result.order),
+  );
+  await reply(
+    `❌ Чек №${result.order.id} — оплата не підтверджена\n` +
+      `👤 ${result.order.nickname}\n` +
+      `Сума не додана до топу підтримки`,
+  );
+  return true;
 }
 
 function parseOrdinalArg(arg: string): number | "last" | null {
@@ -79,7 +240,7 @@ function parseAnketaCommand(
   const match = text
     .trim()
     .match(
-      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали|add|deny|reject|clear|reset|notpay)(?:@\w+)?(?:\s+(.+))?$/i,
+      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали|add|deny|reject|clear|reset|notpay|pay|оплата)(?:@\w+)?(?:\s+(.+))?$/i,
     );
   if (!match) return null;
 
@@ -91,6 +252,8 @@ function parseAnketaCommand(
   if (cmd === "del" || cmd === "видалити" || cmd === "видали") cmd = "delete";
   if (cmd === "reject") cmd = "deny";
   if (cmd === "reset") cmd = "clear";
+
+  if (cmd === "оплата") cmd = "pay";
 
   // /anketa count → cmd count; /anketa delete 12 yes → cmd delete
   if (cmd === "anketa" && arg) {
@@ -169,6 +332,10 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
   if (cmd === "help") {
     await reply(helpText());
     return true;
+  }
+
+  if (cmd === "pay") {
+    return handlePayCommand(arg, reply);
   }
 
   if (cmd === "notpay") {

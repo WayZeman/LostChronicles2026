@@ -454,6 +454,63 @@ export type MarkSupportOrderNotPaidResult =
       reason: "not_found" | "already_cancelled" | "expired" | "conflict";
     };
 
+export type MarkSupportOrderPaidResult =
+  | {
+      ok: true;
+      order: SupportOrderRecord;
+      previousStatus: string;
+    }
+  | {
+      ok: false;
+      reason: "not_found" | "already_paid" | "cancelled" | "expired" | "conflict";
+    };
+
+/**
+ * Адмін підтвердив оплату в Telegram (/pay N yes) — потрапляє в топ підтримки.
+ */
+export async function markSupportOrderPaid(
+  id: number,
+): Promise<MarkSupportOrderPaidResult> {
+  if (!Number.isInteger(id) || id < 1) {
+    return { ok: false, reason: "not_found" };
+  }
+  await ensureSupportOrdersTable();
+  const existing = await getSupportOrderById(id);
+  if (!existing) return { ok: false, reason: "not_found" };
+  if (existing.status === "paid") {
+    return { ok: false, reason: "already_paid" };
+  }
+  if (existing.status === "cancelled") {
+    return { ok: false, reason: "cancelled" };
+  }
+  if (existing.status === "expired") {
+    return { ok: false, reason: "expired" };
+  }
+
+  const sql = getSql();
+  const rows = rowsOf(
+    await sql`
+      UPDATE support_orders
+      SET status = 'paid',
+          paid_at = NOW()
+      WHERE id = ${id}
+        AND status = 'pending'
+      RETURNING id
+    `,
+  );
+  if (rows.length < 1) {
+    return { ok: false, reason: "conflict" };
+  }
+
+  const order = await getSupportOrderById(id);
+  if (!order) return { ok: false, reason: "conflict" };
+  return {
+    ok: true,
+    order,
+    previousStatus: existing.status,
+  };
+}
+
 /**
  * Позначити чек як неоплачений (скасовано) — випадає з топу підтримки.
  * Знімається лише це замовлення, інші внески ніку лишаються.

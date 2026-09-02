@@ -138,7 +138,9 @@ export async function notifySupportOrderCreatedTelegram(
     `🛒 <b>НОВЕ ЗАМОВЛЕННЯ</b>\n` +
     `<i>Lost Chronicles · магазин</i>\n\n` +
     buildReceipt(order) +
-    `\n\n⏳ <i>Гравець перейшов до оплати</i>`;
+    `\n\n⏳ <i>Гравець перейшов до оплати</i>\n` +
+    `Підтвердити: <code>/pay ${order.id} yes</code>\n` +
+    `Відхилити: <code>/pay ${order.id} no</code>`;
 
   return sendOrdersTelegramHtml(html);
 }
