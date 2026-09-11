@@ -370,8 +370,12 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
     }
     await reply(
       "⚠️ Не вдалося достукатися до Minecraft.\n" +
-        "Перевір, що LcAnketa 1.2.0 запущений і порт 8787 відкритий.\n" +
-        (result.error ? `Деталі: ${result.error}` : ""),
+        (result.status === 503 &&
+        /secret not configured/i.test(result.error || "")
+          ? "У plugins/LcAnketa/config.yml секрет ще CHANGE_ME.\n" +
+            "Встав secret з готового config.yml і зроби /lcanketa reload."
+          : "Перевір LcAnketa 1.2.0 і webhook-port у панелі «Мережа» (зараз 25552).\n" +
+            (result.error ? `Деталі: ${result.error}` : "")),
     );
     return true;
   }
