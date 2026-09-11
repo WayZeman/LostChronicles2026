@@ -24,6 +24,7 @@ import {
   markSupportOrderNotPaid,
   markSupportOrderPaid,
 } from "@/lib/support-orders";
+import { wakeMinecraftAnketaSync } from "@/lib/minecraft-anketa-wake";
 
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
 export const ANKETA_BOT_COMMANDS = [
@@ -35,6 +36,7 @@ export const ANKETA_BOT_COMMANDS = [
   { command: "delete", description: "Видалити: /delete 12 yes" },
   { command: "pay", description: "Оплата чека: /pay 19 yes або no" },
   { command: "notpay", description: "Неоплачений чек: /notpay 10" },
+  { command: "restart", description: "Перезапуск Minecraft: /restart yes" },
   { command: "help", description: "Усі команди" },
 ] as const;
 
@@ -56,6 +58,9 @@ export function anketaHelpText(): string {
     "/pay 19 yes — оплату підтверджено (у топ)\n" +
     "/pay 19 no — оплата не надійшла\n" +
     "/notpay 10 — те саме, що /pay 10 no\n\n" +
+    "♻️ Сервер\n\n" +
+    "/restart — запит на перезапуск Minecraft\n" +
+    "/restart yes — підтвердити перезапуск\n\n" +
     "/help — ця підказка\n\n" +
     "Коротко також: /add 12 · /deny 12\n\n" +
     "Статуси в анкеті:\n" +
@@ -230,14 +235,14 @@ function parseOrdinalArg(arg: string): number | "last" | null {
   return Number.isFinite(n) && n > 0 ? n : null;
 }
 
-/** Нормалізує /anketa …, /add server N, /count, /help, /delete … */
+/** Нормалізує /anketa …, /add server N, /count, /help, /delete …, /restart */
 function parseAnketaCommand(
   text: string,
 ): { cmd: string; arg: string } | null {
   const match = text
     .trim()
     .match(
-      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали|add|deny|reject|clear|reset|notpay|pay|оплата)(?:@\w+)?(?:\s+(.+))?$/i,
+      /^\/(anketa|анкета|count|help|start|delete|del|допомога|видалити|видали|add|deny|reject|clear|reset|notpay|pay|оплата|restart|reboot|перезапуск)(?:@\w+)?(?:\s+(.+))?$/i,
     );
   if (!match) return null;
 
@@ -251,6 +256,7 @@ function parseAnketaCommand(
   if (cmd === "reset") cmd = "clear";
 
   if (cmd === "оплата") cmd = "pay";
+  if (cmd === "reboot" || cmd === "перезапуск") cmd = "restart";
 
   // /anketa count → cmd count; /anketa delete 12 yes → cmd delete
   if (cmd === "anketa" && arg) {
@@ -328,6 +334,43 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
 
   if (cmd === "help") {
     await reply(helpText());
+    return true;
+  }
+
+  if (cmd === "restart") {
+    const confirmed = /^(yes|y|так|підтверджую|confirm)$/i.test(arg);
+    if (!confirmed) {
+      await reply(
+        "♻️ Це перезапустить Minecraft-сервер і вижене гравців на 1–2 хв.\n\n" +
+          "Підтверди:\n/restart yes",
+      );
+      return true;
+    }
+    const result = await wakeMinecraftAnketaSync("restart");
+    if (result.ok) {
+      await reply(
+        "♻️ Команду перезапуску надіслано на сервер.\n" +
+          "LcAnketa виконає restart за кілька секунд.",
+      );
+      return true;
+    }
+    if (result.status === 429) {
+      await reply(
+        "⏳ Перезапуск уже заплановано або ще діє пауза (~1 хв). Зачекай і спробуй знову.",
+      );
+      return true;
+    }
+    if (result.skipped === "no_url") {
+      await reply(
+        "⚠️ MINECRAFT_ANKETA_WAKE_URL не задано на сайті — сервер не отримав команду.",
+      );
+      return true;
+    }
+    await reply(
+      "⚠️ Не вдалося достукатися до Minecraft.\n" +
+        "Перевір, що LcAnketa 1.2.0 запущений і порт 8787 відкритий.\n" +
+        (result.error ? `Деталі: ${result.error}` : ""),
+    );
     return true;
   }
 
