@@ -333,11 +333,13 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
     sendAnketaTelegramText(body, { chatId, threadId });
 
   if (cmd === "help") {
+    void registerAnketaBotCommands();
     await reply(helpText());
     return true;
   }
 
   if (cmd === "restart") {
+    void registerAnketaBotCommands();
     const confirmed = /^(yes|y|так|підтверджую|confirm)$/i.test(arg);
     if (!confirmed) {
       await reply(
