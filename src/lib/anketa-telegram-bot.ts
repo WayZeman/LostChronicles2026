@@ -29,6 +29,7 @@ import { wakeMinecraftAnketaSync } from "@/lib/minecraft-anketa-wake";
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
 export const ANKETA_BOT_COMMANDS = [
   { command: "anketa", description: "Остання / №N — анкета зі статусом" },
+  { command: "restart", description: "Перезапуск Minecraft: /restart yes" },
   { command: "add", description: "Прийняти: /add server 3" },
   { command: "deny", description: "Відхилити: /deny server 3" },
   { command: "clear", description: "Скинути статус: /clear server 3" },
@@ -36,7 +37,6 @@ export const ANKETA_BOT_COMMANDS = [
   { command: "delete", description: "Видалити: /delete 12 yes" },
   { command: "pay", description: "Оплата чека: /pay 19 yes або no" },
   { command: "notpay", description: "Неоплачений чек: /notpay 10" },
-  { command: "restart", description: "Перезапуск Minecraft: /restart yes" },
   { command: "help", description: "Усі команди" },
 ] as const;
 
