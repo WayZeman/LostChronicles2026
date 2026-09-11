@@ -15,6 +15,11 @@ import {
   sendAnketaTelegramText,
 } from "@/lib/notify-application";
 import {
+  notifySupportOrderNotPaid,
+  notifySupportOrderPaid,
+  supportOrderToNotifyPayload,
+} from "@/lib/notify-support-order";
+import {
   getSupportOrderById,
   markSupportOrderNotPaid,
   markSupportOrderPaid,
@@ -179,6 +184,7 @@ async function handlePayCommand(
     }
 
     const total = formatUahFromKopecks(result.order.amount_kopecks);
+    await notifySupportOrderPaid(supportOrderToNotifyPayload(result.order));
     await reply(
       `✅ Чек №${result.order.id} підтверджено\n` +
         `👤 ${result.order.nickname}\n` +
@@ -205,6 +211,7 @@ async function handlePayCommand(
     return true;
   }
 
+  await notifySupportOrderNotPaid(supportOrderToNotifyPayload(result.order));
   await reply(
     `❌ Чек №${result.order.id} — оплата не підтверджена\n` +
       `👤 ${result.order.nickname}\n` +
@@ -356,6 +363,7 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
       return true;
     }
 
+    await notifySupportOrderNotPaid(supportOrderToNotifyPayload(result.order));
     await reply(
       `❌ Чек №${result.order.id} — оплата не підтверджена\n` +
         `👤 ${result.order.nickname}\n` +

@@ -1,7 +1,12 @@
 /**
- * Сповіщення про замовлення підтримки в Telegram (@serveranketbot).
- * Env: TELEGRAM_ORDERS_BOT_TOKEN + TELEGRAM_ORDERS_CHAT_ID
+ * Сповіщення про замовлення підтримки в Telegram (@serveranketbot) і Discord.
+ * Telegram: TELEGRAM_ORDERS_BOT_TOKEN + TELEGRAM_ORDERS_CHAT_ID
+ * Discord: DISCORD_SUPPORT_WEBHOOK_URL (розділ «Підтримка»)
  */
+
+function escapeDiscordBoldFragment(s: string): string {
+  return s.replace(/\*/g, "＊");
+}
 
 function escapeTelegramHtml(s: string): string {
   return s
@@ -22,6 +27,47 @@ function ordersBotConfig(): { token: string; chatId: string } | null {
   const chatId = process.env.TELEGRAM_ORDERS_CHAT_ID?.trim();
   if (!token || !chatId) return null;
   return { token, chatId };
+}
+
+function supportDiscordWebhookUrl(): string | null {
+  return (
+    process.env.DISCORD_SUPPORT_WEBHOOK_URL?.trim() ||
+    process.env.DISCORD_WEBHOOK?.trim() ||
+    null
+  );
+}
+
+async function postSupportDiscordWebhook(
+  payload: Record<string, unknown>,
+): Promise<boolean> {
+  const webhook = supportDiscordWebhookUrl();
+  if (!webhook) {
+    console.error("[support-orders] DISCORD_SUPPORT_WEBHOOK_URL missing");
+    return false;
+  }
+
+  try {
+    const res = await fetch(webhook, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        ...payload,
+        allowed_mentions: { parse: [] },
+      }),
+    });
+    if (!res.ok) {
+      console.error(
+        "[support-orders] Discord webhook error:",
+        res.status,
+        await res.text().catch(() => ""),
+      );
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[support-orders] Discord webhook failed:", e);
+    return false;
+  }
 }
 
 async function sendOrdersTelegramHtml(html: string): Promise<boolean> {
@@ -131,6 +177,54 @@ function buildReceipt(order: OrderNotifyPayload): string {
   );
 }
 
+function buildReceiptDiscord(order: OrderNotifyPayload): string {
+  const nick = escapeDiscordBoldFragment(order.nickname);
+  const items =
+    order.items && order.items.length > 0
+      ? order.items
+      : [
+          {
+            card_title: order.card_title,
+            price_label: order.price_label,
+            quantity: Math.max(1, order.quantity ?? 1),
+            line_kopecks: order.amount_kopecks,
+          },
+        ];
+
+  const lines = items.map((it, i) => {
+    const title = escapeDiscordBoldFragment(it.card_title);
+    const qty = Math.max(1, it.quantity);
+    const lineTotal = formatUahFromKopecks(it.line_kopecks);
+    const unit =
+      it.unit_kopecks != null && it.unit_kopecks > 0
+        ? formatUahFromKopecks(it.unit_kopecks)
+        : qty > 0
+          ? formatUahFromKopecks(Math.round(it.line_kopecks / qty))
+          : lineTotal;
+    return (
+      `**${i + 1}.** ${title}\n` +
+      `   ${qty} × ${unit} ₴  =  **${lineTotal} ₴**`
+    );
+  });
+
+  const total = escapeDiscordBoldFragment(
+    formatUahFromKopecks(order.amount_kopecks),
+  );
+  const note = order.note.trim()
+    ? `\n${divider()}\n💬 **Коментар**\n${escapeDiscordBoldFragment(order.note.trim())}`
+    : "";
+
+  return (
+    `${divider()}\n` +
+    lines.join("\n\n") +
+    `\n${divider()}\n` +
+    `💵 **Разом: ${total} ₴**\n` +
+    `👤 Нік: **${nick}**\n` +
+    `🧾 Чек № **${order.id}**` +
+    note
+  );
+}
+
 export async function notifySupportOrderCreatedTelegram(
   order: OrderNotifyPayload,
 ): Promise<boolean> {
@@ -145,6 +239,33 @@ export async function notifySupportOrderCreatedTelegram(
   return sendOrdersTelegramHtml(html);
 }
 
+export async function notifySupportOrderCreatedDiscord(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  return postSupportDiscordWebhook({
+    embeds: [
+      {
+        title: "🛒 Нове замовлення",
+        description:
+          buildReceiptDiscord(order) +
+          `\n\n⏳ *Гравець перейшов до оплати*`,
+        color: 0xfee75c,
+        footer: { text: "Lost Chronicles · магазин" },
+      },
+    ],
+  });
+}
+
+export async function notifySupportOrderCreated(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  const [telegram, discord] = await Promise.all([
+    notifySupportOrderCreatedTelegram(order),
+    notifySupportOrderCreatedDiscord(order),
+  ]);
+  return telegram || discord;
+}
+
 export async function notifySupportOrderPaidTelegram(
   order: OrderNotifyPayload,
 ): Promise<boolean> {
@@ -154,6 +275,31 @@ export async function notifySupportOrderPaidTelegram(
     buildReceipt(order);
 
   return sendOrdersTelegramHtml(html);
+}
+
+export async function notifySupportOrderPaidDiscord(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  return postSupportDiscordWebhook({
+    embeds: [
+      {
+        title: "✅ Оплату підтверджено",
+        description: buildReceiptDiscord(order),
+        color: 0x57f287,
+        footer: { text: "Lost Chronicles · магазин" },
+      },
+    ],
+  });
+}
+
+export async function notifySupportOrderPaid(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  const [telegram, discord] = await Promise.all([
+    notifySupportOrderPaidTelegram(order),
+    notifySupportOrderPaidDiscord(order),
+  ]);
+  return telegram || discord;
 }
 
 /** Адмін позначив чек як неоплачений → випадає з топу. */
@@ -170,6 +316,34 @@ export async function notifySupportOrderNotPaidTelegram(
   return sendOrdersTelegramHtml(html);
 }
 
+export async function notifySupportOrderNotPaidDiscord(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  return postSupportDiscordWebhook({
+    embeds: [
+      {
+        title: "❌ Підтримка не оплачена",
+        description:
+          buildReceiptDiscord(order) +
+          `\n\n⚠️ *Замовлення скасовано: оплата не надійшла, тому підтримка недійсна.\n` +
+          `Цей чек знято з топу (інші внески гравця лишаються).*`,
+        color: 0xed4245,
+        footer: { text: "Lost Chronicles · магазин" },
+      },
+    ],
+  });
+}
+
+export async function notifySupportOrderNotPaid(
+  order: OrderNotifyPayload,
+): Promise<boolean> {
+  const [telegram, discord] = await Promise.all([
+    notifySupportOrderNotPaidTelegram(order),
+    notifySupportOrderNotPaidDiscord(order),
+  ]);
+  return telegram || discord;
+}
+
 export async function notifyUnmatchedDonationTelegram(
   amountKopecks: number,
 ): Promise<boolean> {
@@ -181,6 +355,38 @@ export async function notifyUnmatchedDonationTelegram(
     `${divider()}\n` +
     `<i>Немає pending-замовлення з такою сумою</i>`;
   return sendOrdersTelegramHtml(html);
+}
+
+export async function notifyUnmatchedDonationDiscord(
+  amountKopecks: number,
+): Promise<boolean> {
+  const amount = escapeDiscordBoldFragment(
+    formatUahFromKopecks(amountKopecks),
+  );
+  return postSupportDiscordWebhook({
+    embeds: [
+      {
+        title: "💛 Донат у банку",
+        description:
+          `${divider()}\n` +
+          `💵 Сума: **${amount} ₴**\n` +
+          `${divider()}\n` +
+          `*Немає pending-замовлення з такою сумою*`,
+        color: 0xf1c40f,
+        footer: { text: "Lost Chronicles" },
+      },
+    ],
+  });
+}
+
+export async function notifyUnmatchedDonation(
+  amountKopecks: number,
+): Promise<boolean> {
+  const [telegram, discord] = await Promise.all([
+    notifyUnmatchedDonationTelegram(amountKopecks),
+    notifyUnmatchedDonationDiscord(amountKopecks),
+  ]);
+  return telegram || discord;
 }
 
 /** Payload для сповіщень з повного запису замовлення. */

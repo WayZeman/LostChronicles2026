@@ -1,9 +1,11 @@
 /** Дата відкриття сервера (YYYY-MM-DD). Перевизначення: NEXT_PUBLIC_SERVER_LAUNCH_DATE. */
 export const LC_DEFAULT_SERVER_LAUNCH_DATE = "2023-09-11";
 
-/** Річниця завжди 11 вересня (місяць 0–11). */
+/** Річниця: 11 вересня (місяць 0–11); святкування триває кілька днів. */
 export const LC_ANNIVERSARY_MONTH = 8;
 export const LC_ANNIVERSARY_DAY = 11;
+/** Останній день показу привітання включно (11–13 вересня). */
+export const LC_ANNIVERSARY_DAY_END = 13;
 
 export function getServerLaunchDate(): Date {
   const raw =
@@ -100,7 +102,7 @@ export function ukDaysWord(n: number): string {
 }
 
 /**
- * Річниця завжди саме 11 вересня (після першого року існування).
+ * Привітання з річницею: 11–13 вересня включно (після першого року існування).
  * Локальний прев’ю: NEXT_PUBLIC_FORCE_SERVER_ANNIVERSARY=1
  */
 export function isServerAnniversary(now: Date = new Date()): boolean {
@@ -108,13 +110,14 @@ export function isServerAnniversary(now: Date = new Date()): boolean {
     return true;
   }
   const today = startOfLocalDay(now);
-  if (
-    today.getMonth() !== LC_ANNIVERSARY_MONTH ||
-    today.getDate() !== LC_ANNIVERSARY_DAY
-  ) {
+  if (today.getMonth() !== LC_ANNIVERSARY_MONTH) {
     return false;
   }
-  // День відкриття (2023-09-11) — ще не річниця
+  const day = today.getDate();
+  if (day < LC_ANNIVERSARY_DAY || day > LC_ANNIVERSARY_DAY_END) {
+    return false;
+  }
+  // День відкриття (2023-09-11) і дні одразу після нього в перший рік — ще не річниця
   return getServerAgeParts(today).years >= 1;
 }
 

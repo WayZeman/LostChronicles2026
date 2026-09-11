@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 import { authorizeCronRequest } from "@/lib/cron-auth";
 import {
-  notifySupportOrderPaidTelegram,
-  notifyUnmatchedDonationTelegram,
+  notifySupportOrderPaid,
+  notifyUnmatchedDonation,
 } from "@/lib/notify-support-order";
 import {
   getStoredMonoBalanceKopecks,
@@ -32,55 +32,9 @@ function formatUah(kopecks: number): string {
   });
 }
 
-async function notifyDiscordDonation(
-  differenceKopecks: number,
-  currentBalanceKopecks: number,
-  webhook: string,
-): Promise<boolean> {
-  try {
-    const discordRes = await fetch(webhook, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        embeds: [
-          {
-            title: "💛 Отримано підтримку!",
-            color: 0xf1c40f,
-            fields: [
-              {
-                name: "💵 Сума:",
-                value: `₴${formatUah(differenceKopecks)}`,
-                inline: false,
-              },
-              {
-                name: "📊 Поточний баланс:",
-                value: `₴${formatUah(currentBalanceKopecks)}`,
-                inline: false,
-              },
-            ],
-            footer: { text: "Lost Chronicle Support" },
-          },
-        ],
-      }),
-    });
-    if (!discordRes.ok) {
-      console.error(
-        "[mono-check] Discord webhook error:",
-        discordRes.status,
-        await discordRes.text(),
-      );
-      return false;
-    }
-    return true;
-  } catch (e) {
-    console.error("[mono-check] Discord webhook request failed:", e);
-    return false;
-  }
-}
-
 /**
  * Перевірка балансу банки Monobank:
- * зіставляє приріст з pending-замовленнями /support і шле в Telegram (@serveranketbot).
+ * зіставляє приріст з pending-замовленнями /support і шле в Telegram + Discord.
  */
 export async function GET(req: Request) {
   const denied = authorizeCronRequest(req);
@@ -88,7 +42,6 @@ export async function GET(req: Request) {
 
   const token = process.env.MONO_TOKEN?.trim();
   const jarId = process.env.MONO_JAR_ID?.trim();
-  const webhook = process.env.DISCORD_WEBHOOK?.trim();
 
   if (!token) {
     console.error("[mono-check] MONO_TOKEN is missing");
@@ -155,8 +108,7 @@ export async function GET(req: Request) {
   }
 
   let matchedCount = 0;
-  let telegramOk = false;
-  let discordOk = false;
+  let notified = false;
   let differenceKopecks = 0;
 
   if (
@@ -171,25 +123,17 @@ export async function GET(req: Request) {
 
       if (matched.length > 0) {
         const results = await Promise.all(
-          matched.map((o) => notifySupportOrderPaidTelegram(o)),
+          matched.map((o) => notifySupportOrderPaid(o)),
         );
-        telegramOk = results.every(Boolean);
-        if (telegramOk) {
+        notified = results.every(Boolean);
+        if (notified) {
           await markOrdersNotified(matched.map((o) => o.id));
         }
       } else {
-        telegramOk = await notifyUnmatchedDonationTelegram(differenceKopecks);
+        notified = await notifyUnmatchedDonation(differenceKopecks);
       }
     } catch (e) {
-      console.error("[mono-check] Order match / Telegram failed:", e);
-    }
-
-    if (webhook) {
-      discordOk = await notifyDiscordDonation(
-        differenceKopecks,
-        currentBalanceKopecks,
-        webhook,
-      );
+      console.error("[mono-check] Order match / notify failed:", e);
     }
   }
 
@@ -210,7 +154,6 @@ export async function GET(req: Request) {
         ? differenceKopecks
         : 0,
     matchedOrders: matchedCount,
-    notifiedTelegram: telegramOk,
-    notifiedDiscord: discordOk,
+    notified,
   });
 }

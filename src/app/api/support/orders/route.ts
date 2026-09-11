@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import { notifySupportOrderCreatedTelegram } from "@/lib/notify-support-order";
+import { notifySupportOrderCreated } from "@/lib/notify-support-order";
 import { getUserPublicById } from "@/lib/proposals-queries";
 import { getSupportSettings } from "@/lib/site-content";
 import {
@@ -83,7 +83,7 @@ export async function POST(req: Request) {
       "https://send.monobank.ua/jar/8f7nV8DopG";
     const payUrl = buildMonoJarPayUrl(jar, order.amount_kopecks);
 
-    const notified = await notifySupportOrderCreatedTelegram(order);
+    const notified = await notifySupportOrderCreated(order);
     if (notified) {
       await markOrdersNotified([order.id]);
     }
