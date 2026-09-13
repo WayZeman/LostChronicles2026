@@ -73,7 +73,13 @@ export function formatApplicationTelegramText(
 
 export async function sendAnketaTelegramText(
   text: string,
-  opts?: { chatId?: string; threadId?: number | null },
+  opts?: {
+    chatId?: string;
+    threadId?: number | null;
+    replyToMessageId?: number | null;
+    forceReply?: boolean;
+    placeholder?: string;
+  },
 ): Promise<boolean> {
   const cfg = anketaBotConfig();
   if (!cfg) return false;
@@ -88,6 +94,18 @@ export async function sendAnketaTelegramText(
   };
   if (opts?.threadId) {
     payload.message_thread_id = opts.threadId;
+  }
+  if (opts?.replyToMessageId) {
+    payload.reply_to_message_id = opts.replyToMessageId;
+  }
+  if (opts?.forceReply) {
+    payload.reply_markup = {
+      force_reply: true,
+      selective: true,
+      ...(opts.placeholder
+        ? { input_field_placeholder: opts.placeholder.slice(0, 64) }
+        : {}),
+    };
   }
 
   try {

@@ -28,15 +28,15 @@ import { wakeMinecraftAnketaSync } from "@/lib/minecraft-anketa-wake";
 
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
 export const ANKETA_BOT_COMMANDS = [
-  { command: "anketa", description: "Остання / №N — анкета зі статусом" },
-  { command: "restart", description: "Перезапуск Minecraft: /restart yes" },
-  { command: "add", description: "Прийняти: /add server 3" },
-  { command: "deny", description: "Відхилити: /deny server 3" },
-  { command: "clear", description: "Скинути статус: /clear server 3" },
+  { command: "anketa", description: "Анкета: допиши номер, напр. 12" },
+  { command: "restart", description: "Рестарт: допиши yes" },
+  { command: "add", description: "Прийняти: допиши номер, напр. 3" },
+  { command: "deny", description: "Відхилити: допиши номер, напр. 3" },
+  { command: "clear", description: "Скинути статус: допиши номер" },
   { command: "count", description: "Скільки анкет у базі" },
-  { command: "delete", description: "Видалити: /delete 12 yes" },
-  { command: "pay", description: "Оплата чека: /pay 19 yes або no" },
-  { command: "notpay", description: "Неоплачений чек: /notpay 10" },
+  { command: "delete", description: "Видалити: допиши номер, напр. 145" },
+  { command: "pay", description: "Оплата: допиши номер чека" },
+  { command: "notpay", description: "Неоплата: допиши номер чека" },
   { command: "help", description: "Усі команди" },
 ] as const;
 
@@ -117,16 +117,42 @@ async function formatSupportOrderPayPreview(orderId: number): Promise<string | n
   );
 }
 
+function parseReplyContinuation(
+  prompt: string,
+  userText: string,
+): { cmd: string; arg: string } | null {
+  const mark = prompt.match(
+    /· команда (anketa|add|deny|clear|delete|pay|notpay|restart)\b/,
+  );
+  if (!mark) return null;
+  const cmd = mark[1];
+  const arg = userText
+    .trim()
+    .replace(new RegExp(`^/${cmd}(?:@\\w+)?\\s*`, "i"), "")
+    .trim();
+  return { cmd, arg: arg.toLowerCase() };
+}
+
+function promptForArg(cmd: string, hint: string): string {
+  return `${hint}\n\n· команда ${cmd}`;
+}
+
+type AnketaReply = (
+  body: string,
+  extra?: { forceReply?: boolean; placeholder?: string },
+) => Promise<boolean>;
+
 async function handlePayCommand(
   arg: string,
-  reply: (body: string) => Promise<boolean>,
+  reply: AnketaReply,
 ): Promise<boolean> {
   if (!arg) {
     await reply(
-      "Вкажи номер чека:\n" +
-        "/pay 19 — перегляд\n" +
-        "/pay 19 yes — оплату підтверджено\n" +
-        "/pay 19 no — оплата не надійшла",
+      promptForArg(
+        "pay",
+        "Напиши номер чека, наприклад 19\n19 yes — оплачено · 19 no — не надійшло",
+      ),
+      { forceReply: true, placeholder: "19" },
     );
     return true;
   }
@@ -314,23 +340,34 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
   if (!msg || typeof msg !== "object") return false;
 
   const m = msg as {
+    message_id?: number;
     text?: string;
     chat?: { id?: number | string };
     message_thread_id?: number;
+    reply_to_message?: { text?: string };
   };
   if (!m.text || m.chat?.id == null) return false;
 
   const chatId = String(m.chat.id);
   if (!isAllowedChat(chatId)) return false;
 
-  const parsed = parseAnketaCommand(String(m.text));
+  let parsed = parseAnketaCommand(String(m.text));
+  if (!parsed && m.reply_to_message?.text) {
+    parsed = parseReplyContinuation(m.reply_to_message.text, String(m.text));
+  }
   if (!parsed) return false;
 
   const { cmd } = parsed;
   const arg = parsed.arg;
   const threadId = m.message_thread_id || null;
-  const reply = (body: string) =>
-    sendAnketaTelegramText(body, { chatId, threadId });
+  const reply: AnketaReply = (body, extra) =>
+    sendAnketaTelegramText(body, {
+      chatId,
+      threadId,
+      replyToMessageId: extra?.forceReply ? (m.message_id ?? null) : null,
+      forceReply: extra?.forceReply,
+      placeholder: extra?.placeholder,
+    });
 
   if (cmd === "help") {
     void registerAnketaBotCommands();
@@ -343,8 +380,11 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
     const confirmed = /^(yes|y|так|підтверджую|confirm)$/i.test(arg);
     if (!confirmed) {
       await reply(
-        "♻️ Це перезапустить Minecraft-сервер і вижене гравців на 1–2 хв.\n\n" +
-          "Підтверди:\n/restart yes",
+        promptForArg(
+          "restart",
+          "♻️ Це перезапустить Minecraft і вижене гравців на 1–2 хв.\nНапиши yes щоб підтвердити.",
+        ),
+        { forceReply: true, placeholder: "yes" },
       );
       return true;
     }
@@ -387,7 +427,11 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
   if (cmd === "notpay") {
     if (!arg || !/^\d+$/.test(arg)) {
       await reply(
-        "Вкажи номер чека:\n/notpay 10\n\n(номер з повідомлення «Чек № …»)",
+        promptForArg(
+          "notpay",
+          "Напиши номер чека, наприклад 10\n(номер з повідомлення «Чек № …»)",
+        ),
+        { forceReply: true, placeholder: "10" },
       );
       return true;
     }
@@ -430,11 +474,15 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
   if (cmd === "add" || cmd === "deny" || cmd === "clear") {
     if (!arg) {
       await reply(
-        cmd === "add"
-          ? "Вкажи номер анкети:\n/add server 12"
-          : cmd === "deny"
-            ? "Вкажи номер анкети:\n/deny server 12"
-            : "Вкажи номер анкети:\n/clear server 12",
+        promptForArg(
+          cmd,
+          cmd === "add"
+            ? "Напиши номер анкети, яку прийняти, наприклад 12"
+            : cmd === "deny"
+              ? "Напиши номер анкети, яку відхилити, наприклад 12"
+              : "Напиши номер анкети, щоб скинути статус, наприклад 12",
+        ),
+        { forceReply: true, placeholder: "12" },
       );
       return true;
     }
@@ -488,10 +536,11 @@ export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
   if (cmd === "delete") {
     if (!arg) {
       await reply(
-        "Вкажи номер:\n" +
-          "/delete 12 — перегляд\n" +
-          "/delete 12 yes — видалити\n" +
-          "/delete last yes — видалити останню",
+        promptForArg(
+          "delete",
+          "Напиши номер анкети, наприклад 145\n145 yes — видалити одразу · last yes — останню",
+        ),
+        { forceReply: true, placeholder: "145" },
       );
       return true;
     }
