@@ -166,6 +166,15 @@ const SUPPORT_CARD_SEEDS: SupportCardSeed[] = [
     price: "15 ₴",
     qty: true,
   },
+  {
+    order: 10,
+    title: "Перенесення ділянки або будинку",
+    description:
+      "Якщо побудував не там, де хотів — можна перенести ділянку чи будинок. Якщо знайшов спавнер — його теж можна перенести. Після оплати погодження і саме перенесення робить адміністрація; у коментарі до замовлення вкажи, що саме і куди.",
+    image: "/support-relocate.jpg",
+    price: "100 ₴",
+    qty: false,
+  },
 ];
 
 let supportCardsSchemaEnsured = false;
@@ -203,15 +212,13 @@ async function ensureSupportCardsTable(
   supportCardsSchemaEnsured = true;
 }
 
-async function patchSupportRenameCard(
+async function upsertSupportCardByTitle(
   sql: ReturnType<typeof getSql>,
+  seed: SupportCardSeed,
 ): Promise<void> {
-  const title = "Кастомний підпис предмета";
-  const description =
-    "Кастомна назва (підпис) для твого предмета в грі — зроби його унікальним.";
-  const image = "/support-item-rename.jpg";
-  const price = "15 ₴";
-  const tiersJson = JSON.stringify([{ label: "", price_label: price }]);
+  const tiersJson = JSON.stringify(
+    seed.tiers?.length ? seed.tiers : [{ label: "", price_label: seed.price }],
+  );
   await sql`
     INSERT INTO support_cards (
       sort_order, title, description, image_url, price_label, price_tiers,
@@ -219,33 +226,42 @@ async function patchSupportRenameCard(
     )
     SELECT
       COALESCE((SELECT MAX(sort_order) FROM support_cards), 0) + 1,
-      ${title},
-      ${description},
-      ${image},
-      ${price},
+      ${seed.title},
+      ${seed.description},
+      ${seed.image},
+      ${seed.price},
       ${tiersJson},
       ${""},
-      ${true}
+      ${seed.qty}
     WHERE NOT EXISTS (
       SELECT 1 FROM support_cards
-      WHERE lower(trim(title)) = lower(${title})
+      WHERE lower(trim(title)) = lower(${seed.title})
     )
   `;
   await sql`
     UPDATE support_cards
     SET
-      image_url = ${image},
-      description = ${description},
-      price_label = ${price},
+      image_url = ${seed.image},
+      description = ${seed.description},
+      price_label = ${seed.price},
       price_tiers = ${tiersJson},
+      quantity_enabled = ${seed.qty},
       updated_at = NOW()
-    WHERE lower(trim(title)) = lower(${title})
+    WHERE lower(trim(title)) = lower(${seed.title})
       AND (
-        image_url IS DISTINCT FROM ${image}
-        OR price_label IS DISTINCT FROM ${price}
+        image_url IS DISTINCT FROM ${seed.image}
+        OR price_label IS DISTINCT FROM ${seed.price}
+        OR description IS DISTINCT FROM ${seed.description}
+        OR quantity_enabled IS DISTINCT FROM ${seed.qty}
       )
   `;
 }
+
+const SUPPORT_CARD_PATCHES: SupportCardSeed[] = SUPPORT_CARD_SEEDS.filter(
+  (s) =>
+    s.title === "Кастомний підпис предмета" ||
+    s.title === "Перенесення ділянки або будинку",
+);
 
 /** Seed дефолтний каталог, якщо таблиця порожня (не затирає адмін-контент). */
 async function seedSupportCardsIfEmpty(
@@ -284,7 +300,9 @@ async function ensureSupportCardsReady(
 ): Promise<void> {
   await ensureSupportCardsTable(sql);
   await seedSupportCardsIfEmpty(sql);
-  await patchSupportRenameCard(sql);
+  for (const patch of SUPPORT_CARD_PATCHES) {
+    await upsertSupportCardByTitle(sql, patch);
+  }
 }
 
 async function ensureCmsTables(): Promise<void> {

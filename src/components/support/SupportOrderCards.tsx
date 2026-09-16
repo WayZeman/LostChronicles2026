@@ -733,7 +733,15 @@ export function SupportOrderCards({ cards }: Props) {
                     onChange={(e) => setNote(e.target.value)}
                     maxLength={500}
                     autoFocus
-                    placeholder="Пісня / деталі"
+                    placeholder={
+                      cartRows.some((r) =>
+                        r.card.title
+                          .toLowerCase()
+                          .includes("перенесення"),
+                      )
+                        ? "Що перенести і куди (координати)"
+                        : "Пісня / деталі"
+                    }
                     className="lc-focus-ring mt-1.5 w-full border-2 border-black bg-black/30 px-3 py-2.5 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
                   />
                 </label>
