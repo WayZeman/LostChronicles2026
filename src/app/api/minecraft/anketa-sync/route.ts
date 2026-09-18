@@ -5,7 +5,7 @@ import {
   listPendingIngameJobs,
   type IngameJobAction,
 } from "@/lib/applications";
-import { sendAnketaTelegramText } from "@/lib/notify-application";
+import { sendAnketaTelegramText, anketaNotifyThreadId } from "@/lib/notify-application";
 
 export const dynamic = "force-dynamic";
 
@@ -103,6 +103,7 @@ export async function POST(req: Request) {
     }
 
     const nick = acked.nickname || "—";
+    const threadId = anketaNotifyThreadId();
     if (ok) {
       await sendAnketaTelegramText(
         action === "promote"
@@ -114,6 +115,7 @@ export async function POST(req: Request) {
               `Анкета #${acked.ordinal}\n` +
               (detail ? `${detail}\n` : "") +
               `Статус: Не прийнято`,
+        { threadId },
       );
     } else {
       await sendAnketaTelegramText(
@@ -123,6 +125,7 @@ export async function POST(req: Request) {
             ? "Статус лишився: не додано на сервер\n"
             : "Ранг на сервері не змінено\n") +
           (errText ? `Помилка: ${errText}` : "Перевір нік у анкеті і LuckPerms."),
+        { threadId },
       );
     }
 

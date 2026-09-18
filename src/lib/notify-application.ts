@@ -38,6 +38,13 @@ export function anketaBotConfig(): { token: string; chatId: string } | null {
   return { token, chatId };
 }
 
+/** Тема для нових анкет: t.me/c/2430381787/21902 */
+export function anketaNotifyThreadId(): number {
+  const raw = process.env.TELEGRAM_ANKETA_THREAD_ID?.trim();
+  const n = raw ? Number(raw) : 21902;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 21902;
+}
+
 export function formatApplicationTelegramText(
   a: ApplicationNotifyPayload,
 ): string {
@@ -142,5 +149,7 @@ export async function notifyApplicationTelegram(
     );
     return false;
   }
-  return sendAnketaTelegramText(formatApplicationTelegramText(a));
+  return sendAnketaTelegramText(formatApplicationTelegramText(a), {
+    threadId: anketaNotifyThreadId(),
+  });
 }
