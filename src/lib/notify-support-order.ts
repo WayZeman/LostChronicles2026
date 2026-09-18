@@ -29,6 +29,13 @@ function ordersBotConfig(): { token: string; chatId: string } | null {
   return { token, chatId };
 }
 
+/** Тема підтримки: t.me/c/2430381787/21892 */
+function ordersNotifyThreadId(): number {
+  const raw = process.env.TELEGRAM_ORDERS_THREAD_ID?.trim();
+  const n = raw ? Number(raw) : 21892;
+  return Number.isFinite(n) && n > 0 ? Math.floor(n) : 21892;
+}
+
 function supportDiscordWebhookUrl(): string | null {
   return (
     process.env.DISCORD_SUPPORT_WEBHOOK_URL?.trim() ||
@@ -87,6 +94,7 @@ async function sendOrdersTelegramHtml(html: string): Promise<boolean> {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           chat_id: cfg.chatId,
+          message_thread_id: ordersNotifyThreadId(),
           text: html,
           parse_mode: "HTML",
           disable_web_page_preview: true,
