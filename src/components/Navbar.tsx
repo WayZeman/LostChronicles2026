@@ -38,7 +38,7 @@ const bottomNavLinks = [
   ...links,
 ] as const;
 
-/** Єдина навігація: приклеєна до низу viewport на всіх розмірах екрана. */
+/** Нижня навігація на всіх екранах — той самий набір, стиль Laby/LC. */
 export function Navbar() {
   const pathname = usePathname() ?? "";
 
@@ -53,16 +53,14 @@ export function Navbar() {
               href={href}
               aria-label={label}
               className={cn(
-                "lc-focus-ring flex min-h-[3.15rem] min-w-0 flex-1 flex-col items-center justify-center gap-0 px-0.5 py-1 text-[9px] font-bold leading-tight transition-[background,color,box-shadow,opacity,transform] duration-200 ease-out min-[380px]:text-[10px] sm:gap-0.5 md:min-h-[3.4rem] md:gap-1 md:px-1.5 md:text-xs",
-                active
-                  ? "mc-badge"
-                  : "border-2 border-transparent text-[var(--mc-nav-link)] hover:border-black hover:bg-[linear-gradient(180deg,#9a9aff_0%,#7a7aff_48%,#5a5ad4_100%)] hover:text-[var(--mc-on-gold)] hover:shadow-[inset_2px_2px_0_rgba(255,255,255,0.28),inset_-2px_-2px_0_rgba(0,0,0,0.4)]",
+                "lc-focus-ring lc-bottom-link flex min-h-[3.15rem] min-w-0 flex-1 flex-col items-center justify-center gap-0 px-0.5 py-1 text-[9px] font-semibold leading-tight min-[380px]:text-[10px] sm:gap-0.5 md:min-h-[3.4rem] md:gap-1 md:px-1.5 md:text-xs",
+                active ? "is-active" : null,
               )}
               aria-current={active ? "page" : undefined}
             >
               <Icon
                 className={cn(
-                  "size-[1.25rem] shrink-0 sm:size-[1.25rem] md:size-[1.3rem]",
+                  "size-[1.25rem] shrink-0 md:size-[1.3rem]",
                   active ? "text-[var(--mc-on-gold)]" : "opacity-90",
                 )}
                 strokeWidth={active ? 2.5 : 2}

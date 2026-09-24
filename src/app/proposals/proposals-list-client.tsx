@@ -103,7 +103,7 @@ export function ProposalsListClient() {
             </div>
 
             <div
-              className="mt-3 grid grid-cols-2 border-2 border-black bg-black/35 sm:mt-4"
+              className="mt-3 grid grid-cols-2 overflow-hidden rounded-md border-2 border-[var(--mc-outline)] bg-black/35 sm:mt-4"
               role="tablist"
               aria-label="Фільтр голосувань"
             >
@@ -131,7 +131,7 @@ export function ProposalsListClient() {
                     onClick={() => setTab(t.id)}
                     className={cn(
                       "lc-focus-ring min-h-11 touch-manipulation px-2 text-sm font-bold transition-colors sm:min-h-10 sm:px-3",
-                      t.id === "done" && "border-l-2 border-black",
+                      t.id === "done" && "border-l-2 border-[var(--mc-outline)]",
                       selected
                         ? "bg-[var(--mc-net-green)] text-black"
                         : "text-[var(--mc-text-muted)] hover:bg-white/[0.04] hover:text-[var(--mc-text)]",
@@ -214,13 +214,13 @@ export function ProposalsListClient() {
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="lc-skeleton-breathe h-36 border-2 border-black bg-black/30 shadow-[3px_3px_0_rgba(0,0,0,0.4)] sm:h-44 sm:shadow-[4px_4px_0_rgba(0,0,0,0.4)]"
+                className="lc-skeleton-breathe mc-frame h-36 sm:h-44"
               />
             ))}
           </div>
         ) : list.length === 0 ? (
           <SoftAppear>
-            <div className="border-2 border-black bg-black/30 px-3 py-12 text-center shadow-[3px_3px_0_rgba(0,0,0,0.4)] sm:py-14 sm:shadow-[4px_4px_0_rgba(0,0,0,0.4)]">
+            <div className="mc-frame px-3 py-12 text-center sm:py-14">
               <p className="text-sm text-[var(--mc-text-muted)]">
                 Голосувань ще немає.
               </p>
@@ -235,7 +235,7 @@ export function ProposalsListClient() {
           </SoftAppear>
         ) : visible.length === 0 ? (
           <SoftAppear>
-            <div className="border-2 border-black bg-black/30 px-3 py-10 text-center shadow-[3px_3px_0_rgba(0,0,0,0.4)] sm:py-12 sm:shadow-[4px_4px_0_rgba(0,0,0,0.4)]">
+            <div className="mc-frame px-3 py-10 text-center sm:py-12">
               <p className="text-sm text-[var(--mc-text-muted)]">
                 {tab === "active"
                   ? "Немає активних голосувань."

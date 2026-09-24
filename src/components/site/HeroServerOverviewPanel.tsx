@@ -22,7 +22,7 @@ export function HeroServerOverviewPanel() {
         )}
         aria-label="Хронологія онлайну на сервері"
       >
-        <h2 className="lc-section-title text-center text-lg uppercase md:text-xl">
+        <h2 className="lc-section-title text-center text-lg md:text-xl">
           Онлайн сервера
         </h2>
         <div className="mt-4 md:mt-5">

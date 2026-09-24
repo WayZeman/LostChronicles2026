@@ -77,7 +77,7 @@ export function WikiCategoryView({
       </div>
 
       <SoftAppear>
-        <header className="relative overflow-hidden border border-white/10 bg-black/30 px-4 py-5 text-center sm:px-6 sm:py-6 sm:text-left">
+        <header className="relative overflow-hidden rounded-lg border border-white/10 bg-black/30 px-4 py-5 text-center sm:px-6 sm:py-6 sm:text-left">
           <span
             className={cn("absolute inset-y-0 left-0 w-1.5", accent.bar)}
             aria-hidden
@@ -131,7 +131,7 @@ export function WikiCategoryView({
               const seal = monogram(p.page_title, p.short_code);
               const cover = wikiCardImageUrl(category.slug, p.image_url);
               const cardClass = cn(
-                "group relative flex w-full flex-col overflow-hidden",
+                "group relative flex w-full flex-col overflow-hidden rounded-lg",
                 "border border-white/10 bg-black/35 p-4 transition duration-200",
                 "sm:w-[calc(50%-0.375rem)]",
                 "hover:-translate-y-0.5 hover:bg-black/45",

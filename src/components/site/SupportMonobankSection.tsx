@@ -67,7 +67,7 @@ export function SupportMonobankSection({
         <div className="order-2 flex flex-col items-center text-center sm:order-1">
           <h2
             id="support-donate-heading"
-            className="w-full text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:text-base"
+            className="lc-section-title w-full text-center text-lg md:text-xl"
           >
             Підтримати сервер
           </h2>
@@ -90,7 +90,7 @@ export function SupportMonobankSection({
 
           <h3
             id="support-vote-heading"
-            className="mt-5 w-full text-center text-sm font-extrabold uppercase tracking-wide text-[var(--mc-text)] sm:mt-6"
+            className="lc-section-title mt-5 w-full text-center text-lg sm:mt-6"
           >
             Підтримати голосуючи
           </h3>

@@ -42,7 +42,7 @@ function ChoiceOption({
       aria-pressed={selected}
       onClick={onSelect}
       className={cn(
-        "lc-focus-ring flex w-full items-center gap-3 border-2 px-3 py-2.5 text-left text-sm font-bold transition-[transform,filter,background-color,border-color]",
+        "lc-focus-ring flex w-full items-center gap-3 rounded-md border-2 px-3 py-2.5 text-left text-sm font-bold transition-[transform,filter,background-color,border-color]",
         selected
           ? "border-[var(--mc-net-green)] bg-[var(--mc-net-green)]/15 text-[var(--mc-text)]"
           : "border-white/12 bg-black/35 text-[var(--mc-text)] hover:border-[var(--mc-net-green)]/45 hover:bg-black/50",
@@ -50,7 +50,7 @@ function ChoiceOption({
     >
       <span
         className={cn(
-          "flex size-5 shrink-0 items-center justify-center border-2 border-black text-[10px]",
+          "flex size-5 shrink-0 items-center justify-center rounded-sm border-2 border-[var(--mc-outline)] text-[10px]",
           multi ? "" : "rounded-full",
           selected
             ? "bg-[var(--mc-net-green)] text-[var(--mc-green-ink)]"
@@ -266,7 +266,7 @@ export function ApplyForm({
   if (doneId !== null) {
     return (
       <div className="space-y-5 text-center">
-        <div className="mx-auto flex size-12 items-center justify-center border-2 border-black bg-[var(--mc-net-green)] text-xl font-black text-[var(--mc-green-ink)] shadow-[2px_2px_0_#000]">
+        <div className="mx-auto flex size-12 items-center justify-center rounded-lg border-2 border-[var(--mc-outline)] bg-[var(--mc-net-green)] text-xl font-black text-[var(--mc-green-ink)]">
           ✓
         </div>
         <div className="space-y-2">

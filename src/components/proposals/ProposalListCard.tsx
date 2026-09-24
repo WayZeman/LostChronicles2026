@@ -98,7 +98,7 @@ function ProposalCardHeader({ proposal: p }: { proposal: ProposalListCardData })
     return (
       <div
         className={cn(
-          "lc-mc-timer-bar lc-mc-timer-bar--live flex items-center justify-center border-b-2 border-black px-2.5 py-2 sm:px-3 sm:py-2.5",
+          "lc-mc-timer-bar lc-mc-timer-bar--live flex items-center justify-center border-b border-white/10 px-2.5 py-2 sm:px-3 sm:py-2.5",
         )}
       >
         <span
@@ -124,7 +124,7 @@ function ProposalCardHeader({ proposal: p }: { proposal: ProposalListCardData })
   return (
     <div
       className={cn(
-        "lc-mc-timer-bar flex min-h-9 items-center justify-center border-b-2 border-black px-2.5 py-2 sm:min-h-10 sm:px-3 sm:py-2.5",
+        "lc-mc-timer-bar flex min-h-9 items-center justify-center border-b border-white/10 px-2.5 py-2 sm:min-h-10 sm:px-3 sm:py-2.5",
         barToneClass(tone),
       )}
     >
@@ -174,7 +174,7 @@ export function ProposalListCard({ proposal: p }: Props) {
           </span>
         </p>
 
-        <div className="mt-3 border-2 border-black bg-black/45 p-1.5 shadow-[inset_2px_2px_0_rgba(255,255,255,0.04)] sm:mt-3.5 sm:p-2.5">
+        <div className="mt-3 rounded-md border-2 border-[var(--mc-outline)] bg-black/45 p-1.5 sm:mt-3.5 sm:p-2.5">
           {isChoice ? (
             <ProposalChoiceBar options={p.options ?? []} compact />
           ) : (
@@ -184,7 +184,7 @@ export function ProposalListCard({ proposal: p }: Props) {
               aria-label={`За ${yes}, проти ${no}`}
             >
               <div
-                className="flex min-w-0 items-center justify-center border-2 border-[#1e6410] bg-[#143d10]/90 px-1.5 transition-[flex-grow] duration-500 ease-out sm:px-2"
+                className="flex min-w-0 items-center justify-center rounded-md border-2 border-[#1e6410] bg-[#143d10]/90 px-1.5 transition-[flex-grow] duration-500 ease-out sm:px-2"
                 style={{ flex: `${yesFlex} 1 0%` }}
               >
                 <span className="text-xl font-black tabular-nums leading-none text-[var(--mc-grass-bright)] sm:text-3xl">
@@ -192,7 +192,7 @@ export function ProposalListCard({ proposal: p }: Props) {
                 </span>
               </div>
               <div
-                className="flex min-w-0 items-center justify-center border-2 border-[#7f1d1d] bg-[#4a1515]/90 px-1.5 transition-[flex-grow] duration-500 ease-out sm:px-2"
+                className="flex min-w-0 items-center justify-center rounded-md border-2 border-[#7f1d1d] bg-[#4a1515]/90 px-1.5 transition-[flex-grow] duration-500 ease-out sm:px-2"
                 style={{ flex: `${noFlex} 1 0%` }}
               >
                 <span className="text-xl font-black tabular-nums leading-none text-[#f87171] sm:text-3xl">

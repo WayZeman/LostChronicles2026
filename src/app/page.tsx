@@ -73,10 +73,10 @@ export default async function Home() {
   return (
     <main className={lcPageMainClass}>
       <div className={lcPageContainerHomeClass}>
-        <section className="am-reveal relative z-10 flex flex-col items-center pt-0 text-center md:pt-0">
+        <section className="am-reveal relative z-10 flex flex-col items-center pt-2 text-center md:pt-4">
           <h1 className="sr-only">Lost Chronicles — Ukrainian Minecraft Server</h1>
 
-          <div className="relative w-full max-w-[min(100%,28rem)] sm:max-w-[min(100%,32rem)] md:max-w-[min(100%,36rem)]">
+          <div className="relative w-full max-w-[min(100%,22rem)] sm:max-w-[min(100%,26rem)]">
             <Image
               src="/lc-logo-hero-v2.png"
               alt="Lost Chronicles — Ukrainian Minecraft Server"
@@ -84,34 +84,32 @@ export default async function Home() {
               height={606}
               priority
               unoptimized
-              className="relative z-0 h-auto w-full drop-shadow-[0_8px_28px_rgba(0,0,0,0.55)]"
+              className="relative z-0 h-auto w-full drop-shadow-[0_12px_32px_rgba(0,0,0,0.5)]"
               draggable={false}
             />
-            <div className="pointer-events-none absolute inset-x-0 bottom-[7%] z-10 flex justify-center sm:bottom-[8%] md:bottom-[9%]">
-              <Link
-                href={LC_APPLY_PATH}
-                className="lc-focus-ring lc-btn-accent pointer-events-auto min-h-11 px-8 py-2.5 text-sm shadow-[0_6px_20px_rgba(0,0,0,0.5)]"
-              >
-                Подати заявку
-              </Link>
-            </div>
           </div>
 
-          <HeroAuthGreeting />
-
-          {voteUrl ? (
-            <div className="relative z-10 mt-5 flex flex-wrap justify-center gap-3">
+          <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-3">
+            <Link
+              href={LC_APPLY_PATH}
+              className="lc-focus-ring lc-btn-accent min-h-11 px-7 py-2.5 text-sm"
+            >
+              Подати заявку
+            </Link>
+            {voteUrl ? (
               <a
                 href={voteUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="lc-focus-ring mc-btn-secondary px-6 py-2.5 text-sm"
+                className="lc-focus-ring mc-btn-secondary min-h-11 px-5 py-2.5 text-sm"
               >
-                Підтримати голосом
+                Голос
                 <ExternalLink className="size-3 opacity-60" aria-hidden />
               </a>
-            </div>
-          ) : null}
+            ) : null}
+          </div>
+
+          <HeroAuthGreeting />
         </section>
 
         <div
@@ -140,7 +138,7 @@ export default async function Home() {
               "lc-interactive-panel-static relative",
             )}
           >
-            <h2 className="lc-section-title text-center text-lg uppercase md:text-xl">
+            <h2 className="lc-section-title text-center text-xl md:text-2xl">
               Підключитися до сервера
             </h2>
             <div

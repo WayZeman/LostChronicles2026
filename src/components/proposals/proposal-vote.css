@@ -107,86 +107,51 @@
   background: color-mix(in srgb, var(--mc-surface-elevated) 78%, transparent);
 }
 
-/* Картка пропозиції — Minecraft scoreboard / inventory tile */
+/* Картка пропозиції — слот як у решти сайту */
 .lc-proposal-board {
-  border: 2px solid #000;
-  border-radius: 0;
-  background: #1a1a1a;
-  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.45);
+  border: 2px solid var(--mc-outline);
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, #323232 0%, #2c2c2c 72%, #262626 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 10px 28px rgba(0, 0, 0, 0.32);
   transition:
     transform 0.15s ease,
     box-shadow 0.15s ease;
 }
 
-@media (min-width: 640px) {
-  .lc-proposal-board {
-    box-shadow: 4px 4px 0 rgba(0, 0, 0, 0.5);
-  }
-}
-
 .lc-proposal-board:hover {
   transform: translateY(-2px);
-  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.5);
-}
-
-@media (min-width: 640px) {
-  .lc-proposal-board:hover {
-    transform: translateY(-3px);
-    box-shadow: 6px 7px 0 rgba(0, 0, 0, 0.55);
-  }
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 14px 32px rgba(0, 0, 0, 0.38);
 }
 
 .lc-proposal-board--live {
   box-shadow:
-    3px 3px 0 rgba(0, 0, 0, 0.45),
-    0 0 0 1px rgba(84, 197, 48, 0.3);
-}
-
-@media (min-width: 640px) {
-  .lc-proposal-board--live {
-    box-shadow:
-      4px 4px 0 rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(84, 197, 48, 0.35);
-  }
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    0 10px 28px rgba(0, 0, 0, 0.32),
+    0 0 0 1px rgba(84, 197, 48, 0.35);
 }
 
 .lc-proposal-board--live:hover {
   box-shadow:
-    4px 5px 0 rgba(0, 0, 0, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 14px 32px rgba(0, 0, 0, 0.38),
     0 0 0 1px rgba(122, 224, 74, 0.5);
-}
-
-@media (min-width: 640px) {
-  .lc-proposal-board--live:hover {
-    box-shadow:
-      6px 7px 0 rgba(0, 0, 0, 0.55),
-      0 0 0 1px rgba(122, 224, 74, 0.55),
-      0 0 18px rgba(84, 197, 48, 0.12);
-  }
 }
 
 .lc-proposal-board--cancelled {
   box-shadow:
-    3px 3px 0 rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08),
+    0 10px 28px rgba(0, 0, 0, 0.32),
     0 0 0 1px rgba(239, 68, 68, 0.28);
 }
 
-@media (min-width: 640px) {
-  .lc-proposal-board--cancelled {
-    box-shadow:
-      4px 4px 0 rgba(0, 0, 0, 0.5),
-      0 0 0 1px rgba(239, 68, 68, 0.28);
-  }
-}
-
 .lc-proposal-board--done:hover {
-  box-shadow: 4px 5px 0 rgba(0, 0, 0, 0.5);
-}
-
-@media (min-width: 640px) {
-  .lc-proposal-board--done:hover {
-    box-shadow: 6px 7px 0 rgba(0, 0, 0, 0.55);
-  }
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    0 14px 32px rgba(0, 0, 0, 0.38);
 }
 
 /* Touch: без hover-підйому */
@@ -226,7 +191,7 @@
   width: 0.42rem;
   height: 0.42rem;
   margin-top: -0.21rem;
-  border-radius: 0;
+  border-radius: 999px;
   background: #7dff5a;
   box-shadow: 0 0 0 1px #000, 0 0 8px rgba(125, 255, 90, 0.85);
   animation: lc-vote-live-pulse 1.6s ease-in-out infinite;
@@ -244,15 +209,13 @@
   }
 }
 
-/* Minecraft HUD timer — Monocraft + classic MC text shadow */
+/* Таймер голосування */
 .lc-mc-timer {
-  font-family: var(--font-mc);
+  font-family: var(--font-sans);
   font-size: 0.95rem;
-  font-weight: 700;
+  font-weight: 800;
   line-height: 1.15;
-  letter-spacing: 0.04em;
-  -webkit-font-smoothing: none;
-  text-rendering: geometricPrecision;
+  letter-spacing: -0.02em;
 }
 
 @media (min-width: 640px) {

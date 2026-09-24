@@ -13,7 +13,7 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-heading: var(--font-mc);
+  --font-heading: var(--font-noto), "Noto Sans", ui-sans-serif, system-ui, sans-serif;
   --font-mc: var(--font-minecraft), "Monocraft", ui-monospace, monospace;
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
@@ -147,15 +147,20 @@
   --chart-3: #55ffff;
   --chart-4: #ff5555;
   --chart-5: #8b8b8b;
-  /* Гострі блоки як у GUI Minecraft */
-  --radius: 0;
+  /* Laby-подібні слоти: легкий радіус, тони LC */
+  --radius: 0.5rem;
+  --radius-card: 0.5rem;
+  --radius-slot: 0.375rem;
+  --mc-outline: #0a0a0a;
+  --mc-btn-inset-top: rgba(255, 255, 255, 0.22);
+  --mc-btn-inset-bot: rgba(0, 0, 0, 0.45);
   --mc-frame-outer: #000000;
   --mc-frame-edge: #1a1a1a;
   --mc-frame-hi: #5a5a5a;
   --mc-frame-lo: #141414;
 
   /* Ширина основного «вікна» = нижня навігація */
-  --lc-site-shell-width: min(calc(100vw - 1rem), 64rem);
+  --lc-site-shell-width: min(calc(100vw - 1.25rem), 72rem);
   --mc-btn-face: #6f6f6f;
   --mc-btn-face-top: #8b8b8b;
   --mc-btn-face-bot: #5a5a5a;
@@ -215,12 +220,14 @@
 }
 
 .lc-hero-title {
-  letter-spacing: 0.02em;
-  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-weight: 800;
 }
 
 .lc-hero-display {
-  letter-spacing: 0.02em;
+  letter-spacing: -0.045em;
+  font-weight: 800;
+  line-height: 0.95;
 }
 
 .lc-hero-accent {
@@ -235,8 +242,8 @@
 }
 
 .lc-section-title {
-  letter-spacing: 0.02em;
-  font-weight: 700;
+  letter-spacing: -0.02em;
+  font-weight: 800;
   color: var(--mc-text);
 }
 
@@ -501,8 +508,8 @@ html.lc-anniversary .lc-atmosphere-particles {
 
 html.lc-anniversary .lc-bottom-nav {
   box-shadow:
-    0 0 0 2px rgba(255, 215, 64, 0.35),
-    0 -10px 36px rgba(236, 175, 45, 0.28),
+    0 0 0 1px rgba(255, 215, 64, 0.28),
+    0 -10px 36px rgba(236, 175, 45, 0.18),
     inset 0 1px 0 rgba(255, 248, 200, 0.12);
 }
 
@@ -795,16 +802,8 @@ html.lc-anniversary .am-glass {
 /* ——— Minecraft pause-menu GUI ——— */
 
 /* Піксельний шрифт як у грі (Monocraft) — заголовки, кнопки, навігація */
-.lc-hero-title,
-.lc-hero-display,
-.lc-section-title,
-.mc-btn-primary,
-.mc-btn-secondary,
-.lc-btn-accent,
-.mc-badge,
-.mc-slot,
-nav[aria-label="Головна навігація"],
-.lc-mc-font {
+.lc-mc-font,
+.mc-slot {
   font-family: var(--font-mc);
   font-synthesis: none;
   -webkit-font-smoothing: none;
@@ -812,56 +811,25 @@ nav[aria-label="Головна навігація"],
   font-smooth: never;
 }
 
-.lc-hero-title,
-.lc-section-title {
-  letter-spacing: 0.02em;
-  font-weight: 700;
-  text-shadow:
-    2px 2px 0 #3f3f3f,
-    1px 1px 0 #000;
-}
-
-.lc-hero-display {
-  letter-spacing: 0.02em;
-  font-weight: 700;
-  text-shadow:
-    2px 2px 0 #3f3f3f,
-    1px 1px 0 #000;
-}
-
-nav[aria-label="Головна навігація"] a,
-nav[aria-label="Головна навігація"] span {
-  text-shadow: 1px 1px 0 #000;
-  letter-spacing: 0.01em;
-}
-
 .mc-btn-primary,
 .mc-btn-secondary,
 .lc-btn-accent,
 .mc-badge {
-  text-shadow: 1px 1px 0 #000;
-  letter-spacing: 0.02em;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.01em;
 }
 
-/* Кам’яна панель (як нижній блок у меню сервера) */
+/* Картка-панель: 3D-слот як у Laby, тони LC */
 .mc-frame,
 .am-glass {
-  border: 2px solid #000;
-  border-radius: 0;
-  background:
-    repeating-linear-gradient(
-      0deg,
-      transparent,
-      transparent 2px,
-      rgba(0, 0, 0, 0.04) 2px,
-      rgba(0, 0, 0, 0.04) 4px
-    ),
-    linear-gradient(180deg, #3a3a3a 0%, #2c2c2c 55%, #242424 100%);
+  border: 2px solid var(--mc-outline);
+  border-radius: var(--radius-card);
+  background: linear-gradient(180deg, #323232 0%, #2c2c2c 72%, #262626 100%);
   color: var(--mc-ink);
   box-shadow:
-    inset 3px 3px 0 var(--mc-frame-hi),
-    inset -3px -3px 0 var(--mc-frame-lo),
-    0 0 0 1px #000;
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 0 0 1px rgba(90, 90, 90, 0.28),
+    0 10px 28px rgba(0, 0, 0, 0.32);
 }
 
 @keyframes lc-login-soft-pulse {
@@ -885,7 +853,7 @@ nav[aria-label="Головна навігація"] span {
   }
 }
 
-/* Нижня навігація — по центру внизу екрана */
+/* Нижня навігація — місце як було, вигляд як у Laby */
 .lc-bottom-nav {
   position: fixed;
   left: 50%;
@@ -893,17 +861,48 @@ nav[aria-label="Головна навігація"] span {
   z-index: 100;
   width: var(--lc-site-shell-width);
   overflow: hidden;
-  background: var(--mc-nav-bg);
-  padding-top: 0.35rem;
-  padding-bottom: max(0.35rem, calc(env(safe-area-inset-bottom, 0px) * 0.35));
+  border-bottom: none;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+  padding-top: 0.3rem;
+  padding-bottom: max(0.3rem, calc(env(safe-area-inset-bottom, 0px) * 0.45));
   transform: translateX(-50%) translateZ(0);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
 }
 
+.lc-bottom-link {
+  border: 2px solid transparent;
+  border-radius: var(--radius-slot);
+  color: var(--mc-nav-link);
+  transition:
+    background 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    border-color 0.12s ease;
+}
+
+.lc-bottom-link:hover {
+  color: var(--mc-on-gold);
+  border-color: var(--mc-outline);
+  background: var(--mc-btn-hover-mid);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4);
+}
+
+.lc-bottom-link.is-active {
+  color: var(--mc-on-gold);
+  border-color: var(--mc-outline);
+  background: var(--mc-btn-hover-mid);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4);
+}
+
 @media (min-width: 640px) {
   :root {
-    --lc-site-shell-width: min(calc(100vw - 1.5rem), 64rem);
+    --lc-site-shell-width: min(calc(100vw - 2rem), 72rem);
   }
 }
 
@@ -917,26 +916,26 @@ nav[aria-label="Головна навігація"] span {
 
 /* Вдавлений слот */
 .mc-slot {
-  border: 2px solid #000;
-  border-radius: 0;
-  background: #1a1a1a;
+  border: 2px solid var(--mc-outline);
+  border-radius: var(--radius-slot);
+  background: #141414;
   box-shadow:
-    inset 3px 3px 0 #0a0a0a,
-    inset -2px -2px 0 #3a3a3a;
+    inset 0 3px 0 rgba(0, 0, 0, 0.45),
+    inset 0 0 0 2px rgba(90, 90, 90, 0.28);
 }
 
 /* Поля вводу */
 .mc-input,
 input.mc-input,
 textarea.mc-input {
-  border: 2px solid #000;
-  border-radius: 0;
-  background: #000;
+  border: 2px solid var(--mc-outline);
+  border-radius: var(--radius-slot);
+  background: #0c0c0c;
   color: #fff;
   font-family: var(--font-noto), "Noto Sans", ui-sans-serif, system-ui, sans-serif;
   box-shadow:
-    inset 2px 2px 0 #3f3f3f,
-    inset -2px -2px 0 #101010;
+    inset 0 3px 0 rgba(0, 0, 0, 0.4),
+    inset 0 0 0 2px rgba(90, 90, 90, 0.22);
 }
 
 .mc-input::placeholder,
@@ -949,14 +948,14 @@ textarea.mc-input::placeholder {
 input.mc-input:focus,
 textarea.mc-input:focus {
   outline: none;
-  border-color: #000;
+  border-color: var(--mc-outline);
   box-shadow:
-    inset 2px 2px 0 #3f3f3f,
-    inset -2px -2px 0 #101010,
-    0 0 0 2px var(--mc-menu-yellow);
+    inset 0 3px 0 rgba(0, 0, 0, 0.4),
+    inset 0 0 0 2px rgba(90, 90, 90, 0.22),
+    0 0 0 2px color-mix(in srgb, var(--mc-menu-yellow) 70%, transparent);
 }
 
-/* Кнопки меню — smooth stone */
+/* 3D-кнопки як у Laby, палітра LC */
 .mc-btn-primary,
 .mc-btn-secondary,
 .lc-btn-accent {
@@ -964,57 +963,49 @@ textarea.mc-input:focus {
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  border-radius: 0;
-  border: 2px solid #000;
-  background: linear-gradient(
-    180deg,
-    var(--mc-btn-face-top) 0%,
-    var(--mc-btn-face) 48%,
-    var(--mc-btn-face-bot) 100%
-  );
+  border-radius: var(--radius-slot);
+  border: 2px solid var(--mc-outline);
+  background: var(--mc-btn-face);
   color: #fff;
   font-weight: 700;
   font-size: 0.875rem;
   line-height: 1.25;
-  letter-spacing: 0.02em;
-  padding: 0.65rem 1.35rem;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+  letter-spacing: 0.01em;
+  padding: 0.55rem 1.2rem 0.7rem;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
   box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.35),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.45);
+    inset 0 2px 0 var(--mc-btn-inset-top),
+    inset 0 -3px 0 var(--mc-btn-inset-bot);
   transition:
-    background 0.08s linear,
-    color 0.08s linear,
-    box-shadow 0.08s linear;
+    background 0.12s ease,
+    color 0.12s ease,
+    box-shadow 0.12s ease,
+    filter 0.12s ease;
 }
 
 .mc-btn-primary:hover,
 .mc-btn-secondary:hover,
 .lc-btn-accent:hover {
   color: var(--mc-on-gold);
-  background: linear-gradient(
-    180deg,
-    var(--mc-btn-hover-top) 0%,
-    var(--mc-btn-hover-mid) 48%,
-    var(--mc-btn-hover-bot) 100%
-  );
+  background: var(--mc-btn-hover-mid);
   filter: none;
   box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.28),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.4);
+    inset 0 2px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4);
 }
 
 .mc-btn-primary:active,
 .mc-btn-secondary:active,
 .lc-btn-accent:active {
-  transform: translateY(1px);
+  transform: translateY(2px);
+  padding-bottom: 0.55rem;
   box-shadow:
-    inset 2px 2px 0 rgba(0, 0, 0, 0.45),
-    inset -1px -1px 0 rgba(255, 255, 255, 0.12);
+    inset 0 2px 0 rgba(0, 0, 0, 0.4),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .mc-btn-icon {
-  border-radius: 0;
+  border-radius: var(--radius-slot);
 }
 
 /* Активний бейдж / вкладка */
@@ -1022,20 +1013,15 @@ textarea.mc-input:focus {
   display: inline-flex;
   align-items: center;
   gap: 0.375rem;
-  border-radius: 0;
-  border: 2px solid #000;
-  background: linear-gradient(
-    180deg,
-    var(--mc-btn-hover-top) 0%,
-    var(--mc-btn-hover-mid) 48%,
-    var(--mc-btn-hover-bot) 100%
-  );
+  border-radius: var(--radius-slot);
+  border: 2px solid var(--mc-outline);
+  background: var(--mc-btn-hover-mid);
   color: var(--mc-on-gold);
   font-weight: 700;
-  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.55);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.55);
   box-shadow:
-    inset 2px 2px 0 rgba(255, 255, 255, 0.28),
-    inset -2px -2px 0 rgba(0, 0, 0, 0.4);
+    inset 0 2px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.4);
 }
 
 @keyframes lc-border-shimmer {
@@ -1111,11 +1097,11 @@ textarea.mc-input:focus {
 
 .lc-interactive-panel:hover {
   transform: none;
-  border-color: #000;
+  border-color: var(--mc-outline);
   box-shadow:
-    inset 3px 3px 0 var(--mc-frame-hi),
-    inset -3px -3px 0 var(--mc-frame-lo),
-    0 0 0 1px #000;
+    inset 0 1px 0 rgba(255, 255, 255, 0.16),
+    inset 0 0 0 1px rgba(90, 90, 90, 0.35),
+    0 14px 32px rgba(0, 0, 0, 0.38);
 }
 
 .lc-interactive-panel:hover::after {
@@ -1138,12 +1124,6 @@ textarea.mc-input:focus {
 .mc-btn-secondary:hover,
 .lc-btn-accent:hover {
   transform: none;
-}
-
-.lc-btn-primary:active,
-.mc-btn-secondary:active,
-.lc-btn-accent:active {
-  transform: translateY(1px);
 }
 
 .lc-focus-ring {
@@ -1957,6 +1937,7 @@ textarea.mc-input:focus {
   max-width: 21.5rem;
   overflow: hidden;
   pointer-events: auto;
+  border-radius: var(--radius-card);
   padding: 1rem 1rem 0.85rem;
   background:
     linear-gradient(

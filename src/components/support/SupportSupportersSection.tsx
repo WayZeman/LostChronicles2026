@@ -62,14 +62,12 @@ export function SupportSupportersSection({ entries }: Props) {
     >
       <section
         className={cn(
-          "w-full overflow-hidden border-2 border-black bg-black/30",
-          "shadow-[4px_4px_0_rgba(0,0,0,0.45)]",
-          /* на телефоні/планшеті — на всю ширину сітки; на lg — як дві картки */
+          "mc-frame w-full overflow-hidden",
           "lg:w-[calc((100%-2.5rem)*2/3+1.25rem)]",
         )}
         aria-labelledby="support-supporters-heading"
       >
-        <header className="border-b-2 border-black bg-black/45 px-3.5 py-3 text-center sm:px-4 sm:py-3.5">
+        <header className="border-b border-white/10 px-3.5 py-3 text-center sm:px-4 sm:py-3.5">
           <h2
             id="support-supporters-heading"
             className="text-[13px] font-extrabold tracking-wide text-[var(--mc-text)] sm:text-sm"

@@ -54,7 +54,7 @@ export async function HeroSocialPanel() {
           <div className="hidden h-full min-h-0 sm:block sm:w-[12.65625rem] md:w-[14.90625rem]">
             <HeroLatestShort
               videoId={latestShort.id}
-              className="mc-frame !h-full !w-full !rounded-none"
+              className="mc-frame !h-full !w-full !rounded-none sm:!rounded-r-lg sm:!rounded-l-none"
             />
           </div>
         ) : null}

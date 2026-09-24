@@ -323,8 +323,7 @@ export function SupportOrderCards({ cards }: Props) {
     });
   }
 
-  const modalShell =
-    "border-2 border-black bg-[color-mix(in_srgb,var(--mc-panel,#1a1a1a)_96%,#000)] shadow-[6px_6px_0_rgba(0,0,0,0.55)]";
+  const modalShell = "mc-frame overflow-hidden";
 
   return (
     <>
@@ -346,7 +345,7 @@ export function SupportOrderCards({ cards }: Props) {
         <button
           type="button"
           onClick={() => setCartOpen(true)}
-          className="lc-focus-ring relative inline-flex min-h-11 items-center gap-2 border-2 border-black bg-black/35 px-3.5 text-sm font-bold text-[var(--mc-text)]"
+          className="lc-focus-ring relative inline-flex min-h-11 items-center gap-2 rounded-md border-2 border-[var(--mc-outline)] bg-black/35 px-3.5 text-sm font-bold text-[var(--mc-text)]"
         >
           <ShoppingCart className="size-4" aria-hidden />
           <span className="hidden xs:inline sm:inline">Кошик</span>
@@ -361,7 +360,7 @@ export function SupportOrderCards({ cards }: Props) {
       </div>
 
       {cards.length === 0 ? (
-        <div className="border-2 border-black/60 bg-black/25 py-14 text-center text-sm text-[var(--mc-text-muted)]">
+        <div className="rounded-md border-2 border-[var(--mc-outline)]/60 bg-black/25 py-14 text-center text-sm text-[var(--mc-text-muted)]">
           Товарів поки немає.
         </div>
       ) : (
@@ -382,9 +381,9 @@ export function SupportOrderCards({ cards }: Props) {
               >
                 <article
                   className={cn(
-                    "relative flex h-full flex-col overflow-hidden border-2 border-black bg-black/30",
-                    "shadow-[4px_4px_0_rgba(0,0,0,0.45)] transition-[transform,box-shadow] duration-150",
-                    "hover:-translate-y-0.5 hover:shadow-[6px_6px_0_rgba(0,0,0,0.5)]",
+                    "mc-frame relative flex h-full flex-col overflow-hidden",
+                    "transition-[transform,box-shadow] duration-150",
+                    "hover:-translate-y-0.5",
                   )}
                 >
                   <div className="relative aspect-[4/3] w-full overflow-hidden bg-[#121212]">
@@ -396,7 +395,7 @@ export function SupportOrderCards({ cards }: Props) {
                       loading="lazy"
                       decoding="async"
                     />
-                    <div className="absolute bottom-2 right-2 border-2 border-black bg-black/80 px-2.5 py-1.5 text-xl font-black tabular-nums leading-none text-[var(--mc-net-green)] sm:text-2xl">
+                    <div className="absolute bottom-2 right-2 rounded-md border-2 border-[var(--mc-outline)] bg-black/80 px-2.5 py-1.5 text-xl font-black tabular-nums leading-none text-[var(--mc-net-green)] sm:text-2xl">
                       {badge}
                     </div>
                   </div>
@@ -414,7 +413,7 @@ export function SupportOrderCards({ cards }: Props) {
                           aria-label="Зменшити"
                           disabled={q <= 1}
                           onClick={() => setQtyFor(card.id, q - 1)}
-                          className="lc-focus-ring inline-flex h-9 w-9 items-center justify-center border-2 border-black bg-black/40 text-base font-bold disabled:opacity-40"
+                          className="lc-focus-ring inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-[var(--mc-outline)] bg-black/40 text-base font-bold disabled:opacity-40"
                         >
                           −
                         </button>
@@ -426,7 +425,7 @@ export function SupportOrderCards({ cards }: Props) {
                           aria-label="Збільшити"
                           disabled={q >= MAX_QTY}
                           onClick={() => setQtyFor(card.id, q + 1)}
-                          className="lc-focus-ring inline-flex h-9 w-9 items-center justify-center border-2 border-black bg-black/40 text-base font-bold disabled:opacity-40"
+                          className="lc-focus-ring inline-flex h-9 w-9 items-center justify-center rounded-md border-2 border-[var(--mc-outline)] bg-black/40 text-base font-bold disabled:opacity-40"
                         >
                           +
                         </button>
@@ -459,7 +458,7 @@ export function SupportOrderCards({ cards }: Props) {
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-40 p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div
             className={cn(
-              "pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 border-2 border-black bg-[color-mix(in_srgb,#141414_94%,#000)] p-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3",
+              "pointer-events-auto mx-auto flex max-w-3xl flex-col gap-2 rounded-md border-2 border-[var(--mc-outline)] bg-[color-mix(in_srgb,#141414_94%,#000)] p-2.5 shadow-[0_-8px_24px_rgba(0,0,0,0.45)] backdrop-blur-sm sm:flex-row sm:items-center sm:gap-3 sm:p-3",
             )}
           >
             <button
@@ -476,7 +475,7 @@ export function SupportOrderCards({ cards }: Props) {
               <button
                 type="button"
                 onClick={() => setCartOpen(true)}
-                className="lc-focus-ring inline-flex min-h-11 items-center justify-center border-2 border-black bg-black/40 px-3 text-sm font-bold text-[var(--mc-text)]"
+                className="lc-focus-ring inline-flex min-h-11 items-center justify-center rounded-md border-2 border-[var(--mc-outline)] bg-black/40 px-3 text-sm font-bold text-[var(--mc-text)]"
               >
                 Кошик
               </button>
@@ -520,7 +519,7 @@ export function SupportOrderCards({ cards }: Props) {
               <button
                 type="button"
                 onClick={() => setTierPick(null)}
-                className="lc-focus-ring border-2 border-black p-1.5 text-[var(--mc-text-muted)]"
+                className="lc-focus-ring rounded-md border-2 border-[var(--mc-outline)] p-1.5 text-[var(--mc-text-muted)]"
                 aria-label="Закрити"
               >
                 <X className="size-4" />
@@ -534,7 +533,7 @@ export function SupportOrderCards({ cards }: Props) {
                     onClick={() =>
                       addToCartWithTier(tierPick.card, idx, tierPick.qty)
                     }
-                    className="lc-focus-ring flex w-full items-center justify-between gap-3 border-2 border-black bg-black/35 px-3.5 py-3 text-left transition-colors hover:bg-black/50"
+                    className="lc-focus-ring flex w-full items-center justify-between gap-3 rounded-md border-2 border-[var(--mc-outline)] bg-black/35 px-3.5 py-3 text-left transition-colors hover:bg-black/50"
                   >
                     <span className="min-w-0 font-bold text-[var(--mc-text)] [overflow-wrap:anywhere]">
                       {tier.label || `Варіант ${idx + 1}`}
@@ -562,7 +561,7 @@ export function SupportOrderCards({ cards }: Props) {
             )}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between gap-2 border-b-2 border-dashed border-black/50 px-4 py-3 sm:px-5">
+            <div className="flex items-center justify-between gap-2 border-b border-dashed border-white/15 px-4 py-3 sm:px-5">
               <div>
                 <h3
                   id="support-cart-title"
@@ -577,7 +576,7 @@ export function SupportOrderCards({ cards }: Props) {
               <button
                 type="button"
                 onClick={() => setCartOpen(false)}
-                className="lc-focus-ring border-2 border-black p-1.5 text-[var(--mc-text-muted)]"
+                className="lc-focus-ring rounded-md border-2 border-[var(--mc-outline)] p-1.5 text-[var(--mc-text-muted)]"
                 aria-label="Закрити"
               >
                 <X className="size-4" />
@@ -590,7 +589,7 @@ export function SupportOrderCards({ cards }: Props) {
                   Кошик порожній.
                 </p>
               ) : (
-                <div className="border-2 border-dashed border-black/40 bg-[#0d0d0d] px-3 py-3 font-mono sm:px-4">
+                <div className="rounded-md border border-dashed border-white/20 bg-[#0d0d0d] px-3 py-3 font-mono sm:px-4">
                   <ul className="space-y-0 divide-y divide-dashed divide-white/15">
                     {cartRows.map(({ line, card, displayTitle, unit, total }, idx) => (
                       <li
@@ -609,7 +608,7 @@ export function SupportOrderCards({ cards }: Props) {
                               <div className="mt-2 flex items-center justify-center gap-2 sm:justify-start">
                                 <button
                                   type="button"
-                                  className="lc-focus-ring h-8 w-8 border-2 border-black bg-black/40 font-bold"
+                                  className="lc-focus-ring h-8 w-8 rounded-md border-2 border-[var(--mc-outline)] bg-black/40 font-bold"
                                   onClick={() =>
                                     updateCartQty(
                                       card.id,
@@ -625,7 +624,7 @@ export function SupportOrderCards({ cards }: Props) {
                                 </span>
                                 <button
                                   type="button"
-                                  className="lc-focus-ring h-8 w-8 border-2 border-black bg-black/40 font-bold"
+                                  className="lc-focus-ring h-8 w-8 rounded-md border-2 border-[var(--mc-outline)] bg-black/40 font-bold"
                                   onClick={() =>
                                     updateCartQty(
                                       card.id,
@@ -675,12 +674,12 @@ export function SupportOrderCards({ cards }: Props) {
               )}
             </div>
 
-            <div className="border-t-2 border-dashed border-black/50 px-4 py-3 sm:px-5">
+            <div className="border-t border-dashed border-white/15 px-4 py-3 sm:px-5">
               <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <button
                   type="button"
                   onClick={continueShopping}
-                  className="lc-focus-ring inline-flex min-h-11 items-center justify-center border-2 border-black bg-black/35 px-4 text-sm font-bold text-[var(--mc-text)]"
+                  className="lc-focus-ring inline-flex min-h-11 items-center justify-center rounded-md border-2 border-[var(--mc-outline)] bg-black/35 px-4 text-sm font-bold text-[var(--mc-text)]"
                 >
                   Продовжити покупки
                 </button>
@@ -723,7 +722,7 @@ export function SupportOrderCards({ cards }: Props) {
                 <p className="mt-4 text-xs font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
                   Нікнейм
                 </p>
-                <p className="mt-1.5 border-2 border-black bg-black/30 px-3 py-2.5 text-sm font-semibold text-[var(--mc-text)]">
+                <p className="mt-1.5 rounded-md border-2 border-[var(--mc-outline)] bg-black/30 px-3 py-2.5 text-sm font-semibold text-[var(--mc-text)]">
                   {me?.gameNickname}
                 </p>
                 <label className="mt-3 block text-xs font-bold uppercase tracking-wide text-[var(--mc-text-muted)]">
@@ -742,7 +741,7 @@ export function SupportOrderCards({ cards }: Props) {
                         ? "Що перенести і куди (координати)"
                         : "Пісня / деталі"
                     }
-                    className="lc-focus-ring mt-1.5 w-full border-2 border-black bg-black/30 px-3 py-2.5 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
+                    className="lc-focus-ring mt-1.5 w-full rounded-md border-2 border-[var(--mc-outline)] bg-black/30 px-3 py-2.5 text-sm text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
                   />
                 </label>
                 {error ? (
@@ -758,7 +757,7 @@ export function SupportOrderCards({ cards }: Props) {
                       closeOverlay();
                       setCartOpen(true);
                     }}
-                    className="lc-focus-ring inline-flex min-h-11 items-center justify-center border-2 border-black bg-black/35 px-4 text-sm font-bold text-[var(--mc-text-muted)]"
+                    className="lc-focus-ring inline-flex min-h-11 items-center justify-center rounded-md border-2 border-[var(--mc-outline)] bg-black/35 px-4 text-sm font-bold text-[var(--mc-text-muted)]"
                   >
                     Назад до кошика
                   </button>
@@ -805,7 +804,7 @@ export function SupportOrderCards({ cards }: Props) {
                   <button
                     type="button"
                     onClick={closeOverlay}
-                    className="lc-focus-ring inline-flex min-h-11 items-center justify-center border-2 border-black px-4 text-sm font-bold text-[var(--mc-text-muted)]"
+                    className="lc-focus-ring inline-flex min-h-11 items-center justify-center rounded-md border-2 border-[var(--mc-outline)] px-4 text-sm font-bold text-[var(--mc-text-muted)]"
                   >
                     Назад у магазин
                   </button>

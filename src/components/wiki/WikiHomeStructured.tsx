@@ -107,7 +107,7 @@ export function WikiHomeStructured({
                     ? "стрічка"
                     : wikiPagesChip(cat.page_count);
                 const cardClass = cn(
-                  "group relative flex w-full flex-col overflow-hidden",
+                  "group relative flex w-full flex-col overflow-hidden rounded-lg",
                   "border border-white/10 bg-black/35 p-4 transition duration-200",
                   "sm:w-[calc(50%-0.45rem)]",
                   "hover:-translate-y-0.5 hover:bg-black/45",

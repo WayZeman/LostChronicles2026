@@ -26,7 +26,7 @@ export default function MapPage() {
       <div className={lcPageContainerClass}>
         <WikiContentFrame>
           <div className="relative flex flex-col items-center text-center">
-            <h2 className="lc-section-title text-xl uppercase md:text-2xl">
+            <h2 className="lc-section-title text-xl md:text-2xl">
               Перейти до карти
             </h2>
 

@@ -247,7 +247,7 @@ export function HeroSocialLinks({
   return (
     <div className={cn("w-full", rail && "w-auto", className)}>
       {!hideTitle ? (
-        <h2 className="lc-section-title text-center text-lg uppercase md:text-xl">
+        <h2 className="lc-section-title text-center text-lg md:text-xl">
           Ми в соцмережах
         </h2>
       ) : null}

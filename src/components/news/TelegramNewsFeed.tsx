@@ -72,10 +72,10 @@ export function TelegramNewsFeed({ posts, topicUrl }: Props) {
                 <div className="pointer-events-none absolute inset-y-0 left-0 w-0.5 bg-[var(--mc-net-green)]/70 opacity-70 transition-opacity group-hover:opacity-100 sm:w-1" />
 
                 <div className="px-3.5 py-3.5 pl-4 sm:px-5 sm:py-5 sm:pl-6">
-                  <time
+                    <time
                     dateTime={post.dateIso}
                     title={date.full}
-                    className="inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-sm border border-black/60 bg-[var(--mc-surface-elevated)] px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-text)] sm:text-xs"
+                    className="inline-flex max-w-full flex-wrap items-center gap-1.5 rounded-md border border-white/10 bg-[var(--mc-surface-elevated)] px-2 py-0.5 text-[11px] font-semibold text-[var(--mc-text)] sm:text-xs"
                   >
                     <span>{date.day}</span>
                     {date.time ? (
@@ -121,7 +121,7 @@ export function TelegramNewsFeed({ posts, topicUrl }: Props) {
                       {previewImages.map((src, i) => (
                         <li
                           key={src}
-                          className="relative min-w-0 overflow-hidden border border-black/50 bg-black/25"
+                          className="relative min-w-0 overflow-hidden rounded-md border border-white/10 bg-black/25"
                         >
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
@@ -153,7 +153,7 @@ export function TelegramNewsFeed({ posts, topicUrl }: Props) {
           href={topicUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="lc-focus-ring lc-btn-accent inline-flex min-h-12 w-full max-w-sm items-center justify-center gap-2 px-6 text-sm font-bold uppercase tracking-wide sm:w-auto sm:min-w-[16rem]"
+          className="lc-focus-ring lc-btn-accent inline-flex min-h-12 w-full max-w-sm items-center justify-center gap-2 px-6 text-sm font-bold sm:w-auto sm:min-w-[16rem]"
         >
           Більше новин
           <ArrowUpRight className="size-4 opacity-80" aria-hidden />

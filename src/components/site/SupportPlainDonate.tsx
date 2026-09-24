@@ -167,7 +167,7 @@ export function SupportPlainDonate({ nextPath = "/", className }: Props) {
           onClick={closeModal}
         >
           <div
-            className="w-full max-w-sm border-2 border-black bg-[color-mix(in_srgb,var(--mc-panel,#1a1a1a)_96%,#000)] p-4 shadow-[6px_6px_0_rgba(0,0,0,0.55)] sm:p-5"
+            className="mc-frame w-full max-w-sm p-4 sm:p-5"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="mb-3 flex items-start justify-between gap-2">
@@ -210,7 +210,7 @@ export function SupportPlainDonate({ nextPath = "/", className }: Props) {
                   disabled={pending}
                   autoFocus
                   placeholder="50"
-                  className="lc-focus-ring w-full border-2 border-black bg-black/30 px-3 py-2.5 pr-9 text-sm font-semibold tabular-nums text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
+                  className="lc-focus-ring mc-input w-full px-3 py-2.5 pr-9 text-sm font-semibold tabular-nums text-[var(--mc-text)] placeholder:text-[var(--mc-text-muted)]"
                 />
                 <span
                   className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-bold text-[var(--mc-net-green)]"
@@ -246,7 +246,7 @@ export function SupportPlainDonate({ nextPath = "/", className }: Props) {
                 type="button"
                 disabled={pending}
                 onClick={closeModal}
-                className="lc-focus-ring inline-flex min-h-11 items-center justify-center border-2 border-black bg-black/35 px-4 text-sm font-bold text-[var(--mc-text)] disabled:opacity-40"
+                className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center justify-center px-4 text-sm font-bold text-[var(--mc-text)] disabled:opacity-40"
               >
                 Скасувати
               </button>
