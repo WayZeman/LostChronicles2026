@@ -7,7 +7,6 @@ import {
   WIKI_FREE_PLAYERS_LABEL,
 } from "@/lib/wiki-player-roster";
 import type { WikiCategoryPageRow } from "@/lib/wiki-structure";
-import { cn } from "@/lib/utils";
 
 type Props = {
   pages: WikiCategoryPageRow[];
@@ -17,14 +16,6 @@ type Props = {
   rowActions?: (page: WikiCategoryPageRow) => ReactNode;
   onOpen?: (page: WikiCategoryPageRow) => void;
 };
-
-function initials(title: string): string {
-  const parts = title.trim().split(/[\s_]+/).filter(Boolean);
-  if (parts.length >= 2) {
-    return `${parts[0]![0] ?? ""}${parts[1]![0] ?? ""}`.toUpperCase();
-  }
-  return title.trim().slice(0, 2).toUpperCase();
-}
 
 function PlayerName({
   page,
@@ -80,16 +71,12 @@ export function WikiPlayersRoster({
   }
 
   return (
-    <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-2 lg:gap-5">
-      {ordered.map(({ state, members }, index) => {
-        const lone = ordered.length % 2 === 1 && index === ordered.length - 1;
+    <div className="flex flex-col gap-4">
+      {ordered.map(({ state, members }) => {
         return (
           <section
             key={state}
-            className={cn(
-              "overflow-hidden rounded-lg border border-white/10 bg-black/30",
-              lone && "lg:col-span-2",
-            )}
+            className="overflow-hidden rounded-lg border border-white/10 bg-black/30"
           >
             <header className="flex items-center justify-between gap-3 border-b border-white/10 bg-black/25 px-3 py-3 sm:px-4">
               <div className="flex min-w-0 items-center gap-2.5">
@@ -113,7 +100,7 @@ export function WikiPlayersRoster({
             ) : (
               <ul>
                 <li className="hidden border-b border-white/10 px-4 py-2 text-[11px] font-bold uppercase tracking-wide text-[var(--mc-text-subtle)] sm:grid sm:grid-cols-2 sm:gap-6">
-                  <span className="pl-11">Гравець</span>
+                  <span>Гравець</span>
                   <span>Посада</span>
                 </li>
                 {members.map((page) => {
@@ -125,21 +112,13 @@ export function WikiPlayersRoster({
                     >
                       <div className="flex flex-col gap-2.5 px-3 py-3 sm:flex-row sm:items-center sm:gap-4 sm:px-4">
                         <div className="grid min-w-0 flex-1 grid-cols-1 gap-1 sm:grid-cols-2 sm:items-center sm:gap-6">
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span
-                              className="inline-flex size-8 shrink-0 items-center justify-center rounded-md border border-[#ffd54f]/30 bg-black/45 text-[10px] font-black tracking-wide text-[#ffd54f]"
-                              aria-hidden
-                            >
-                              {initials(page.page_title)}
-                            </span>
-                            <PlayerName page={page} onOpen={onOpen} />
-                          </div>
-                          <p className="pl-11 text-sm leading-snug text-[var(--mc-text-muted)] sm:pl-0">
+                          <PlayerName page={page} onOpen={onOpen} />
+                          <p className="text-sm leading-snug text-[var(--mc-text-muted)]">
                             {role && role !== "—" ? role : "—"}
                           </p>
                         </div>
                         {rowActions ? (
-                          <div className="flex flex-wrap gap-1.5 pl-11 sm:shrink-0 sm:pl-0">
+                          <div className="flex flex-wrap gap-1.5 sm:shrink-0">
                             {rowActions(page)}
                           </div>
                         ) : null}
