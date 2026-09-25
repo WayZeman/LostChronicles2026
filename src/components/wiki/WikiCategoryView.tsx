@@ -53,6 +53,8 @@ export function WikiCategoryView({
   const accent = wikiAccentForSlug(category.slug);
   const Icon = accent.Icon;
   const chip = wikiPagesChip(category.pages.length);
+  const isPlayers =
+    category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase();
 
   return (
     <div className="space-y-7">
@@ -79,15 +81,28 @@ export function WikiCategoryView({
       </div>
 
       <SoftAppear>
-        <header className="relative overflow-hidden rounded-lg border border-white/10 bg-black/30 px-4 py-5 text-center sm:px-6 sm:py-6 sm:text-left">
+        <header
+          className={cn(
+            "relative overflow-hidden rounded-lg border border-white/10 bg-black/30 px-4 py-5 sm:px-6 sm:py-6",
+            isPlayers ? "text-left" : "text-center sm:text-left",
+          )}
+        >
           <span
             className={cn("absolute inset-y-0 left-0 w-1.5", accent.bar)}
             aria-hidden
           />
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
+          <div
+            className={cn(
+              "flex gap-3 sm:items-start sm:gap-4",
+              isPlayers
+                ? "flex-row items-start"
+                : "flex-col items-center sm:flex-row",
+            )}
+          >
             <span
               className={cn(
                 "inline-flex size-12 shrink-0 items-center justify-center border bg-black/45",
+                isPlayers && "rounded-lg",
                 accent.chip,
               )}
             >
@@ -106,15 +121,14 @@ export function WikiCategoryView({
                   {category.description}
                 </p>
               ) : null}
-              {category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase() ? (
+              {isPlayers ? (
                 <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--mc-text-muted)]">
-                  За державою: гравець і посада. Хто без держави — у розділі
-                  «Вільні».
+                  Гравці за державами. Хто без держави — у розділі «Вільні».
                 </p>
               ) : null}
               {editMode ? (
                 <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-[var(--mc-text-subtle)]">
-                  {category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase()
+                  {isPlayers
                     ? "«Змінити» — держава і посада. «Нова категорія» — ще одна держава в списку."
                     : "Клік по обкладинці — текст сторінки. Кнопка «Редагувати» — фото, код і опис картки."}
                 </p>
@@ -126,11 +140,12 @@ export function WikiCategoryView({
 
       {topSlot ? <div className="relative z-10">{topSlot}</div> : null}
 
-      {category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase() ? (
+      {isPlayers ? (
         <SoftAppear slow>
           <WikiPlayersRoster
             pages={category.pages}
             groups={category.player_groups}
+            showEmpty={editMode}
             rowActions={editMode && pageActions ? pageActions : undefined}
             onOpen={editMode ? onOpenPage : undefined}
           />
