@@ -1,5 +1,9 @@
 import { getSql } from "@/lib/db";
 import {
+  playerRosterFromArticle,
+  WIKI_PLAYERS_SLUG,
+} from "@/lib/wiki-player-roster";
+import {
   ensureWikiTables,
   getWikiPageBySlug,
   normalizeWikiSlug,
@@ -54,6 +58,10 @@ export type WikiCategoryPageRow = {
   page_slug: string;
   page_title: string;
   page_summary: string;
+  /** Розділ «Гравці»: держава або «Вільні». */
+  player_state: string;
+  /** Розділ «Гравці»: посада. */
+  player_role: string;
 };
 
 export type WikiHomeTree = {
@@ -244,27 +252,57 @@ export async function getWikiCategoryBySlug(
   const c = cats[0];
   if (!c) return null;
 
-  const pages = rowsOf(await sql`
-    SELECT
-      cp.id, cp.category_id, cp.page_id, cp.short_code, cp.card_blurb,
-      coalesce(cp.image_url, '') AS image_url, cp.sort_order,
-      p.slug AS page_slug, p.title AS page_title, p.summary AS page_summary
-    FROM wiki_category_pages cp
-    JOIN wiki_pages p ON p.id = cp.page_id
-    WHERE cp.category_id = ${num(c.id)}
-    ORDER BY cp.sort_order ASC, cp.id ASC
-  `).map((r) => ({
-    id: num(r.id),
-    category_id: num(r.category_id),
-    page_id: num(r.page_id),
-    short_code: String(r.short_code ?? ""),
-    card_blurb: String(r.card_blurb ?? ""),
-    image_url: String(r.image_url ?? ""),
-    sort_order: num(r.sort_order),
-    page_slug: String(r.page_slug ?? ""),
-    page_title: String(r.page_title ?? ""),
-    page_summary: String(r.page_summary ?? ""),
-  }));
+  const isPlayers =
+    String(c.slug ?? "").toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase();
+  const pages = rowsOf(
+    isPlayers
+      ? await sql`
+          SELECT
+            cp.id, cp.category_id, cp.page_id, cp.short_code, cp.card_blurb,
+            coalesce(cp.image_url, '') AS image_url, cp.sort_order,
+            p.slug AS page_slug, p.title AS page_title, p.summary AS page_summary,
+            p.content_html AS page_html
+          FROM wiki_category_pages cp
+          JOIN wiki_pages p ON p.id = cp.page_id
+          WHERE cp.category_id = ${num(c.id)}
+          ORDER BY cp.sort_order ASC, cp.id ASC
+        `
+      : await sql`
+          SELECT
+            cp.id, cp.category_id, cp.page_id, cp.short_code, cp.card_blurb,
+            coalesce(cp.image_url, '') AS image_url, cp.sort_order,
+            p.slug AS page_slug, p.title AS page_title, p.summary AS page_summary,
+            '' AS page_html
+          FROM wiki_category_pages cp
+          JOIN wiki_pages p ON p.id = cp.page_id
+          WHERE cp.category_id = ${num(c.id)}
+          ORDER BY cp.sort_order ASC, cp.id ASC
+        `,
+  ).map((r) => {
+    const page_title = String(r.page_title ?? "");
+    const card_blurb = String(r.card_blurb ?? "");
+    const roster = isPlayers
+      ? playerRosterFromArticle({
+          title: page_title,
+          html: String(r.page_html ?? ""),
+          cardBlurb: card_blurb,
+        })
+      : { state: "", role: "" };
+    return {
+      id: num(r.id),
+      category_id: num(r.category_id),
+      page_id: num(r.page_id),
+      short_code: String(r.short_code ?? ""),
+      card_blurb,
+      image_url: String(r.image_url ?? ""),
+      sort_order: num(r.sort_order),
+      page_slug: String(r.page_slug ?? ""),
+      page_title,
+      page_summary: String(r.page_summary ?? ""),
+      player_state: roster.state,
+      player_role: roster.role,
+    };
+  });
 
   return {
     ...mapCategory(c),

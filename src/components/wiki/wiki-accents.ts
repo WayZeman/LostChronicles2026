@@ -152,7 +152,7 @@ export function wikiCategoryCreateCopy(slug: string): {
         addLabel: "Новий гравець",
         formTitle: "Нова картка гравця",
         titlePlaceholder: "Нікнейм / імʼя",
-        blurbPlaceholder: "Короткий опис на картці — опційно",
+        blurbPlaceholder: "Посада, або «Держава — посада»",
         createLabel: "Створити картку і сторінку",
         successHint: "Картку додано. Натисни на обкладинку, щоб відкрити сторінку.",
       };

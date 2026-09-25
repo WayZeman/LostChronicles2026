@@ -14,6 +14,8 @@ import {
   isLocalWikiCover,
   wikiCardImageUrl,
 } from "@/components/wiki/wiki-covers";
+import { WikiPlayersRoster } from "@/components/wiki/WikiPlayersRoster";
+import { WIKI_PLAYERS_SLUG } from "@/lib/wiki-player-roster";
 import { cn } from "@/lib/utils";
 import type { ReactNode } from "react";
 
@@ -104,6 +106,12 @@ export function WikiCategoryView({
                   {category.description}
                 </p>
               ) : null}
+              {category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase() ? (
+                <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--mc-text-muted)]">
+                  За державою: гравець і посада. Хто без держави — у розділі
+                  «Вільні».
+                </p>
+              ) : null}
               {editMode ? (
                 <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-[var(--mc-text-subtle)]">
                   Клік по обкладинці — текст сторінки. Кнопка «Редагувати» —
@@ -124,6 +132,11 @@ export function WikiCategoryView({
             ? " Додай першу картку формою зверху."
             : null}
         </p>
+      ) : category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase() &&
+        !editMode ? (
+        <SoftAppear slow>
+          <WikiPlayersRoster pages={category.pages} />
+        </SoftAppear>
       ) : (
         <SoftAppear slow>
           <div className="flex flex-wrap justify-center gap-3">
