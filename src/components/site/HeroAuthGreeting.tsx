@@ -23,6 +23,7 @@ type AuthUser = {
   needsNickname: boolean;
   avatarUrl: string;
   isAdmin?: boolean;
+  canEditWiki?: boolean;
   role?: string;
 };
 
@@ -204,7 +205,7 @@ export function HeroAuthGreeting() {
             </button>
           </form>
 
-          {user.isAdmin ? (
+          {user.isAdmin || user.canEditWiki ? (
             <Link
               href="/admin"
               onClick={() => setOpen(false)}
