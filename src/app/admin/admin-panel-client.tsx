@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { ArrowDown, ArrowUp, Ban, Clock, ExternalLink, Plus, Trash2, Upload } from "lucide-react";
 import { FaqRichEditor } from "@/components/admin/FaqRichEditor";
 import { AdminWikiCms } from "@/components/admin/AdminWikiCms";
+import { AdminPlayerRoster } from "@/components/admin/AdminPlayerRoster";
 import { AdminApplyCms } from "@/components/admin/AdminApplyCms";
 import { SoftAppear } from "@/components/site/SoftAppear";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
@@ -33,7 +34,8 @@ type Tab =
   | "voting"
   | "proposals"
   | "admins"
-  | "wiki";
+  | "wiki"
+  | "roster";
 
 type FaqDraft = { key: string; question: string; answer_html: string };
 
@@ -105,7 +107,8 @@ export function AdminPanelClient() {
     tabParam === "voting" ||
     tabParam === "proposals" ||
     tabParam === "admins" ||
-    tabParam === "wiki"
+    tabParam === "wiki" ||
+    tabParam === "roster"
       ? tabParam
       : "faq";
   const [tab, setTab] = useState<Tab>(initialTab);
@@ -150,7 +153,7 @@ export function AdminPanelClient() {
       setIsFullAdmin(fullAdmin);
       setAllowed(true);
       if (!fullAdmin) {
-        setTab("wiki");
+        setTab((current) => (current === "roster" ? "roster" : "wiki"));
         return;
       }
 
@@ -233,7 +236,7 @@ export function AdminPanelClient() {
   useEffect(() => {
     const id = requestAnimationFrame(() => {
       if (!isFullAdmin) {
-        setTab("wiki");
+        setTab(searchParams.get("tab") === "roster" ? "roster" : "wiki");
         return;
       }
       const t = searchParams.get("tab");
@@ -246,7 +249,8 @@ export function AdminPanelClient() {
         t === "voting" ||
         t === "proposals" ||
         t === "admins" ||
-        t === "wiki"
+        t === "wiki" ||
+        t === "roster"
       ) {
         setTab(t);
       }
@@ -475,7 +479,7 @@ export function AdminPanelClient() {
         role === "admin"
           ? "Адміна призначено."
           : role === "wiki_editor"
-            ? "Вікі-редактора призначено."
+            ? "Вікі-редактора призначено. Доступні лише вікі та розподіл гравців."
             : "Роль знято (гравець).",
       );
     } catch {
@@ -572,9 +576,13 @@ export function AdminPanelClient() {
         { id: "voting", label: "Голосування" },
         { id: "proposals", label: "Пропозиції" },
         { id: "wiki", label: "Вікі" },
+        { id: "roster", label: "Розподіл гравців" },
         { id: "admins", label: "Ролі" },
       ]
-    : [{ id: "wiki", label: "Вікі" }];
+    : [
+        { id: "wiki", label: "Вікі" },
+        { id: "roster", label: "Розподіл гравців" },
+      ];
 
   async function onCardImageFile(idx: number, file: File | null) {
     if (!file) return;
@@ -608,7 +616,7 @@ export function AdminPanelClient() {
                 Керування сайтом
               </h1>
               <p className="mt-1 text-sm text-[var(--mc-text-muted)]">
-                FAQ, анкети, підключення, підтримка, вікі, пропозиції та ролі.
+                FAQ, анкети, підключення, підтримка, вікі, розподіл гравців, пропозиції та ролі.
               </p>
             </div>
           </header>
@@ -649,7 +657,9 @@ export function AdminPanelClient() {
           <div
             className={cn(
               lcGlassPanelClass,
-              tab === "wiki" ? "!p-3 sm:!p-5 lg:!p-6 min-h-[70vh]" : "!p-4 sm:!p-6",
+              tab === "wiki" || tab === "roster"
+                ? "!p-3 sm:!p-5 lg:!p-6 min-h-[70vh]"
+                : "!p-4 sm:!p-6",
             )}
           >
             {tab === "faq" ? (
@@ -1511,8 +1521,23 @@ export function AdminPanelClient() {
             ) : null}
 
             {tab === "wiki" ? <AdminWikiCms /> : null}
+            {tab === "roster" ? <AdminPlayerRoster /> : null}
 
             {tab === "admins" ? (
+              <div className="space-y-4">
+              <div className="space-y-1.5 rounded-lg border border-white/10 bg-black/25 px-3 py-3 text-sm leading-relaxed text-[var(--mc-text-muted)]">
+                <p>
+                  <span className="font-bold text-sky-200">Вікі редактор</span>{" "}
+                  може лише редагувати вікі та розподіл гравців. Інші вкладки
+                  йому недоступні.
+                </p>
+                <p>
+                  <span className="font-bold text-[var(--mc-net-green)]">
+                    Адмін
+                  </span>{" "}
+                  має доступ до всього керування сайтом.
+                </p>
+              </div>
               <ul className="space-y-2">
                 {users.map((u) => {
                   const label = u.game_nickname || u.username;
@@ -1574,6 +1599,7 @@ export function AdminPanelClient() {
                   );
                 })}
               </ul>
+              </div>
             ) : null}
           </div>
         </SoftAppear>

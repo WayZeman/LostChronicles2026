@@ -12,6 +12,14 @@ const STATE_ORDER = [
   "Титульна Імперія Артолії",
 ] as const;
 
+/** Категорії, які є на сторінці, навіть поки в них немає гравців. */
+export const DEFAULT_PLAYER_GROUP_TITLES: readonly string[] = STATE_ORDER;
+
+export type PlayerGroupRef = {
+  title: string;
+  sort_order: number;
+};
+
 /** Довші збіги раніше, щоб «Артолія» не перебила точнішу назву. */
 const STATE_ALIASES: Array<{ re: RegExp; title: string }> = [
   { re: /домініон\p{L}*\s+земана/iu, title: "Домініон Земана" },
@@ -118,6 +126,49 @@ export function playerRosterFromArticle(input: {
     state: state === WIKI_FREE_PLAYERS_LABEL ? WIKI_FREE_PLAYERS_LABEL : state,
     role,
   };
+}
+
+/** Явний підпис картки: «Держава — посада». Перекриває інфобокс статті. */
+export function formatPlayerCardBlurb(state: string, role: string): string {
+  const s = state.trim() || WIKI_FREE_PLAYERS_LABEL;
+  const r = role.trim();
+  return `${s} — ${r || "—"}`;
+}
+
+/**
+ * Порядок категорій: збережений sort_order, далі держави лише з гравців,
+ * «Вільні» завжди в кінці. `groups === undefined` — стандартний набір.
+ */
+export function orderedPlayerGroupTitles(
+  pages: Array<{ player_state: string }>,
+  groups: PlayerGroupRef[] | undefined,
+): string[] {
+  const refs =
+    groups === undefined
+      ? DEFAULT_PLAYER_GROUP_TITLES.map((title, sort_order) => ({
+          title,
+          sort_order,
+        }))
+      : groups;
+  const known = new Set(refs.map((g) => g.title));
+  const extras = new Set<string>();
+  let hasFree = false;
+  for (const page of pages) {
+    const state = page.player_state.trim() || WIKI_FREE_PLAYERS_LABEL;
+    if (state === WIKI_FREE_PLAYERS_LABEL) {
+      hasFree = true;
+      continue;
+    }
+    if (!known.has(state)) extras.add(state);
+  }
+  const titles = [
+    ...[...refs].sort(
+      (a, b) => a.sort_order - b.sort_order || a.title.localeCompare(b.title, "uk"),
+    ).map((g) => g.title),
+    ...[...extras].sort((a, b) => a.localeCompare(b, "uk")),
+  ];
+  if (hasFree) titles.push(WIKI_FREE_PLAYERS_LABEL);
+  return titles;
 }
 
 export function comparePlayerStates(a: string, b: string): number {

@@ -114,8 +114,9 @@ export function WikiCategoryView({
               ) : null}
               {editMode ? (
                 <p className="mt-3 max-w-2xl text-[11px] leading-relaxed text-[var(--mc-text-subtle)]">
-                  Клік по обкладинці — текст сторінки. Кнопка «Редагувати» —
-                  фото, код і опис картки.
+                  {category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase()
+                    ? "«Змінити» — держава і посада. «Нова категорія» — ще одна держава в списку."
+                    : "Клік по обкладинці — текст сторінки. Кнопка «Редагувати» — фото, код і опис картки."}
                 </p>
               ) : null}
             </div>
@@ -125,18 +126,22 @@ export function WikiCategoryView({
 
       {topSlot ? <div className="relative z-10">{topSlot}</div> : null}
 
-      {category.pages.length === 0 ? (
+      {category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase() ? (
+        <SoftAppear slow>
+          <WikiPlayersRoster
+            pages={category.pages}
+            groups={category.player_groups}
+            rowActions={editMode && pageActions ? pageActions : undefined}
+            onOpen={editMode ? onOpenPage : undefined}
+          />
+        </SoftAppear>
+      ) : category.pages.length === 0 ? (
         <p className="border border-dashed border-white/15 px-4 py-10 text-center text-sm text-[var(--mc-text-muted)]">
           У цьому розділі ще немає записів.
           {editMode
             ? " Додай першу картку формою зверху."
             : null}
         </p>
-      ) : category.slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase() &&
-        !editMode ? (
-        <SoftAppear slow>
-          <WikiPlayersRoster pages={category.pages} />
-        </SoftAppear>
       ) : (
         <SoftAppear slow>
           <div className="flex flex-wrap justify-center gap-3">

@@ -1,6 +1,8 @@
 import { getSql } from "@/lib/db";
 import {
+  DEFAULT_PLAYER_GROUP_TITLES,
   playerRosterFromArticle,
+  WIKI_FREE_PLAYERS_LABEL,
   WIKI_PLAYERS_SLUG,
 } from "@/lib/wiki-player-roster";
 import {
@@ -72,9 +74,17 @@ export type WikiHomeTree = {
   >;
 };
 
+export type WikiPlayerGroupRow = {
+  id: number;
+  title: string;
+  sort_order: number;
+};
+
 export type WikiCategoryDetail = WikiCategoryRow & {
   pages: WikiCategoryPageRow[];
   section_title: string;
+  /** Лише розділ «Гравці»: держави, навіть порожні. */
+  player_groups?: WikiPlayerGroupRow[];
 };
 
 export async function ensureWikiStructureTables(): Promise<void> {
@@ -136,6 +146,28 @@ export async function ensureWikiStructureTables(): Promise<void> {
     ALTER TABLE wiki_pages
     ADD COLUMN IF NOT EXISTS summary TEXT NOT NULL DEFAULT ''
   `;
+  await sql`
+    CREATE TABLE IF NOT EXISTS wiki_player_groups (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(200) NOT NULL,
+      sort_order INT NOT NULL DEFAULT 0,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      CONSTRAINT wiki_player_groups_title_uidx UNIQUE (title)
+    )
+  `;
+  const groupCount = rowsOf(
+    await sql`SELECT count(*)::int AS c FROM wiki_player_groups`,
+  );
+  if (num(groupCount[0]?.c) === 0) {
+    for (let i = 0; i < DEFAULT_PLAYER_GROUP_TITLES.length; i += 1) {
+      const title = DEFAULT_PLAYER_GROUP_TITLES[i]!;
+      await sql`
+        INSERT INTO wiki_player_groups (title, sort_order)
+        VALUES (${title}, ${i})
+        ON CONFLICT (title) DO NOTHING
+      `;
+    }
+  }
   structureEnsured = true;
 }
 
@@ -308,7 +340,81 @@ export async function getWikiCategoryBySlug(
     ...mapCategory(c),
     section_title: String(c.section_title ?? ""),
     pages,
+    ...(isPlayers ? { player_groups: await listWikiPlayerGroups() } : {}),
   };
+}
+
+function mapPlayerGroup(r: Record<string, unknown>): WikiPlayerGroupRow {
+  return {
+    id: num(r.id),
+    title: String(r.title ?? ""),
+    sort_order: num(r.sort_order),
+  };
+}
+
+export async function listWikiPlayerGroups(): Promise<WikiPlayerGroupRow[]> {
+  await ensureWikiStructureTables();
+  const sql = getSql();
+  return rowsOf(await sql`
+    SELECT id, title, sort_order
+    FROM wiki_player_groups
+    ORDER BY sort_order ASC, id ASC
+  `).map(mapPlayerGroup);
+}
+
+export async function createWikiPlayerGroup(
+  title: string,
+): Promise<
+  { ok: true; group: WikiPlayerGroupRow } | { ok: false; error: string }
+> {
+  const name = title.trim();
+  if (!name) return { ok: false, error: "Потрібна назва категорії." };
+  if (name.toLowerCase() === WIKI_FREE_PLAYERS_LABEL.toLowerCase()) {
+    return {
+      ok: false,
+      error: "«Вільні» з’являються самі, коли гравець без держави.",
+    };
+  }
+  await ensureWikiStructureTables();
+  const existing = await listWikiPlayerGroups();
+  if (existing.some((g) => g.title.toLowerCase() === name.toLowerCase())) {
+    return { ok: false, error: "Така категорія вже є." };
+  }
+  const sql = getSql();
+  const maxRows = rowsOf(
+    await sql`SELECT coalesce(max(sort_order), -1)::int AS m FROM wiki_player_groups`,
+  );
+  const sort_order = num(maxRows[0]?.m) + 1;
+  try {
+    const rows = rowsOf(await sql`
+      INSERT INTO wiki_player_groups (title, sort_order)
+      VALUES (${name}, ${sort_order})
+      RETURNING id, title, sort_order
+    `);
+    return { ok: true, group: mapPlayerGroup(rows[0]!) };
+  } catch {
+    return { ok: false, error: "Така категорія вже є." };
+  }
+}
+
+export async function deleteWikiPlayerGroup(
+  id: number,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await ensureWikiStructureTables();
+  const groups = await listWikiPlayerGroups();
+  const group = groups.find((g) => g.id === id);
+  if (!group) return { ok: false, error: "Категорію не знайдено." };
+  const players = await getWikiCategoryBySlug(WIKI_PLAYERS_SLUG);
+  const used = players?.pages.some((p) => p.player_state === group.title);
+  if (used) {
+    return {
+      ok: false,
+      error: "У категорії ще є гравці. Спочатку перенеси їх.",
+    };
+  }
+  const sql = getSql();
+  await sql`DELETE FROM wiki_player_groups WHERE id = ${id}`;
+  return { ok: true };
 }
 
 export async function createWikiSection(input: {
@@ -373,7 +479,7 @@ export async function createWikiCategory(input: {
 }): Promise<{ ok: true; category: WikiCategoryRow } | { ok: false; error: string }> {
   await ensureWikiStructureTables();
   const title = input.title.trim();
-  if (!title) return { ok: false, error: "Потрібна назва блоку." };
+  if (!title) return { ok: false, error: "Потрібна назва категорії." };
   const slug = normalizeWikiSlug(input.slug || wikiSlugFromTitle(title));
   if (!slug) return { ok: false, error: "Некоректний slug." };
   const sql = getSql();
@@ -396,7 +502,7 @@ export async function createWikiCategory(input: {
     `);
     return { ok: true, category: mapCategory(rows[0]!) };
   } catch {
-    return { ok: false, error: "Блок з таким slug уже існує." };
+    return { ok: false, error: "Категорія з такою адресою вже існує." };
   }
 }
 

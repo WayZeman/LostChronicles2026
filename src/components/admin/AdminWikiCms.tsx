@@ -15,6 +15,11 @@ import type {
 import { compressImageFile } from "@/lib/compress-image";
 import { cn } from "@/lib/utils";
 import { wikiCategoryCreateCopy } from "@/components/wiki/wiki-accents";
+import {
+  formatPlayerCardBlurb,
+  WIKI_FREE_PLAYERS_LABEL,
+  WIKI_PLAYERS_SLUG,
+} from "@/lib/wiki-player-roster";
 
 type View =
   | { kind: "home" }
@@ -25,6 +30,47 @@ type SocialDraft = WikiSocialLink;
 
 const btnSm =
   "lc-focus-ring rounded-lg border px-2.5 py-1 text-[11px] font-bold disabled:opacity-50";
+
+const fieldClass =
+  "lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]";
+
+function isPlayersSlug(slug: string): boolean {
+  return slug.toLowerCase() === WIKI_PLAYERS_SLUG.toLowerCase();
+}
+
+function PlayerStateSelect({
+  value,
+  onChange,
+  groups,
+  extra,
+}: {
+  value: string;
+  onChange: (next: string) => void;
+  groups: Array<{ title: string }>;
+  extra?: string;
+}) {
+  const options = groups.map((g) => g.title);
+  if (extra && extra !== WIKI_FREE_PLAYERS_LABEL && !options.includes(extra)) {
+    options.push(extra);
+  }
+  if (!options.includes(WIKI_FREE_PLAYERS_LABEL)) {
+    options.push(WIKI_FREE_PLAYERS_LABEL);
+  }
+  const selected = options.includes(value) ? value : WIKI_FREE_PLAYERS_LABEL;
+  return (
+    <select
+      value={selected}
+      onChange={(e) => onChange(e.target.value)}
+      className={fieldClass}
+    >
+      {options.map((title) => (
+        <option key={title} value={title}>
+          {title}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 export function AdminWikiCms() {
   const [tree, setTree] = useState<WikiHomeTree | null>(null);
@@ -51,6 +97,12 @@ export function AdminWikiCms() {
   const [editCardCode, setEditCardCode] = useState("");
   const [editCardBlurb, setEditCardBlurb] = useState("");
   const [editCardImageUrl, setEditCardImageUrl] = useState("");
+  const [editPlayerState, setEditPlayerState] = useState("");
+  const [editPlayerRole, setEditPlayerRole] = useState("");
+  const [newPlayerState, setNewPlayerState] = useState("");
+  const [newPlayerRole, setNewPlayerRole] = useState("");
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroupTitle, setNewGroupTitle] = useState("");
 
   const [pageTitle, setPageTitle] = useState("");
   const [pageHtml, setPageHtml] = useState("");
@@ -66,6 +118,7 @@ export function AdminWikiCms() {
     setNewPageCode("");
     setNewPageBlurb("");
     setNewPageImageUrl("");
+    setNewPlayerRole("");
   }
 
   function closeCardEditor() {
@@ -84,6 +137,10 @@ export function AdminWikiCms() {
     setEditCardCode(page.short_code ?? "");
     setEditCardBlurb(page.card_blurb ?? "");
     setEditCardImageUrl(page.image_url ?? "");
+    setEditPlayerState(page.player_state || WIKI_FREE_PLAYERS_LABEL);
+    setEditPlayerRole(
+      page.player_role.trim() === "—" ? "" : page.player_role.trim(),
+    );
     setMsg(null);
     setErr(null);
   }
@@ -231,7 +288,7 @@ export function AdminWikiCms() {
       setNewCatTitle("");
       setNewCatDesc("");
       setAddingCatFor(null);
-      setMsg("Блок додано.");
+      setMsg("Категорію додано.");
     } catch {
       setErr("Мережа недоступна");
     }
@@ -239,7 +296,7 @@ export function AdminWikiCms() {
   }
 
   async function deleteSection(id: number) {
-    if (!window.confirm("Видалити розділ і всі його блоки зі структури?")) return;
+    if (!window.confirm("Видалити розділ і всі його категорії зі структури?")) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/admin/wiki/sections/${id}`, {
@@ -261,7 +318,7 @@ export function AdminWikiCms() {
   }
 
   async function deleteCategory(id: number) {
-    if (!window.confirm("Видалити цей блок зі структури?")) return;
+    if (!window.confirm("Видалити цю категорію і всі її картки?")) return;
     setBusy(true);
     try {
       const res = await fetch(`/api/admin/wiki/categories/${id}`, {
@@ -279,7 +336,7 @@ export function AdminWikiCms() {
         setView({ kind: "home" });
         setCategory(null);
       }
-      setMsg("Блок видалено.");
+      setMsg("Категорію видалено.");
     } catch {
       setErr("Мережа недоступна");
     }
@@ -289,6 +346,7 @@ export function AdminWikiCms() {
   async function createPageInCategory() {
     if (view.kind !== "category" || !newPageTitle.trim()) return;
     const copy = wikiCategoryCreateCopy(view.slug);
+    const players = isPlayersSlug(view.slug);
     setBusy(true);
     setErr(null);
     setMsg(null);
@@ -302,9 +360,11 @@ export function AdminWikiCms() {
           body: JSON.stringify({
             mode: "create",
             title: newPageTitle.trim(),
-            short_code: newPageCode.trim(),
-            card_blurb: newPageBlurb.trim(),
-            image_url: newPageImageUrl.trim(),
+            short_code: players ? "" : newPageCode.trim(),
+            card_blurb: players
+              ? formatPlayerCardBlurb(newPlayerState, newPlayerRole)
+              : newPageBlurb.trim(),
+            image_url: players ? "" : newPageImageUrl.trim(),
           }),
         },
       );
@@ -328,10 +388,14 @@ export function AdminWikiCms() {
       if (d.category) setCategory(d.category);
       resetCreateForm();
       setAddingPage(false);
-      setMsg(copy.successHint);
+      setMsg(
+        players
+          ? "Гравця додано до списку."
+          : copy.successHint,
+      );
 
       const linkRow = d.category?.pages.find((p) => p.id === d.linkId);
-      if (linkRow) {
+      if (linkRow && !players) {
         openCardEditor(linkRow);
       }
     } catch {
@@ -342,6 +406,14 @@ export function AdminWikiCms() {
 
   async function saveCardEditor() {
     if (editingCardId == null) return;
+    const players = category != null && isPlayersSlug(category.slug);
+    const blurb = players
+      ? formatPlayerCardBlurb(editPlayerState, editPlayerRole)
+      : editCardBlurb.trim();
+    const code = players ? "" : editCardCode.trim();
+    const imageUrl = players
+      ? (category?.pages.find((p) => p.id === editingCardId)?.image_url ?? "")
+      : editCardImageUrl.trim();
     setBusy(true);
     setErr(null);
     try {
@@ -352,14 +424,25 @@ export function AdminWikiCms() {
           credentials: "include",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
-            short_code: editCardCode.trim(),
-            card_blurb: editCardBlurb.trim(),
-            image_url: editCardImageUrl.trim(),
+            short_code: code,
+            card_blurb: blurb,
+            image_url: imageUrl,
           }),
         },
       );
       if (!res.ok) {
-        setErr("Не вдалося зберегти картку");
+        setErr(players ? "Не вдалося зберегти гравця" : "Не вдалося зберегти картку");
+        setBusy(false);
+        return;
+      }
+      if (players && category) {
+        const fresh = await fetch(`/api/admin/wiki/categories/${category.id}`, {
+          credentials: "include",
+        });
+        const body = (await fresh.json()) as { category?: WikiCategoryDetail };
+        if (fresh.ok && body.category) setCategory(body.category);
+        setMsg("Гравця збережено.");
+        closeCardEditor();
         setBusy(false);
         return;
       }
@@ -371,9 +454,9 @@ export function AdminWikiCms() {
                 p.id === editingCardId
                   ? {
                       ...p,
-                      short_code: editCardCode.trim(),
-                      card_blurb: editCardBlurb.trim(),
-                      image_url: editCardImageUrl.trim(),
+                      short_code: code,
+                      card_blurb: blurb,
+                      image_url: imageUrl,
                     }
                   : p,
               ),
@@ -382,6 +465,63 @@ export function AdminWikiCms() {
       );
       setMsg("Картку збережено. Щоб змінити текст статті — клікніть на обкладинку.");
       closeCardEditor();
+    } catch {
+      setErr("Мережа недоступна");
+    }
+    setBusy(false);
+  }
+
+  async function createPlayerGroup() {
+    if (!newGroupTitle.trim()) return;
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch("/api/admin/wiki/player-groups", {
+        method: "POST",
+        credentials: "include",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ title: newGroupTitle.trim() }),
+      });
+      const d = (await res.json()) as {
+        category?: WikiCategoryDetail;
+        error?: string;
+      };
+      if (!res.ok) {
+        setErr(d.error || "Не вдалося створити категорію");
+        setBusy(false);
+        return;
+      }
+      if (d.category) setCategory(d.category);
+      setNewGroupTitle("");
+      setAddingGroup(false);
+      setMsg("Категорію додано.");
+    } catch {
+      setErr("Мережа недоступна");
+    }
+    setBusy(false);
+  }
+
+  async function deletePlayerGroup(id: number, title: string) {
+    if (!window.confirm(`Видалити категорію «${title}»?`)) return;
+    setBusy(true);
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/wiki/player-groups/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      const d = (await res.json()) as {
+        category?: WikiCategoryDetail;
+        error?: string;
+      };
+      if (!res.ok) {
+        setErr(d.error || "Не вдалося видалити категорію");
+        setBusy(false);
+        return;
+      }
+      if (d.category) setCategory(d.category);
+      setMsg("Категорію видалено.");
     } catch {
       setErr("Мережа недоступна");
     }
@@ -682,7 +822,7 @@ export function AdminWikiCms() {
                   }}
                   className={cn(btnSm, "border-sky-400/40 text-sky-200")}
                 >
-                  + Блок
+                  + Категорія
                 </button>
                 <button
                   type="button"
@@ -724,7 +864,7 @@ export function AdminWikiCms() {
               addingCatFor !== null ? (
                 <div className="mt-6 space-y-2 rounded-xl border border-sky-400/30 bg-black/30 p-3">
                   <p className="text-xs font-bold text-sky-200">
-                    Новий блок у розділі
+                    Нова категорія
                   </p>
                   <input
                     value={newCatTitle}
@@ -745,7 +885,7 @@ export function AdminWikiCms() {
                       onClick={() => void createCategory(addingCatFor)}
                       className={cn(btnSm, "border-sky-400/40 text-sky-200")}
                     >
-                      Додати блок
+                      Створити категорію
                     </button>
                     <button
                       type="button"
@@ -779,25 +919,55 @@ export function AdminWikiCms() {
           onOpenPage={(p) => void openPage(p)}
           headerActions={(() => {
             const copy = wikiCategoryCreateCopy(category.slug);
+            const players = isPlayersSlug(category.slug);
             return (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={() => {
-                  closeCardEditor();
-                  setAddingPage((v) => {
-                    if (v) resetCreateForm();
-                    return !v;
-                  });
-                }}
-                className={cn(
-                  btnSm,
-                  "inline-flex items-center gap-1 border-[var(--mc-net-green)]/40 text-[var(--mc-net-green)]",
-                )}
-              >
-                <Plus className="size-3.5" />
-                {copy.addLabel}
-              </button>
+              <div className="flex flex-wrap gap-2">
+                {players ? (
+                  <button
+                    type="button"
+                    disabled={busy}
+                    onClick={() => {
+                      closeCardEditor();
+                      setAddingPage(false);
+                      setAddingGroup((v) => !v);
+                      setNewGroupTitle("");
+                    }}
+                    className={cn(
+                      btnSm,
+                      "inline-flex items-center gap-1 border-sky-400/40 text-sky-200",
+                    )}
+                  >
+                    <Plus className="size-3.5" />
+                    Нова категорія
+                  </button>
+                ) : null}
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => {
+                    closeCardEditor();
+                    setAddingGroup(false);
+                    setAddingPage((v) => {
+                      if (v) resetCreateForm();
+                      else if (players) {
+                        setNewPlayerState(
+                          category.player_groups?.[0]?.title ??
+                            WIKI_FREE_PLAYERS_LABEL,
+                        );
+                        setNewPlayerRole("");
+                      }
+                      return !v;
+                    });
+                  }}
+                  className={cn(
+                    btnSm,
+                    "inline-flex items-center gap-1 border-[var(--mc-net-green)]/40 text-[var(--mc-net-green)]",
+                  )}
+                >
+                  <Plus className="size-3.5" />
+                  {copy.addLabel}
+                </button>
+              </div>
             );
           })()}
           pageActions={(p) => (
@@ -816,7 +986,11 @@ export function AdminWikiCms() {
                 )}
               >
                 <Pencil className="size-3" />
-                {editingCardId === p.id ? "Картка…" : "Редагувати картку"}
+                {editingCardId === p.id
+                  ? "…"
+                  : isPlayersSlug(category.slug)
+                    ? "Змінити"
+                    : "Редагувати картку"}
               </button>
               <button
                 type="button"
@@ -833,8 +1007,10 @@ export function AdminWikiCms() {
           )}
           topSlot={(() => {
             const copy = wikiCategoryCreateCopy(category.slug);
+            const players = isPlayersSlug(category.slug);
             const showCreate =
-              addingPage || (category.pages.length === 0 && editingCardId == null);
+              addingPage ||
+              (!players && category.pages.length === 0 && editingCardId == null);
             const editingPageRow =
               editingCardId != null
                 ? category.pages.find((p) => p.id === editingCardId)
@@ -862,71 +1038,153 @@ export function AdminWikiCms() {
                   }}
                 />
 
-                {editingPageRow ? (
-                  <div className="mb-2 space-y-3 rounded-xl border border-sky-400/35 bg-black/35 p-3 sm:p-4">
-                    <div>
-                      <p className="text-xs font-bold text-sky-200">
-                        Редагування картки · {editCardTitle || editingPageRow.page_title}
-                      </p>
-                      <p className="mt-1 text-[11px] text-[var(--mc-text-subtle)]">
-                        Тут лише обкладинка, код і короткий текст на картці.
-                        Текст статті — клік по обкладинці в списку нижче.
-                      </p>
+                {players ? (
+                  <div className="mb-3 space-y-3 rounded-xl border border-white/10 bg-black/30 p-3">
+                    <div className="flex flex-wrap gap-2">
+                      {(category.player_groups ?? []).map((g) => {
+                        const used = category.pages.some(
+                          (p) => p.player_state === g.title,
+                        );
+                        return (
+                          <span
+                            key={g.id}
+                            className="inline-flex items-center gap-1.5 rounded-md border border-white/15 px-2 py-1 text-xs text-[var(--mc-text)]"
+                          >
+                            {g.title}
+                            <button
+                              type="button"
+                              disabled={busy || used}
+                              title={
+                                used
+                                  ? "Спочатку перенеси гравців"
+                                  : "Видалити категорію"
+                              }
+                              onClick={() => void deletePlayerGroup(g.id, g.title)}
+                              className="text-[var(--mc-text-subtle)] disabled:opacity-30"
+                            >
+                              ×
+                            </button>
+                          </span>
+                        );
+                      })}
                     </div>
-                    <input
-                      value={editCardCode}
-                      onChange={(e) => setEditCardCode(e.target.value)}
-                      placeholder="Код на картці (ДЗ) — опційно"
-                      className="lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]"
-                    />
-                    <input
-                      value={editCardBlurb}
-                      onChange={(e) => setEditCardBlurb(e.target.value)}
-                      placeholder={copy.blurbPlaceholder}
-                      className="lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]"
-                    />
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => {
-                          cardPhotoLinkIdRef.current = null;
-                          cardPhotoInputRef.current?.click();
-                        }}
-                        className={cn(
-                          btnSm,
-                          "inline-flex items-center gap-1 border-sky-400/30 text-sky-100",
-                        )}
-                      >
-                        <ImagePlus className="size-3" />
-                        {editCardImageUrl ? "Змінити фото" : "Своє фото"}
-                      </button>
-                      {editCardImageUrl ? (
+                    {addingGroup ? (
+                      <div className="flex flex-wrap gap-2">
+                        <input
+                          value={newGroupTitle}
+                          onChange={(e) => setNewGroupTitle(e.target.value)}
+                          placeholder="Назва категорії (Елден)"
+                          className={cn(fieldClass, "min-w-[14rem] flex-1")}
+                        />
                         <button
                           type="button"
-                          disabled={busy}
-                          onClick={() => setEditCardImageUrl("")}
+                          disabled={busy || !newGroupTitle.trim()}
+                          onClick={() => void createPlayerGroup()}
+                          className={cn(btnSm, "border-sky-400/40 text-sky-200")}
+                        >
+                          Створити
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setAddingGroup(false)}
                           className={cn(
                             btnSm,
                             "border-white/15 text-[var(--mc-text-muted)]",
                           )}
                         >
-                          Стандартна обкладинка
+                          Скасувати
                         </button>
-                      ) : (
-                        <span className="text-[10px] text-[var(--mc-text-subtle)]">
-                          Без фото — стандартна обкладинка розділу
-                        </span>
-                      )}
-                    </div>
-                    {editCardImageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={editCardImageUrl}
-                        alt=""
-                        className="max-h-28 rounded-md border border-white/10 object-cover"
-                      />
+                      </div>
                     ) : null}
+                  </div>
+                ) : null}
+
+                {editingPageRow ? (
+                  <div className="mb-2 space-y-3 rounded-xl border border-sky-400/35 bg-black/35 p-3 sm:p-4">
+                    <div>
+                      <p className="text-xs font-bold text-sky-200">
+                        {players ? "Гравець" : "Редагування картки"} ·{" "}
+                        {editCardTitle || editingPageRow.page_title}
+                      </p>
+                      <p className="mt-1 text-[11px] text-[var(--mc-text-subtle)]">
+                        {players
+                          ? "Категорія — держава в списку. Посада з’явиться в колонці поруч із ніком."
+                          : "Тут лише обкладинка, код і короткий текст на картці. Текст статті — клік по обкладинці в списку нижче."}
+                      </p>
+                    </div>
+                    {players ? (
+                      <>
+                        <PlayerStateSelect
+                          value={editPlayerState}
+                          onChange={setEditPlayerState}
+                          groups={category.player_groups ?? []}
+                          extra={editingPageRow.player_state}
+                        />
+                        <input
+                          value={editPlayerRole}
+                          onChange={(e) => setEditPlayerRole(e.target.value)}
+                          placeholder="Посада"
+                          className={fieldClass}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          value={editCardCode}
+                          onChange={(e) => setEditCardCode(e.target.value)}
+                          placeholder="Код на картці (ДЗ) — опційно"
+                          className={fieldClass}
+                        />
+                        <input
+                          value={editCardBlurb}
+                          onChange={(e) => setEditCardBlurb(e.target.value)}
+                          placeholder={copy.blurbPlaceholder}
+                          className={fieldClass}
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => {
+                              cardPhotoLinkIdRef.current = null;
+                              cardPhotoInputRef.current?.click();
+                            }}
+                            className={cn(
+                              btnSm,
+                              "inline-flex items-center gap-1 border-sky-400/30 text-sky-100",
+                            )}
+                          >
+                            <ImagePlus className="size-3" />
+                            {editCardImageUrl ? "Змінити фото" : "Своє фото"}
+                          </button>
+                          {editCardImageUrl ? (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => setEditCardImageUrl("")}
+                              className={cn(
+                                btnSm,
+                                "border-white/15 text-[var(--mc-text-muted)]",
+                              )}
+                            >
+                              Стандартна обкладинка
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-[var(--mc-text-subtle)]">
+                              Без фото — стандартна обкладинка розділу
+                            </span>
+                          )}
+                        </div>
+                        {editCardImageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={editCardImageUrl}
+                            alt=""
+                            className="max-h-28 rounded-md border border-white/10 object-cover"
+                          />
+                        ) : null}
+                      </>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -937,7 +1195,7 @@ export function AdminWikiCms() {
                           "border-sky-400/40 bg-sky-400/10 px-3 py-1.5 text-sky-100",
                         )}
                       >
-                        {busy ? "Збереження…" : "Зберегти картку"}
+                        {busy ? "Збереження…" : players ? "Зберегти гравця" : "Зберегти картку"}
                       </button>
                       <button
                         type="button"
@@ -972,70 +1230,89 @@ export function AdminWikiCms() {
                         {copy.formTitle}
                       </p>
                       <p className="mt-1 text-[11px] text-[var(--mc-text-subtle)]">
-                        Зʼявляється картка в «{category.title}» і порожня сторінка
-                        з тією ж назвою. Далі можна одразу підправити обкладинку.
+                        {players
+                          ? "Нік, категорія і посада. Сторінка гравця створюється разом із рядком у списку."
+                          : `Зʼявляється картка в «${category.title}» і порожня сторінка з тією ж назвою. Далі можна одразу підправити обкладинку.`}
                       </p>
                     </div>
                     <input
                       value={newPageTitle}
                       onChange={(e) => setNewPageTitle(e.target.value)}
                       placeholder={copy.titlePlaceholder}
-                      className="lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]"
+                      className={fieldClass}
                     />
-                    <input
-                      value={newPageCode}
-                      onChange={(e) => setNewPageCode(e.target.value)}
-                      placeholder="Код на картці (ДЗ) — опційно"
-                      className="lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]"
-                    />
-                    <input
-                      value={newPageBlurb}
-                      onChange={(e) => setNewPageBlurb(e.target.value)}
-                      placeholder={copy.blurbPlaceholder}
-                      className="lc-focus-ring w-full rounded-lg border border-white/12 bg-black/40 px-3 py-2 text-sm text-[var(--mc-text)]"
-                    />
-                    <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() => {
-                          cardPhotoLinkIdRef.current = null;
-                          cardPhotoInputRef.current?.click();
-                        }}
-                        className={cn(
-                          btnSm,
-                          "inline-flex items-center gap-1 border-sky-400/30 text-sky-100",
-                        )}
-                      >
-                        <ImagePlus className="size-3" />
-                        {newPageImageUrl ? "Змінити фото картки" : "Фото картки"}
-                      </button>
-                      {newPageImageUrl ? (
-                        <button
-                          type="button"
-                          disabled={busy}
-                          onClick={() => setNewPageImageUrl("")}
-                          className={cn(
-                            btnSm,
-                            "border-white/15 text-[var(--mc-text-muted)]",
+                    {players ? (
+                      <>
+                        <PlayerStateSelect
+                          value={newPlayerState}
+                          onChange={setNewPlayerState}
+                          groups={category.player_groups ?? []}
+                        />
+                        <input
+                          value={newPlayerRole}
+                          onChange={(e) => setNewPlayerRole(e.target.value)}
+                          placeholder="Посада"
+                          className={fieldClass}
+                        />
+                      </>
+                    ) : (
+                      <>
+                        <input
+                          value={newPageCode}
+                          onChange={(e) => setNewPageCode(e.target.value)}
+                          placeholder="Код на картці (ДЗ) — опційно"
+                          className={fieldClass}
+                        />
+                        <input
+                          value={newPageBlurb}
+                          onChange={(e) => setNewPageBlurb(e.target.value)}
+                          placeholder={copy.blurbPlaceholder}
+                          className={fieldClass}
+                        />
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button
+                            type="button"
+                            disabled={busy}
+                            onClick={() => {
+                              cardPhotoLinkIdRef.current = null;
+                              cardPhotoInputRef.current?.click();
+                            }}
+                            className={cn(
+                              btnSm,
+                              "inline-flex items-center gap-1 border-sky-400/30 text-sky-100",
+                            )}
+                          >
+                            <ImagePlus className="size-3" />
+                            {newPageImageUrl ? "Змінити фото картки" : "Фото картки"}
+                          </button>
+                          {newPageImageUrl ? (
+                            <button
+                              type="button"
+                              disabled={busy}
+                              onClick={() => setNewPageImageUrl("")}
+                              className={cn(
+                                btnSm,
+                                "border-white/15 text-[var(--mc-text-muted)]",
+                              )}
+                            >
+                              Без свого фото
+                            </button>
+                          ) : (
+                            <span className="text-[10px] text-[var(--mc-text-subtle)]">
+                              Без фото буде стандартна обкладинка розділу
+                            </span>
                           )}
-                        >
-                          Без свого фото
-                        </button>
-                      ) : (
-                        <span className="text-[10px] text-[var(--mc-text-subtle)]">
-                          Без фото буде стандартна обкладинка розділу
-                        </span>
-                      )}
-                    </div>
-                    {newPageImageUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={newPageImageUrl}
-                        alt=""
-                        className="max-h-28 rounded-md border border-white/10 object-cover"
-                      />
-                    ) : null}
+                        </div>
+                        {newPageImageUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={newPageImageUrl}
+                            alt=""
+                            className="max-h-28 rounded-md border border-white/10 object-cover"
+                          />
+                        ) : null}
+                      </>
+                    )}
                     <div className="flex flex-wrap gap-2">
                       <button
                         type="button"
@@ -1046,7 +1323,7 @@ export function AdminWikiCms() {
                           "border-[var(--mc-net-green)]/40 bg-[var(--mc-net-green)]/10 px-3 py-1.5 text-[var(--mc-net-green)]",
                         )}
                       >
-                        {busy ? "Створення…" : copy.createLabel}
+                        {busy ? "Створення…" : players ? "Додати гравця" : copy.createLabel}
                       </button>
                       {category.pages.length > 0 ? (
                         <button
