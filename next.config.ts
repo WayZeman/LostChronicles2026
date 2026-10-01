@@ -48,6 +48,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    return [
+      { source: "/join", destination: "/play", permanent: true },
+      { source: "/minecraft-server", destination: "/play", permanent: true },
+      { source: "/ip", destination: "/play", permanent: true },
+    ];
+  },
   async headers() {
     return [
       {

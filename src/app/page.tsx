@@ -74,12 +74,15 @@ export default async function Home() {
     <main className={lcPageMainClass}>
       <div className={lcPageContainerHomeClass}>
         <section className="am-reveal relative z-10 flex flex-col items-center pt-2 text-center md:pt-4">
-          <h1 className="sr-only">Lost Chronicles — Ukrainian Minecraft Server</h1>
+          <h1 className="sr-only">
+            Lost Chronicles — український Minecraft-сервер Java та Bedrock, Лост
+            Хроніклс
+          </h1>
 
           <div className="relative w-full max-w-[min(100%,22rem)] sm:max-w-[min(100%,26rem)]">
             <Image
               src="/lc-logo-hero-v2.png"
-              alt="Lost Chronicles — Ukrainian Minecraft Server"
+              alt="Lost Chronicles — український Minecraft-сервер Java та Bedrock (Лост Хроніклс)"
               width={900}
               height={606}
               priority
@@ -89,12 +92,23 @@ export default async function Home() {
             />
           </div>
 
+          <p className="mt-4 max-w-md text-pretty text-sm leading-relaxed text-[var(--mc-text-muted)]">
+            Український ванільний RP · Java і Bedrock · {settings.version} · IP{" "}
+            <span className="font-mono text-[var(--mc-text)]">{settings.ip}</span>
+          </p>
+
           <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={LC_APPLY_PATH}
               className="lc-focus-ring lc-btn-accent min-h-11 px-7 py-2.5 text-sm"
             >
               Подати заявку
+            </Link>
+            <Link
+              href="/play"
+              className="lc-focus-ring mc-btn-secondary min-h-11 px-5 py-2.5 text-sm"
+            >
+              Як зайти
             </Link>
             {voteUrl ? (
               <a

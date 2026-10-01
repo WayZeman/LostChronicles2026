@@ -3,26 +3,9 @@ import Link from "next/link";
 import { ExternalLink, HeartHandshake } from "lucide-react";
 import { SupportPlainDonate } from "@/components/site/SupportPlainDonate";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { LC_PUBLIC_CATALOG_LINKS } from "@/data/lc-server-listings";
 import { cn } from "@/lib/utils";
 import type { CatalogVoteLink } from "@/lib/site-content";
-
-const DEFAULT_CATALOG_VOTE_LINKS: CatalogVoteLink[] = [
-  {
-    href: "https://minecraft.org.ua/minecraft-servers/Lost-Chronicles/3210",
-    label: "Minecraft.org.ua",
-    shortLabel: "ОУМ",
-  },
-  {
-    href: "https://monicore.com.ua/server/281/lostchronicles",
-    label: "MoniCore",
-    shortLabel: "MoniCore",
-  },
-  {
-    href: "https://allmc.in.ua/play-lost-chronicles-site",
-    label: "AllMC.in.ua",
-    shortLabel: "AllMC",
-  },
-];
 
 type Props = {
   jarUrl?: string;
@@ -41,7 +24,7 @@ export function SupportMonobankSection({
   const links =
     catalogLinks && catalogLinks.length > 0
       ? catalogLinks
-      : DEFAULT_CATALOG_VOTE_LINKS;
+      : LC_PUBLIC_CATALOG_LINKS;
 
   return (
     <section

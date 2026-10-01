@@ -1,5 +1,5 @@
 /**
- * Перевіряє sitemap на продакшені та повідомляє Bing про оновлення.
+ * Перевіряє sitemap на продакшені та повідомляє Bing / IndexNow про оновлення.
  * Google Search Console: подай URL вручну (Ping API за deprecated).
  *
  *   npx tsx scripts/ping-sitemap.ts
@@ -7,6 +7,7 @@
  */
 
 import { resolveLcMarketingSiteUrl } from "../src/lib/lc-domains";
+import { pingLcIndexNow } from "../src/lib/lc-indexnow";
 
 const base = resolveLcMarketingSiteUrl(
   process.env.SITEMAP_BASE ?? process.env.NEXT_PUBLIC_SITE_URL,
@@ -51,6 +52,20 @@ async function main() {
     console.log(`Bing ping: HTTP ${bing.status}`);
   } catch (e) {
     console.warn("Bing ping failed:", e);
+  }
+
+  const locMatches = [...xml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/g)].map((m) =>
+    m[1].trim(),
+  );
+  try {
+    const indexNow = await pingLcIndexNow(
+      locMatches.length > 0
+        ? locMatches
+        : [`${base}/`, `${base}/play`, sitemapUrl],
+    );
+    console.log(`IndexNow: HTTP ${indexNow.status} ok=${indexNow.ok}`);
+  } catch (e) {
+    console.warn("IndexNow failed:", e);
   }
 
   console.log("\nGoogle Search Console:");

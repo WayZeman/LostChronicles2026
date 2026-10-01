@@ -1,3 +1,4 @@
+import { LC_PUBLIC_CATALOG_LINKS } from "@/data/lc-server-listings";
 import { getSql } from "@/lib/db";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
@@ -26,23 +27,9 @@ function num(v: unknown): number {
 
 let cmsEnsured = false;
 
-const DEFAULT_CATALOG_LINKS = [
-  {
-    href: "https://minecraft.org.ua/minecraft-servers/Lost-Chronicles/3210",
-    label: "Minecraft.org.ua",
-    shortLabel: "ОУМ",
-  },
-  {
-    href: "https://monicore.com.ua/server/281/lostchronicles",
-    label: "MoniCore",
-    shortLabel: "MoniCore",
-  },
-  {
-    href: "https://allmc.in.ua/play-lost-chronicles-site",
-    label: "AllMC.in.ua",
-    shortLabel: "AllMC",
-  },
-];
+const DEFAULT_CATALOG_LINKS = LC_PUBLIC_CATALOG_LINKS.map(
+  ({ href, label, shortLabel }) => ({ href, label, shortLabel }),
+);
 
 export type CatalogVoteLink = {
   href: string;

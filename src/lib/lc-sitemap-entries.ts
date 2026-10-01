@@ -14,6 +14,7 @@ export const LC_SITEMAP_STATIC_PATHS: {
   changeFrequency: MetadataRoute.Sitemap[0]["changeFrequency"];
 }[] = [
   { path: "/", priority: 1, changeFrequency: "daily" },
+  { path: "/play", priority: 0.98, changeFrequency: "weekly" },
   { path: "/faq", priority: 0.95, changeFrequency: "weekly" },
   { path: "/apply", priority: 0.95, changeFrequency: "monthly" },
   { path: "/wiki", priority: 0.9, changeFrequency: "daily" },

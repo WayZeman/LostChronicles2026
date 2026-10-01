@@ -51,7 +51,13 @@ export function buildLcPageMetadata(input: PageMetaInput): Metadata {
   return {
     title: input.title,
     description: input.description,
-    alternates: { canonical },
+    alternates: {
+      canonical,
+      languages: {
+        uk: canonical,
+        "x-default": canonical,
+      },
+    },
     robots: index
       ? { index: true, follow: true, googleBot: { index: true, follow: true } }
       : { index: false, follow: false },

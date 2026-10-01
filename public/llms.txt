@@ -5,6 +5,8 @@
 > Lost Chronicles — український Minecraft-сервер Java та Bedrock з рольовим (RP) світом.
 > Офіційний сайт: https://lost-chronicles.co.ua
 > IP сервера (Java/Bedrock): play.lost-chronicles.co.ua
+> Як зайти: https://lost-chronicles.co.ua/play
+> Профіль сервера (JSON): https://lost-chronicles.co.ua/server.json
 
 ## Про проєкт
 
@@ -14,18 +16,28 @@ Lost Chronicles (Лост Хроніклс) — українська Minecraft-�
 ## Ключові сторінки
 
 - Головна: https://lost-chronicles.co.ua/
-- FAQ (як зайти, IP, версія): https://lost-chronicles.co.ua/faq
+- Як зайти (IP, Java, Bedrock, анкета): https://lost-chronicles.co.ua/play
+- FAQ: https://lost-chronicles.co.ua/faq
 - Анкета / вайтлист: https://lost-chronicles.co.ua/apply
 - Вікі: https://lost-chronicles.co.ua/wiki
 - Карта світу: https://lost-chronicles.co.ua/map
 - Новини: https://lost-chronicles.co.ua/news
 - Пропозиції гравців: https://lost-chronicles.co.ua/proposals
 - Підтримка сервера: https://lost-chronicles.co.ua/support
+- server.json: https://lost-chronicles.co.ua/server.json
+
+## Каталоги (пошук серверів)
+
+- Minecraft.org.ua: https://minecraft.org.ua/minecraft-servers/Lost-Chronicles/3210
+- MCUA.TOP: https://mcua.top/server-lost-chronicles.79
+- MoniCore: https://monicore.com.ua/server/281/lostchronicles
+- AllMC.in.ua: https://allmc.in.ua/play-lost-chronicles-site
 
 ## Альтернативні назви (пошук)
 
 Lost Chronicles, Лост Хроніклс, Lost Chronikles, LC Minecraft, lost chronicles minecraft ukraine,
-майнкрафт сервер україна, lost-chronicles.co.ua
+майнкрафт сервер україна, український minecraft сервер 1.21, lost-chronicles.co.ua,
+play.lost-chronicles.co.ua
 
 ## Соцмережі
 
@@ -36,3 +48,4 @@ Lost Chronicles, Лост Хроніклс, Lost Chronikles, LC Minecraft, lost 
 - Мова сайту: українська (uk-UA)
 - Sitemap: https://lost-chronicles.co.ua/sitemap.xml
 - Robots: https://lost-chronicles.co.ua/robots.txt
+- IndexNow: https://lost-chronicles.co.ua/59db5735f20ac7cc229a82c548820bf8.txt

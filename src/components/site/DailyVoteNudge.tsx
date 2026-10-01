@@ -4,29 +4,12 @@ import { ExternalLink, ThumbsUp, X } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useId, useRef, useState } from "react";
 
+import { LC_PUBLIC_CATALOG_LINKS } from "@/data/lc-server-listings";
 import { cn } from "@/lib/utils";
 
 const STORAGE_OPTOUT = "lc-vote-nudge-optout";
 const STORAGE_DAY = "lc-vote-nudge-day";
 const EXIT_MS = 320;
-
-const VOTE_LINKS = [
-  {
-    href: "https://monicore.com.ua/server/281/lostchronicles",
-    label: "MoniCore",
-    hint: "Моніторинг",
-  },
-  {
-    href: "https://minecraft.org.ua/minecraft-servers/Lost-Chronicles/3210",
-    label: "ОУМ",
-    hint: "Організація",
-  },
-  {
-    href: "https://allmc.in.ua/play-lost-chronicles-site",
-    label: "AllMC",
-    hint: "Каталог",
-  },
-] as const;
 
 type Phase = "closed" | "open" | "leaving";
 
@@ -197,7 +180,7 @@ export function DailyVoteNudge() {
         </div>
 
         <ul className="lc-vote-nudge__links">
-          {VOTE_LINKS.map(({ href, label, hint }, i) => (
+          {LC_PUBLIC_CATALOG_LINKS.map(({ href, shortLabel, hint }, i) => (
             <li
               key={href}
               className="lc-vote-nudge__link-item"
@@ -209,7 +192,7 @@ export function DailyVoteNudge() {
                 rel="noopener noreferrer"
                 className="lc-vote-nudge__link lc-focus-ring"
               >
-                <span className="lc-vote-nudge__link-label">{label}</span>
+                <span className="lc-vote-nudge__link-label">{shortLabel}</span>
                 <span className="lc-vote-nudge__link-hint">{hint}</span>
                 <ExternalLink
                   className="lc-vote-nudge__link-icon"

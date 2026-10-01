@@ -80,7 +80,12 @@ export const LC_SEO_DESCRIPTION_SHORT = `Lost Chronicles (Лост Хронік�
 export const LC_SEO_DESCRIPTION_STRUCTURED = `Офіційний сайт українського Minecraft-проєкту Lost Chronicles (${LC_MARKETING_HOST}): сервери Java та Bedrock, рольовий світ і спільнота. Анкета для вайтлисту, вікі з лором, динамічна карта BlueMap, новини та голосування за пропозиції. IP: ${LC_DEFAULT_JAVA_SERVER_HOST}. Шукають також як «Лост Хроніклс», Lost Chronikles або lost chronicles minecraft ukraine.`;
 
 export const LC_SEO_SITE_TITLE_DEFAULT =
-  "Lost Chronicles — український Minecraft-сервер Java та Bedrock | RP";
+  "Lost Chronicles — український Minecraft-сервер 1.21 Java і Bedrock | Лост Хроніклс";
+
+export const LC_SEO_PLAY_TITLE =
+  "Як зайти на Lost Chronicles — IP українського Minecraft-сервера 1.21 Java/Bedrock";
+
+export const LC_SEO_PLAY_DESCRIPTION = `IP ${LC_DEFAULT_JAVA_SERVER_HOST}. Анкета на вайтлист, Java і Bedrock, версія 1.21. Lost Chronicles (Лост Хроніклс) — український ванільний RP Minecraft.`;
 
 export const LC_SEO_FAQ_TITLE = "FAQ — як зайти на Lost Chronicles | Minecraft Україна";
 

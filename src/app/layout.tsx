@@ -99,22 +99,21 @@ export const metadata: Metadata = {
     images: [LC_OG_IMAGE_PATH],
   },
   category: "games",
-  ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
-    ? {
-        verification: {
-          google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim(),
-          ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim()
-            ? { other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION.trim() } }
-            : {}),
-        },
-      }
-    : process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim()
+  verification: {
+    ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION?.trim()
+      ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION.trim() }
+      : {}),
+    ...(process.env.NEXT_PUBLIC_YANDEX_VERIFICATION?.trim()
+      ? { yandex: process.env.NEXT_PUBLIC_YANDEX_VERIFICATION.trim() }
+      : {}),
+    ...(process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION?.trim()
       ? {
-          verification: {
-            other: { "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION.trim() },
+          other: {
+            "msvalidate.01": process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION.trim(),
           },
         }
       : {}),
+  },
 };
 
 export default function RootLayout({
@@ -134,6 +133,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
         <link rel="sitemap" type="application/xml" href="/sitemap.xml" />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs.txt" />
+        <link rel="alternate" type="application/json" href="/server.json" title="Minecraft server.json" />
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){var p=location.pathname;if(p==="/"||p===""){document.documentElement.classList.add("lc-intro-pending");}else{document.documentElement.classList.add("lc-intro-skip");}})();`,
