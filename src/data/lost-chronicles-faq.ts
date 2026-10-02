@@ -19,7 +19,7 @@ const FAQ_CTA_BTN =
   "lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 px-5 py-2.5 text-sm sm:min-h-[2.5rem] sm:w-auto sm:shrink-0 sm:self-center sm:px-6";
 
 const FAQ_JOIN = `<div class="not-prose mb-0 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-<p class="mb-0 min-w-0 flex-1 text-left text-[0.9375rem] leading-[1.65] text-[var(--mc-text)] sm:text-base sm:leading-relaxed">Щоб зайти на Lost Chronicles, пройдіть анкету на вайтлист. IP, версія Java/Bedrock і покрокова інструкція — на сторінці «Як зайти».</p>
+<p class="mb-0 min-w-0 flex-1 text-left text-[0.9375rem] leading-[1.65] text-[var(--mc-text)] sm:text-base sm:leading-relaxed">На сервер можна зайти одразу за IP. В основний світ пускають після анкети: адміністратори перевіряють її і повідомляють, коли доступ відкритий. IP і кроки — на сторінці «Як зайти».</p>
 <a href="${LC_APPLY_PATH}" class="${FAQ_CTA_BTN}">Пройти анкету</a>
 </div>
 <p class="mt-3"><a href="/play">Як зайти на сервер: IP, версія, Java і Bedrock</a></p>`;

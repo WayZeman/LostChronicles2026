@@ -42,20 +42,16 @@ export const metadata: Metadata = buildLcPageMetadata({
 
 const JOIN_STEPS = [
   {
-    title: "Пройдіть анкету",
-    body: "Вхід через вайтлист. Заявка на сайті займає кілька хвилин — без черги в Discord.",
+    title: "Зайдіть на сервер",
+    body: "Скопіюйте IP нижче і додайте сервер у Minecraft. Java і Bedrock підключаються одразу.",
   },
   {
-    title: "Дочекайтеся схвалення",
-    body: "Коли анкету приймуть, нік додадуть на сервер. Після цього можна підключатися.",
+    title: "Заповніть анкету",
+    body: "Щоб потрапити в основний світ, пройдіть анкету на сайті. Це займає кілька хвилин.",
   },
   {
-    title: "Додайте IP у Minecraft",
-    body: "Java — Multiplayer → Add Server. Bedrock — Servers → Add Server, той самий хост і порт нижче.",
-  },
-  {
-    title: "Заходьте в світ",
-    body: "Грайте українською, будуйте поселення і пишіть історію Lost Chronicles разом зі спільнотою.",
+    title: "Дочекайтеся відповіді",
+    body: "Адміністратори перевіряють анкету і повідомляють, коли доступ до основного світу відкритий.",
   },
 ] as const;
 
@@ -96,8 +92,9 @@ export default async function PlayPage() {
       answer: `Так. Bedrock: ${settings.bedrockAddress}, порт ${settings.bedrockPort}. Java і Bedrock грають разом.`,
     },
     {
-      question: "Як потрапити на сервер, якщо стоїть вайтлист?",
-      answer: `Заповніть анкету на сайті (${LC_APPLY_PATH}). Після схвалення нік з’явиться в білому списку.`,
+      question: "Чи можна зайти на сервер без анкети?",
+      answer:
+        "На сервер — так, за IP нижче. В основний світ пускають після анкети: адміністратори перевіряють її і повідомляють, коли доступ відкритий.",
     },
     {
       question: "Де знайти Lost Chronicles у пошуку каталогів?",
@@ -126,8 +123,8 @@ export default async function PlayPage() {
               Як зайти на Lost Chronicles
             </h1>
             <p className="mx-auto mt-3 max-w-lg text-pretty text-sm leading-relaxed text-[var(--mc-text-muted)] sm:text-[0.9375rem]">
-              Lost Chronicles (Лост Хроніклс) — український ванільний RP-сервер.
-              Скопіюйте IP, пройдіть анкету і грайте з ПК, телефона чи консолі.
+              На сервер можна зайти одразу. Основний світ відкривається після
+              анкети: її перевіряють адміністратори і пишуть, коли доступ готовий.
             </p>
             <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
               <Link
@@ -184,23 +181,25 @@ export default async function PlayPage() {
               id="lc-play-steps"
               className="lc-section-title text-center text-xl md:text-2xl"
             >
-              Чотири кроки, щоб зайти
+              Як це працює
             </h2>
-            <ol className="mt-5 grid list-none gap-3 p-0 sm:grid-cols-2">
+            <ol className="mx-auto mt-6 max-w-xl list-none divide-y divide-[var(--mc-border-card)]/80 p-0">
               {JOIN_STEPS.map((step, i) => (
-                <li
-                  key={step.title}
-                  className="rounded-lg border border-[var(--mc-border-card)]/80 bg-[var(--mc-surface-elevated)]/40 px-4 py-3 text-left"
-                >
-                  <p className="text-[11px] font-semibold uppercase tracking-wider text-[var(--mc-text-muted)]">
-                    Крок {i + 1}
-                  </p>
-                  <h3 className="mt-1 text-base font-semibold text-[var(--mc-text)]">
-                    {step.title}
-                  </h3>
-                  <p className="mt-1 text-sm leading-relaxed text-[var(--mc-text-muted)]">
-                    {step.body}
-                  </p>
+                <li key={step.title} className="flex gap-4 py-4 text-left first:pt-0 last:pb-0">
+                  <span
+                    className="mt-0.5 w-5 shrink-0 font-mono text-sm tabular-nums text-[var(--mc-text-muted)]"
+                    aria-hidden
+                  >
+                    {i + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-base font-semibold text-[var(--mc-text)]">
+                      {step.title}
+                    </h3>
+                    <p className="mt-1 text-sm leading-relaxed text-[var(--mc-text-muted)]">
+                      {step.body}
+                    </p>
+                  </div>
                 </li>
               ))}
             </ol>

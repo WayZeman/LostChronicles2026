@@ -60,13 +60,13 @@ export const LC_LISTING_TAGS: string[] = [
 ];
 
 export function lcListingDescriptionShort(ip = LC_DEFAULT_JAVA_SERVER_HOST): string {
-  return `Lost Chronicles (Лост Хроніклс) — український ванільний Minecraft RP-сервер Java та Bedrock 1.21. IP: ${ip}. Вхід через анкету на ${LC_MARKETING_HOST}.`;
+  return `Lost Chronicles (Лост Хроніклс) — український ванільний Minecraft RP-сервер Java та Bedrock 1.21. IP: ${ip}. На сервер можна зайти одразу, в основний світ — після анкети на ${LC_MARKETING_HOST}.`;
 }
 
 export function lcListingDescriptionLong(ip = LC_DEFAULT_JAVA_SERVER_HOST): string {
   return [
     `Lost Chronicles (Лост Хроніклс) — український ванільний Minecraft-сервер Java і Bedrock.`,
-    `Версія 1.21, вайтлист, рольовий світ і спільнота українською.`,
+    `Версія 1.21, рольовий світ і спільнота українською.`,
     ``,
     `IP Java: ${ip}`,
     `Bedrock: ${ip} · порт 19132`,
@@ -75,7 +75,7 @@ export function lcListingDescriptionLong(ip = LC_DEFAULT_JAVA_SERVER_HOST): stri
     `Анкета: ${LC_MARKETING_SITE_ORIGIN}${LC_APPLY_PATH}`,
     ``,
     `Великий світ для поселень і цивілізацій, економіка на монетах, івенти та дружня атмосфера 14+.`,
-    `Java і Bedrock грають разом. Щоб потрапити на сервер — заповніть анкету на сайті, не в Discord.`,
+    `Java і Bedrock грають разом. На сервер можна зайти за IP. В основний світ — після анкети на сайті.`,
   ].join("\n");
 }
 

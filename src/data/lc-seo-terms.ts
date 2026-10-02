@@ -85,7 +85,7 @@ export const LC_SEO_SITE_TITLE_DEFAULT =
 export const LC_SEO_PLAY_TITLE =
   "Як зайти на Lost Chronicles — IP українського Minecraft-сервера 1.21 Java/Bedrock";
 
-export const LC_SEO_PLAY_DESCRIPTION = `IP ${LC_DEFAULT_JAVA_SERVER_HOST}. Анкета на вайтлист, Java і Bedrock, версія 1.21. Lost Chronicles (Лост Хроніклс) — український ванільний RP Minecraft.`;
+export const LC_SEO_PLAY_DESCRIPTION = `IP ${LC_DEFAULT_JAVA_SERVER_HOST}. На сервер можна зайти одразу, в основний світ — після анкети. Java і Bedrock, версія 1.21. Lost Chronicles (Лост Хроніклс).`;
 
 export const LC_SEO_FAQ_TITLE = "FAQ — як зайти на Lost Chronicles | Minecraft Україна";
 
