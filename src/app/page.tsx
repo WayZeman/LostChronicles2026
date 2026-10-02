@@ -92,11 +92,6 @@ export default async function Home() {
             />
           </div>
 
-          <p className="mt-4 max-w-md text-pretty text-sm leading-relaxed text-[var(--mc-text-muted)]">
-            Український ванільний RP · Java і Bedrock · {settings.version} · IP{" "}
-            <span className="font-mono text-[var(--mc-text)]">{settings.ip}</span>
-          </p>
-
           <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-3">
             <Link
               href={LC_APPLY_PATH}
