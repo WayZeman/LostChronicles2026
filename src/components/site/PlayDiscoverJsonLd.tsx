@@ -1,8 +1,5 @@
 import { LC_APPLY_PATH } from "@/data/lost-chronicles-faq";
 import { LC_CATALOG_SAME_AS } from "@/data/lc-server-listings";
-import { stripHtmlForSeo } from "@/lib/seo";
-
-type FaqItem = { question: string; answer: string };
 
 type Props = {
   siteUrl: string;
@@ -10,7 +7,6 @@ type Props = {
   version: string;
   bedrockAddress: string;
   bedrockPort: string;
-  faqs: FaqItem[];
 };
 
 /** HowTo + FAQ + Breadcrumb для сторінки «як зайти» — rich results у Google. */
@@ -20,7 +16,6 @@ export function PlayDiscoverJsonLd({
   version,
   bedrockAddress,
   bedrockPort,
-  faqs,
 }: Props) {
   const playUrl = `${siteUrl}/play`;
   const applyUrl = `${siteUrl}${LC_APPLY_PATH}`;
@@ -78,20 +73,6 @@ export function PlayDiscoverJsonLd({
             text: "Адміністратори перевіряють анкету і повідомляють, коли доступ до основного світу відкритий.",
           },
         ],
-      },
-      {
-        "@type": "FAQPage",
-        "@id": `${playUrl}#faq`,
-        url: playUrl,
-        inLanguage: "uk-UA",
-        mainEntity: faqs.map((item) => ({
-          "@type": "Question",
-          name: item.question,
-          acceptedAnswer: {
-            "@type": "Answer",
-            text: stripHtmlForSeo(item.answer, 500),
-          },
-        })),
       },
       {
         "@type": "GameServer",
