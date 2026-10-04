@@ -1,6 +1,7 @@
 /**
  * Статус Java-сервера через HTTPS (працює на Vercel тощо).
- * API: https://api.mcsrvstat.us — live-запит без кешу, щоб UI бачив актуальний онлайн.
+ * API: https://api.mcsrvstat.us — передавайте host:port (для LC — :25550).
+ * Без порту mcsrvstat іде на :25565 і може влучити в інший сервер на тому ж IP.
  */
 
 export type JavaServerStatusSource = "api" | "api-offline" | "env-fallback";

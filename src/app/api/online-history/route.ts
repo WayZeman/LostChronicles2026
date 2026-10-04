@@ -4,7 +4,9 @@ import {
   fetchPlanLiveForOnlineHistory,
   slicePlanGraphSeriesForPeriod,
 } from "@/lib/lc-plan-online-history";
-import { LC_DEFAULT_JAVA_SERVER_HOST } from "@/lib/lc-server-defaults";
+import {
+  LC_DEFAULT_JAVA_STATUS_HOST,
+} from "@/lib/lc-server-defaults";
 import { getJavaServerStatus } from "@/lib/minecraft-java-status";
 import {
   fetchOumOnlineHistory,
@@ -15,6 +17,16 @@ import {
 export const dynamic = "force-dynamic";
 
 type Period = "day" | "week" | "month" | "all";
+
+/** Хост для mcsrvstat: обов’язково з портом SRV (:25550), інакше б’є в чужий :25565. */
+function resolveJavaStatusHost(): string {
+  const explicit = process.env.NEXT_PUBLIC_SERVER_STATUS_HOST?.trim();
+  if (explicit) return explicit;
+  const ip = process.env.NEXT_PUBLIC_SERVER_IP?.trim();
+  if (ip && ip.includes(":")) return ip;
+  if (ip) return `${ip}:25550`;
+  return LC_DEFAULT_JAVA_STATUS_HOST;
+}
 
 function isPeriod(v: string | null): v is Period {
   return v === "day" || v === "week" || v === "month" || v === "all";
@@ -156,10 +168,10 @@ async function getLiveSnapshot(): Promise<LiveSnapshot> {
     };
   }
 
-  const host =
-    process.env.NEXT_PUBLIC_SERVER_IP?.trim() || LC_DEFAULT_JAVA_SERVER_HOST;
+  // Status API має бити в :25550 (SRV). Без порту mcsrvstat потрапляє на чужий :25565.
+  const statusHost = resolveJavaStatusHost();
   const [status, planLive] = await Promise.all([
-    getJavaServerStatus(host),
+    getJavaServerStatus(statusHost),
     fetchPlanLiveForOnlineHistory(),
   ]);
 
@@ -169,10 +181,29 @@ async function getLiveSnapshot(): Promise<LiveSnapshot> {
       status.playerNames,
     );
     const javaOn = status.playersOnline;
-    const liveOnline = Math.max(
-      planLive.liveOnline,
-      javaOn != null && Number.isFinite(javaOn) && javaOn >= 0 ? javaOn : -1,
-    );
+    const javaTrusted =
+      status.source === "api" &&
+      typeof javaOn === "number" &&
+      Number.isFinite(javaOn) &&
+      javaOn >= 0;
+
+    // Не Math.max(Plan, Java): завищений чужий статус (колишній баг без :25550)
+    // підтягував онлайн вище реального списку ніків.
+    let liveOnline = planLive.liveOnline;
+    if (javaTrusted) {
+      // Обидва джерела узгоджені — беремо свіжіший Java ping; інакше Plan.
+      if (
+        Math.abs(javaOn - planLive.liveOnline) <= 2 ||
+        names.length === 0
+      ) {
+        liveOnline = javaOn;
+      }
+    }
+    // Список сесій Plan — хто реально на сервері; не показуємо більше за ніки.
+    if (names.length > 0 && liveOnline > names.length) {
+      liveOnline = names.length;
+    }
+
     return {
       liveOnline,
       liveMax: status.playersMax,
