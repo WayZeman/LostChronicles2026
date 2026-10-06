@@ -1,8 +1,13 @@
+import { revalidatePath } from "next/cache";
 import { NextResponse } from "next/server";
 
 import { authorizeCronRequest } from "@/lib/cron-auth";
-import { pingLcIndexNow } from "@/lib/lc-indexnow";
-import { buildLcSitemapEntries } from "@/lib/lc-sitemap-entries";
+import { pingLcIndexNowBatched } from "@/lib/lc-indexnow";
+import {
+  buildLcSitemapEntries,
+  lcSitemapPublicUrl,
+  lcSitemapUrl,
+} from "@/lib/lc-sitemap-entries";
 
 export const dynamic = "force-dynamic";
 
@@ -11,11 +16,18 @@ export const dynamic = "force-dynamic";
  * Header: Authorization: Bearer {CRON_SECRET}
  */
 async function run() {
+  revalidatePath("/sitemap.xml");
+
   const entries = await buildLcSitemapEntries();
-  const urls = entries
+  const pageUrls = entries
     .map((e) => e.url)
     .filter((u): u is string => typeof u === "string");
-  const result = await pingLcIndexNow(urls);
+  const urls = [
+    lcSitemapPublicUrl(),
+    lcSitemapUrl("/sitemap.xml"),
+    ...pageUrls,
+  ];
+  const result = await pingLcIndexNowBatched(urls);
   return { pinged: urls.length, ...result };
 }
 

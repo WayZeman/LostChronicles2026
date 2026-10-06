@@ -7,7 +7,7 @@
  */
 
 import { resolveLcMarketingSiteUrl } from "../src/lib/lc-domains";
-import { pingLcIndexNow } from "../src/lib/lc-indexnow";
+import { pingLcIndexNowBatched } from "../src/lib/lc-indexnow";
 
 const base = resolveLcMarketingSiteUrl(
   process.env.SITEMAP_BASE ?? process.env.NEXT_PUBLIC_SITE_URL,
@@ -57,15 +57,29 @@ async function main() {
   const locMatches = [...xml.matchAll(/<loc>\s*([^<]+)\s*<\/loc>/g)].map((m) =>
     m[1].trim(),
   );
+  const indexNowUrls = [
+    sitemapUrl,
+    `${base}/sitemap.xml`,
+    ...(locMatches.length > 0
+      ? locMatches
+      : [`${base}/`, `${base}/play`]),
+  ];
   try {
-    const indexNow = await pingLcIndexNow(
-      locMatches.length > 0
-        ? locMatches
-        : [`${base}/`, `${base}/play`, sitemapUrl],
+    const indexNow = await pingLcIndexNowBatched(indexNowUrls);
+    console.log(
+      `IndexNow: ok=${indexNow.ok} batches=${indexNow.batches} statuses=${indexNow.statuses.join(",")}`,
     );
-    console.log(`IndexNow: HTTP ${indexNow.status} ok=${indexNow.ok}`);
   } catch (e) {
     console.warn("IndexNow failed:", e);
+  }
+
+  try {
+    const googlePing = await fetch(
+      `https://www.google.com/ping?sitemap=${encodeURIComponent(sitemapUrl)}`,
+    );
+    console.log(`Google sitemap ping: HTTP ${googlePing.status}`);
+  } catch (e) {
+    console.warn("Google ping failed:", e);
   }
 
   console.log("\nGoogle Search Console:");
