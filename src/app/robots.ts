@@ -43,6 +43,7 @@ export default function robots(): MetadataRoute.Robots {
       })),
     ],
     sitemap: [
+      lcSitemapUrl("/sitemap-gsc.xml"),
       lcSitemapPublicUrl(),
       lcSitemapPagesUrl(),
       lcSitemapUrl("/sitemap.xml"),

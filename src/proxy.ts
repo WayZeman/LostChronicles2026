@@ -70,6 +70,6 @@ export default async function proxy(req: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/webpack-hmr|_next/image|favicon.ico|sitemap.xml|sitemaps/|robots.txt).*)",
+    "/((?!_next/static|_next/webpack-hmr|_next/image|favicon.ico|sitemap.xml|sitemap-gsc.xml|sitemaps/|robots.txt|google.*\\.html).*)",
   ],
 };
