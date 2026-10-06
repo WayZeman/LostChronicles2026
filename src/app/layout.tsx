@@ -131,7 +131,7 @@ export default function RootLayout({
         <link rel="preconnect" href="https://mc-heads.net" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://ely.by" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="http://skinsystem.ely.by" />
-        <link rel="sitemap" type="application/xml" href="/sitemap-index.xml" />
+        <link rel="sitemap" type="application/xml" href="/sitemaps/index.xml" />
         <link rel="alternate" type="text/plain" href="/llms.txt" title="LLMs.txt" />
         <link rel="alternate" type="application/json" href="/server.json" title="Minecraft server.json" />
         <script

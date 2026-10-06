@@ -13,13 +13,15 @@ const base = resolveLcMarketingSiteUrl(
   process.env.SITEMAP_BASE ?? process.env.NEXT_PUBLIC_SITE_URL,
 );
 
-const sitemapUrl = `${base}/sitemap-index.xml`;
+const sitemapUrl = `${base}/sitemaps/index.xml`;
+const pagesSitemapUrl = `${base}/sitemaps/pages.xml`;
 const robotsUrl = `${base}/robots.txt`;
 
 async function main() {
-  console.log(`Sitemap: ${sitemapUrl}`);
+  console.log(`Sitemap index: ${sitemapUrl}`);
+  console.log(`Sitemap pages: ${pagesSitemapUrl}`);
 
-  const res = await fetch(sitemapUrl, {
+  const res = await fetch(pagesSitemapUrl, {
     headers: { Accept: "application/xml,text/xml,*/*" },
   });
 
@@ -35,14 +37,24 @@ async function main() {
   }
 
   const count = (xml.match(/<loc>/g) ?? []).length;
-  console.log(`OK: ${count} URL у sitemap`);
+  console.log(`OK: ${count} URL у pages sitemap`);
+
+  const indexRes = await fetch(sitemapUrl, {
+    headers: { Accept: "application/xml,text/xml,*/*" },
+  });
+  const indexXml = await indexRes.text();
+  if (!indexRes.ok || !indexXml.includes("<sitemapindex")) {
+    console.error("FAIL: sitemap index невалідний");
+    process.exit(1);
+  }
+  console.log("OK: sitemap index валідний");
 
   const robots = await fetch(robotsUrl);
   const robotsText = await robots.text();
-  if (robotsText.includes(sitemapUrl)) {
-    console.log("OK: robots.txt посилається на sitemap");
+  if (robotsText.includes(sitemapUrl) && robotsText.includes(pagesSitemapUrl)) {
+    console.log("OK: robots.txt посилається на обидва sitemap");
   } else {
-    console.warn("WARN: robots.txt не містить sitemap URL");
+    console.warn("WARN: robots.txt не містить очікувані sitemap URL");
   }
 
   try {
@@ -59,6 +71,7 @@ async function main() {
   );
   const indexNowUrls = [
     sitemapUrl,
+    pagesSitemapUrl,
     `${base}/sitemap.xml`,
     ...(locMatches.length > 0
       ? locMatches

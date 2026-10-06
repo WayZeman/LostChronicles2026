@@ -5,6 +5,7 @@ import { authorizeCronRequest } from "@/lib/cron-auth";
 import { pingLcIndexNowBatched } from "@/lib/lc-indexnow";
 import {
   buildLcSitemapEntries,
+  lcSitemapPagesUrl,
   lcSitemapPublicUrl,
   lcSitemapUrl,
 } from "@/lib/lc-sitemap-entries";
@@ -17,6 +18,8 @@ export const dynamic = "force-dynamic";
  */
 async function run() {
   revalidatePath("/sitemap.xml");
+  revalidatePath("/sitemaps/pages.xml");
+  revalidatePath("/sitemaps/index.xml");
 
   const entries = await buildLcSitemapEntries();
   const pageUrls = entries
@@ -24,6 +27,7 @@ async function run() {
     .filter((u): u is string => typeof u === "string");
   const urls = [
     lcSitemapPublicUrl(),
+    lcSitemapPagesUrl(),
     lcSitemapUrl("/sitemap.xml"),
     ...pageUrls,
   ];

@@ -46,6 +46,6 @@ play.lost-chronicles.co.ua
 ## Технічне
 
 - Мова сайту: українська (uk-UA)
-- Sitemap: https://lost-chronicles.co.ua/sitemap-index.xml
+- Sitemap: https://lost-chronicles.co.ua/sitemaps/index.xml
 - Robots: https://lost-chronicles.co.ua/robots.txt
 - IndexNow: https://lost-chronicles.co.ua/59db5735f20ac7cc229a82c548820bf8.txt

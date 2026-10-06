@@ -55,12 +55,6 @@ const nextConfig: NextConfig = {
       { source: "/ip", destination: "/play", permanent: true },
     ];
   },
-  async rewrites() {
-    return [
-      // Alias для Google Search Console: обхід закешованої помилки /sitemap.xml
-      { source: "/sitemap-index.xml", destination: "/sitemap.xml" },
-    ];
-  },
   async headers() {
     return [
       {
@@ -72,12 +66,12 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Type",
-            value: "application/xml; charset=utf-8",
+            value: "text/xml; charset=utf-8",
           },
         ],
       },
       {
-        source: "/sitemap-index.xml",
+        source: "/sitemaps/:path*",
         headers: [
           {
             key: "Cache-Control",
@@ -85,7 +79,7 @@ const nextConfig: NextConfig = {
           },
           {
             key: "Content-Type",
-            value: "application/xml; charset=utf-8",
+            value: "text/xml; charset=utf-8",
           },
         ],
       },

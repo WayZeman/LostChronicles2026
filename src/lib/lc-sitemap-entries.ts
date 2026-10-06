@@ -178,6 +178,10 @@ export async function buildLcSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export function lcSitemapPublicUrl(): string {
-  // Окремий шлях для GSC: той самий XML, але без закешованої помилки /sitemap.xml
-  return lcSitemapUrl("/sitemap-index.xml");
+  // Чистий Route Handler без content-disposition MetadataRoute (GSC «не отримано»).
+  return lcSitemapUrl("/sitemaps/index.xml");
+}
+
+export function lcSitemapPagesUrl(): string {
+  return lcSitemapUrl("/sitemaps/pages.xml");
 }
