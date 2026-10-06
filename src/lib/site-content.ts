@@ -488,7 +488,7 @@ const SITE_SETTINGS_REVALIDATE_SEC = 300;
 
 const getCachedSiteSettingsMap = unstable_cache(
   loadSiteSettingsMap,
-  ["site-settings-map-v1"],
+  ["site-settings-map-v2"],
   {
     revalidate: SITE_SETTINGS_REVALIDATE_SEC,
     tags: [SITE_SETTINGS_CACHE_TAG],

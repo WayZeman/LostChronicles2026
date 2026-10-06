@@ -30,7 +30,7 @@ export const LC_PUBLIC_CATALOG_LINKS: LcCatalogLink[] = [
     hint: "Моніторинг онлайну",
   },
   {
-    href: "https://allmc.in.ua/play-lost-chronicles-site",
+    href: "https://allmc.in.ua/play-lost-chronicles-co-ua-25550",
     label: "AllMC.in.ua",
     shortLabel: "AllMC",
     hint: "Каталог IP",
