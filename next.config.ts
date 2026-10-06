@@ -58,6 +58,23 @@ const nextConfig: NextConfig = {
   async headers() {
     return [
       {
+        source: "/sitemap-gsc.xml",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=3600, s-maxage=3600",
+          },
+          {
+            key: "Content-Type",
+            value: "text/xml; charset=utf-8",
+          },
+          {
+            key: "Content-Disposition",
+            value: "inline",
+          },
+        ],
+      },
+      {
         source: "/sitemap.xml",
         headers: [
           {
@@ -67,6 +84,10 @@ const nextConfig: NextConfig = {
           {
             key: "Content-Type",
             value: "text/xml; charset=utf-8",
+          },
+          {
+            key: "Content-Disposition",
+            value: "inline",
           },
         ],
       },
