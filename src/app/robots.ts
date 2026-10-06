@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 import { LC_MARKETING_HOST } from "@/lib/lc-domains";
-import { lcSitemapPublicUrl } from "@/lib/lc-sitemap-entries";
+import { lcSitemapPublicUrl, lcSitemapUrl } from "@/lib/lc-sitemap-entries";
 
 const PUBLIC_DISALLOW = [
   "/api/",
@@ -38,7 +38,10 @@ export default function robots(): MetadataRoute.Robots {
         disallow: PUBLIC_DISALLOW,
       })),
     ],
-    sitemap: lcSitemapPublicUrl(),
+    sitemap: [
+      lcSitemapPublicUrl(),
+      lcSitemapUrl("/sitemap.xml"),
+    ],
     host: LC_MARKETING_HOST,
   };
 }

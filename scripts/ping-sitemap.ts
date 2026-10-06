@@ -13,7 +13,7 @@ const base = resolveLcMarketingSiteUrl(
   process.env.SITEMAP_BASE ?? process.env.NEXT_PUBLIC_SITE_URL,
 );
 
-const sitemapUrl = `${base}/sitemap.xml`;
+const sitemapUrl = `${base}/sitemap-index.xml`;
 const robotsUrl = `${base}/robots.txt`;
 
 async function main() {

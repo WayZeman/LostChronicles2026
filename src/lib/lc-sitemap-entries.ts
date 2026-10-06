@@ -32,6 +32,23 @@ export function lcSitemapUrl(path: string, base?: string): string {
   return `${root}${normalized}`;
 }
 
+/**
+ * Google Search Console надійніше їсть lastmod як YYYY-MM-DD
+ * (без мілісекунд ISO), ніж повний Date.toISOString().
+ */
+export function lcSitemapLastmod(value?: Date | string | null): string {
+  const d =
+    value instanceof Date
+      ? value
+      : value
+        ? new Date(value)
+        : new Date();
+  if (Number.isNaN(d.getTime())) {
+    return new Date().toISOString().slice(0, 10);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
 function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
   return new Promise<T>((resolve, reject) => {
     const timer = setTimeout(
@@ -73,7 +90,7 @@ async function loadWikiEntries(
     seen.add(path);
     entries.push({
       url: lcSitemapUrl(path, base),
-      lastModified: page.updated_at ? new Date(page.updated_at) : now,
+      lastModified: lcSitemapLastmod(page.updated_at ?? now),
       changeFrequency: "weekly",
       priority: 0.7,
     });
@@ -88,7 +105,7 @@ async function loadWikiEntries(
       seen.add(path);
       entries.push({
         url: lcSitemapUrl(path, base),
-        lastModified: now,
+        lastModified: lcSitemapLastmod(now),
         changeFrequency: "weekly",
         priority: 0.65,
       });
@@ -115,7 +132,7 @@ async function loadProposalEntries(
   return (rows as { id: number; created_at: Date; ends_at: Date }[]).map(
     (row) => ({
       url: lcSitemapUrl(`/proposals/${row.id}`, base),
-      lastModified: row.ends_at ?? row.created_at ?? now,
+      lastModified: lcSitemapLastmod(row.ends_at ?? row.created_at ?? now),
       changeFrequency: "weekly" as const,
       priority: 0.6,
     }),
@@ -141,7 +158,7 @@ export async function buildLcSitemapEntries(): Promise<MetadataRoute.Sitemap> {
   const staticEntries: MetadataRoute.Sitemap = LC_SITEMAP_STATIC_PATHS.map(
     ({ path, priority, changeFrequency }) => ({
       url: lcSitemapUrl(path, base),
-      lastModified: now,
+      lastModified: lcSitemapLastmod(now),
       changeFrequency,
       priority,
     }),
@@ -161,5 +178,6 @@ export async function buildLcSitemapEntries(): Promise<MetadataRoute.Sitemap> {
 }
 
 export function lcSitemapPublicUrl(): string {
-  return lcSitemapUrl("/sitemap.xml");
+  // Окремий шлях для GSC: той самий XML, але без закешованої помилки /sitemap.xml
+  return lcSitemapUrl("/sitemap-index.xml");
 }
