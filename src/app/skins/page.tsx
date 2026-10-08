@@ -90,10 +90,7 @@ export default async function SkinsGalleryPage() {
                 key={skin.id}
                 skin={skin}
                 isLoggedIn={Boolean(userId)}
-                canDelete={
-                  Boolean(userId) &&
-                  (isAdmin || skin.author_id === userId)
-                }
+                canDelete={isAdmin}
               />
             ))}
           </div>
