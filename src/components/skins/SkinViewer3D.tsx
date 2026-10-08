@@ -10,6 +10,7 @@ import {
   WalkingAnimation,
   type PlayerAnimation,
 } from "skinview3d";
+import { TOUCH } from "three";
 import { cn } from "@/lib/utils";
 
 export type SkinPoseId =
@@ -80,11 +81,40 @@ type Props = {
   animationSpeed?: number;
   /** Показувати 3D overlay-шар (капелюх/куртка тощо). */
   showOuterLayer?: boolean;
+  /**
+   * touchInteract:
+   * - paint — один палець не крутить (для малювання зверху)
+   * - rotate — один палець крутить модель
+   */
+  touchInteract?: "paint" | "rotate";
   onReady?: (viewer: SkinViewer) => void;
   enableRotate?: boolean;
   enableZoom?: boolean;
   enablePan?: boolean;
 };
+
+function applyTouchMode(
+  viewer: SkinViewer,
+  mode: "paint" | "rotate",
+  enableRotate: boolean,
+) {
+  // Фарба: 1 палець не крутить (enableRotate off), 2 пальці — зум/обертання
+  if (mode === "paint") {
+    viewer.controls.enableRotate = false;
+    viewer.controls.enablePan = false;
+    viewer.controls.touches = {
+      ONE: TOUCH.ROTATE,
+      TWO: TOUCH.DOLLY_ROTATE,
+    };
+  } else {
+    viewer.controls.enableRotate = enableRotate;
+    viewer.controls.enablePan = false;
+    viewer.controls.touches = {
+      ONE: TOUCH.ROTATE,
+      TWO: TOUCH.DOLLY_PAN,
+    };
+  }
+}
 
 export function SkinViewer3D({
   skinUrl,
@@ -97,6 +127,7 @@ export function SkinViewer3D({
   pose,
   animationSpeed = 0.7,
   showOuterLayer = true,
+  touchInteract = "rotate",
   onReady,
   enableRotate = true,
   enableZoom = true,
@@ -151,10 +182,10 @@ export function SkinViewer3D({
       skin: skinUrl,
       model: slim ? "slim" : "default",
     });
-    viewer.controls.enableRotate = enableRotate;
     viewer.controls.enableZoom = enableZoom;
     viewer.controls.enablePan = enablePan;
     viewer.autoRotate = false;
+    applyTouchMode(viewer, touchInteract, enableRotate);
     applyPose(viewer);
 
     viewerRef.current = viewer;
@@ -200,10 +231,10 @@ export function SkinViewer3D({
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-    viewer.controls.enableRotate = enableRotate;
     viewer.controls.enableZoom = enableZoom;
     viewer.controls.enablePan = enablePan;
-  }, [enableRotate, enableZoom, enablePan]);
+    applyTouchMode(viewer, touchInteract, enableRotate);
+  }, [enableRotate, enableZoom, enablePan, touchInteract]);
 
   useEffect(() => {
     const viewer = viewerRef.current;
@@ -225,10 +256,14 @@ export function SkinViewer3D({
       <canvas
         ref={canvasRef}
         className={cn(
-          "touch-none bg-[rgba(0,0,0,0.28)]",
+          "touch-none bg-[rgba(0,0,0,0.28)] [-webkit-touch-callout:none]",
           fill ? "h-full w-full" : "rounded-sm",
         )}
-        style={fill ? { width: "100%", height: "100%" } : { width, height }}
+        style={
+          fill
+            ? { width: "100%", height: "100%", touchAction: "none" }
+            : { width, height, touchAction: "none" }
+        }
         width={width}
         height={height}
       />

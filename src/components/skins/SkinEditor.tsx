@@ -112,6 +112,11 @@ export function SkinEditor() {
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ImageData[]>([]);
   const [future, setFuture] = useState<ImageData[]>([]);
+  /** Мобільні вкладки: перегляд 3D / малювання / частини. */
+  const [mobileTab, setMobileTab] = useState<"view" | "paint" | "parts">(
+    "paint",
+  );
+  const [showOuterLayer, setShowOuterLayer] = useState(true);
   /** Stable URL for initial viewer mount only — live updates go via texture canvas. */
   const [viewerSkinUrl] = useState(() =>
     imageDataToPngDataUrl(createBlankSkinImageData()),
@@ -133,9 +138,18 @@ export function SkinEditor() {
   const viewerRef = useRef<SkinViewer | null>(null);
   const texCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const paintingRef = useRef(false);
+  const facePaintingRef = useRef(false);
   const strokeStartedRef = useRef(false);
   const faceCanvasRef = useRef<HTMLCanvasElement>(null);
-  const [showOuterLayer, setShowOuterLayer] = useState(true);
+  const activePointersRef = useRef(new Set<number>());
+
+  useEffect(() => {
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, []);
 
   const partDef = useMemo(
     () => getBodyPart(bodyPart, model),
@@ -361,6 +375,8 @@ export function SkinEditor() {
     (e: PointerEvent, continuous: boolean) => {
       const viewer = viewerRef.current;
       if (!viewer || !paintOn3d) return;
+      // Мультитач (зум/обертання) — не малюємо
+      if (activePointersRef.current.size > 1) return;
       const canvas = viewer.canvas;
       const rect = canvas.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) return;
@@ -388,20 +404,29 @@ export function SkinEditor() {
     const canvas = viewer.canvas;
 
     const onDown = (e: PointerEvent) => {
+      activePointersRef.current.add(e.pointerId);
       if (!paintOn3d || e.button !== 0 || e.altKey) return;
+      if (activePointersRef.current.size > 1) return;
       e.preventDefault();
       paintingRef.current = true;
       strokeStartedRef.current = false;
       viewer.controls.enabled = false;
-      canvas.setPointerCapture(e.pointerId);
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch {
+        /* ignore */
+      }
       paint3dFromEvent(e, false);
       strokeStartedRef.current = true;
     };
     const onMove = (e: PointerEvent) => {
       if (!paintingRef.current) return;
+      if (activePointersRef.current.size > 1) return;
+      e.preventDefault();
       paint3dFromEvent(e, true);
     };
     const onUp = (e: PointerEvent) => {
+      activePointersRef.current.delete(e.pointerId);
       if (!paintingRef.current) return;
       paintingRef.current = false;
       strokeStartedRef.current = false;
@@ -413,8 +438,8 @@ export function SkinEditor() {
       }
     };
 
-    canvas.addEventListener("pointerdown", onDown);
-    canvas.addEventListener("pointermove", onMove);
+    canvas.addEventListener("pointerdown", onDown, { passive: false });
+    canvas.addEventListener("pointermove", onMove, { passive: false });
     canvas.addEventListener("pointerup", onUp);
     canvas.addEventListener("pointercancel", onUp);
     return () => {
@@ -478,122 +503,359 @@ export function SkinEditor() {
       key={id}
       type="button"
       title={label}
+      aria-label={label}
       onClick={() => setTool(id)}
       className={cn(
-        "lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border sm:size-10",
+        "lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border touch-manipulation sm:size-10",
         tool === id
           ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/20 text-[var(--mc-ink)]"
-          : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)] hover:bg-black/40",
+          : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
       )}
     >
       <Icon className="size-4" aria-hidden />
-      <span className="sr-only">{label}</span>
     </button>
   );
 
+  const selectBodyPart = (id: BodyPartId) => {
+    setBodyPart(id);
+    const faces = getBodyPart(id, model).faces;
+    if (!faces[faceSide]) {
+      const first = FACE_ORDER.find((s) => faces[s]);
+      if (first) setFaceSide(first);
+    }
+  };
+
+  const viewerBlock = (
+    <section className="relative flex min-h-0 flex-1 flex-col">
+      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-white/10 px-2 py-1.5 sm:px-3 sm:py-2">
+        <div className="flex rounded-sm border border-white/15 p-0.5">
+          <button
+            type="button"
+            onClick={() => setPaintOn3d(true)}
+            className={cn(
+              "lc-focus-ring min-h-10 rounded-sm px-3 text-xs touch-manipulation",
+              paintOn3d
+                ? "bg-rose-500/20 text-rose-100"
+                : "text-[var(--mc-ink-subtle)]",
+            )}
+          >
+            Фарба
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaintOn3d(false)}
+            className={cn(
+              "lc-focus-ring min-h-10 rounded-sm px-3 text-xs touch-manipulation",
+              !paintOn3d
+                ? "bg-[var(--mc-accent)]/20 text-[var(--mc-ink)]"
+                : "text-[var(--mc-ink-subtle)]",
+            )}
+          >
+            Крутити
+          </button>
+        </div>
+        <select
+          value={pose}
+          onChange={(e) => setPose(e.target.value as SkinPoseId)}
+          className="min-h-10 rounded-sm border border-white/15 bg-black/40 px-2 text-xs"
+          aria-label="Поза"
+        >
+          {SKIN_POSE_OPTIONS.map((p) => (
+            <option key={p.id} value={p.id}>
+              {p.label}
+            </option>
+          ))}
+        </select>
+        <label className="flex min-h-10 items-center gap-2 text-[11px] text-[var(--mc-ink-subtle)]">
+          <span className="hidden sm:inline">Швидк.</span>
+          <input
+            type="range"
+            min={0}
+            max={2}
+            step={0.05}
+            value={animSpeed}
+            onChange={(e) => setAnimSpeed(Number(e.target.value))}
+            className="w-20 accent-[var(--mc-accent)] sm:w-28"
+          />
+        </label>
+        <p className="hidden text-[10px] text-[var(--mc-ink-subtle)] lg:ml-auto lg:block">
+          {paintOn3d
+            ? "1 палець — фарба · 2 пальці — зум · ПКМ — обертати"
+            : "1 палець — обертати · щипок — зум"}
+        </p>
+      </div>
+      <div className="relative min-h-[42vh] flex-1 sm:min-h-[48vh] lg:min-h-0">
+        <SkinViewer3D
+          skinUrl={viewerSkinUrl}
+          slim={model === "slim"}
+          fill
+          pose={pose}
+          animationSpeed={animSpeed}
+          showOuterLayer={showOuterLayer}
+          touchInteract={paintOn3d ? "paint" : "rotate"}
+          enableRotate
+          enableZoom
+          className="absolute inset-0"
+          onReady={(v) => {
+            viewerRef.current = v;
+            v.controls.mouseButtons = {
+              LEFT: -1 as never,
+              MIDDLE: MOUSE.DOLLY,
+              RIGHT: MOUSE.ROTATE,
+            };
+            v.playerObject.skin.setOuterLayerVisible(showOuterLayer);
+            pushTextureToViewer(imageRef.current);
+          }}
+        />
+      </div>
+    </section>
+  );
+
+  const paintBlock = (
+    <section className="flex min-h-0 flex-1 flex-col overflow-auto px-2 py-2 sm:px-3 sm:py-3">
+      <div className="mb-2 flex flex-wrap gap-1.5">
+        {availableSides.map((side) => (
+          <button
+            key={side}
+            type="button"
+            onClick={() => setFaceSide(side)}
+            className={cn(
+              "lc-focus-ring min-h-11 rounded-sm border px-3 py-2 text-xs touch-manipulation",
+              faceSide === side
+                ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
+                : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
+            )}
+          >
+            {FACE_SIDE_LABELS[side]}
+          </button>
+        ))}
+      </div>
+
+      <div className="mb-3 flex justify-center">
+        <canvas
+          ref={faceCanvasRef}
+          className="max-w-full cursor-crosshair touch-none rounded-sm border border-white/15 shadow-[0_0_0_1px_rgba(225,29,72,0.25)]"
+          style={{ touchAction: "none" }}
+          onPointerDown={(e) => {
+            e.preventDefault();
+            facePaintingRef.current = true;
+            strokeStartedRef.current = false;
+            (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
+            paintFaceFromEvent(e, false);
+            strokeStartedRef.current = true;
+          }}
+          onPointerMove={(e) => {
+            if (!facePaintingRef.current) return;
+            e.preventDefault();
+            paintFaceFromEvent(e, true);
+          }}
+          onPointerUp={() => {
+            facePaintingRef.current = false;
+            strokeStartedRef.current = false;
+          }}
+          onPointerCancel={() => {
+            facePaintingRef.current = false;
+            strokeStartedRef.current = false;
+          }}
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
+        {availableSides.map((side) => {
+          const rect = partDef.faces[side]!;
+          const origin = resolveFaceRect(rect, useOverlay);
+          return (
+            <FaceThumb
+              key={side}
+              label={FACE_SIDE_LABELS[side]}
+              active={faceSide === side}
+              imageData={imageData}
+              origin={origin}
+              onClick={() => setFaceSide(side)}
+            />
+          );
+        })}
+      </div>
+    </section>
+  );
+
+  const partsBlock = (
+    <aside className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-2 py-3 sm:px-3">
+      <BodyPartPicker
+        selected={bodyPart}
+        onSelect={selectBodyPart}
+        layout="row"
+        className="lg:hidden"
+      />
+      <BodyPartPicker
+        selected={bodyPart}
+        onSelect={selectBodyPart}
+        layout="stack"
+        className="hidden lg:flex"
+      />
+      <div className="flex flex-wrap gap-1.5">
+        <button
+          type="button"
+          className={cn(
+            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
+            model === "classic"
+              ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+              : "border-white/10 bg-black/25",
+          )}
+          onClick={() => setModel("classic")}
+        >
+          Steve
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
+            model === "slim"
+              ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+              : "border-white/10 bg-black/25",
+          )}
+          onClick={() => setModel("slim")}
+        >
+          Alex
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
+            !useOverlay
+              ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+              : "border-white/10 bg-black/25",
+          )}
+          onClick={() => setUseOverlay(false)}
+        >
+          База
+        </button>
+        <button
+          type="button"
+          className={cn(
+            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
+            useOverlay
+              ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
+              : "border-white/10 bg-black/25",
+          )}
+          onClick={() => {
+            setUseOverlay(true);
+            setShowOuterLayer(true);
+          }}
+        >
+          3D шар
+        </button>
+        <label className="flex min-h-11 items-center gap-2 rounded-sm border border-white/10 bg-black/25 px-3 text-xs text-[var(--mc-ink-subtle)]">
+          <input
+            type="checkbox"
+            checked={showOuterLayer}
+            onChange={(e) => setShowOuterLayer(e.target.checked)}
+            className="size-4 accent-[var(--mc-accent)]"
+          />
+          Показ 3D
+        </label>
+      </div>
+    </aside>
+  );
+
   return (
-    <div className="fixed inset-0 z-[70] flex flex-col bg-[#0b0f14] text-[var(--mc-ink)]">
-      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
+    <div
+      className="fixed inset-0 z-[110] flex flex-col overscroll-none bg-[#0b0f14] text-[var(--mc-ink)]"
+      style={{
+        paddingTop: "env(safe-area-inset-top, 0px)",
+        paddingBottom: "env(safe-area-inset-bottom, 0px)",
+      }}
+    >
+      <header className="flex shrink-0 items-center gap-2 border-b border-white/10 bg-black/50 px-2 py-2 backdrop-blur-md sm:px-3">
         <Link
           href="/skins"
-          className="lc-focus-ring inline-flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-xs text-[var(--mc-ink-subtle)] hover:bg-white/5 hover:text-[var(--mc-ink)]"
+          className="lc-focus-ring inline-flex min-h-11 min-w-11 items-center justify-center gap-1 rounded-sm px-2 text-xs text-[var(--mc-ink-subtle)] touch-manipulation"
         >
-          <ArrowLeft className="size-3.5" aria-hidden />
-          Галерея
+          <ArrowLeft className="size-4" aria-hidden />
+          <span className="hidden sm:inline">Галерея</span>
         </Link>
-        <h1 className="text-sm font-semibold sm:text-base">Редактор скіна</h1>
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            maxLength={80}
-            placeholder="Назва скіна"
-            className="w-36 rounded-sm border border-white/15 bg-black/40 px-2 py-1.5 text-xs sm:w-48 sm:text-sm"
-          />
-          <button
-            type="button"
-            onClick={exportLocal}
-            className="lc-focus-ring mc-btn-secondary inline-flex min-h-9 items-center gap-1.5 px-3 text-xs"
-          >
-            <Download className="size-3.5" aria-hidden />
-            PNG
-          </button>
-          <button
-            type="button"
-            onClick={() => void save()}
-            disabled={saving}
-            className="lc-focus-ring lc-btn-accent inline-flex min-h-9 items-center gap-1.5 px-3 text-xs disabled:opacity-60"
-          >
-            <Save className="size-3.5" aria-hidden />
-            {saving ? "…" : "Зберегти"}
-          </button>
-        </div>
-        {error ? (
-          <p className="w-full text-xs text-red-400" role="alert">
-            {error}
-          </p>
-        ) : null}
+        <h1 className="truncate text-sm font-semibold">Редактор</h1>
+        <input
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          maxLength={80}
+          placeholder="Назва"
+          className="min-h-11 min-w-0 flex-1 rounded-sm border border-white/15 bg-black/40 px-2 text-sm"
+        />
+        <button
+          type="button"
+          onClick={exportLocal}
+          className="lc-focus-ring mc-btn-secondary hidden min-h-11 items-center gap-1.5 px-3 text-xs sm:inline-flex"
+        >
+          <Download className="size-3.5" aria-hidden />
+          PNG
+        </button>
+        <button
+          type="button"
+          onClick={() => void save()}
+          disabled={saving}
+          className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center gap-1.5 px-3 text-xs touch-manipulation disabled:opacity-60"
+        >
+          <Save className="size-3.5" aria-hidden />
+          {saving ? "…" : "OK"}
+        </button>
       </header>
+      {error ? (
+        <p className="shrink-0 bg-red-950/40 px-3 py-1.5 text-xs text-red-300" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black/25 px-3 py-2">
-        <div className="flex gap-1">
-          {toolBtn("pencil", "Олівець", Paintbrush)}
-          {toolBtn("eraser", "Прозорість / гумка", Eraser)}
-          {toolBtn("fill", "Заливка", PaintBucket)}
-          {toolBtn("eyedropper", "Піпетка", Pipette)}
-        </div>
-        <div className="flex gap-1">
-          <button
-            type="button"
-            title="Скасувати"
-            disabled={!history.length}
-            onClick={undo}
-            className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-white/10 bg-black/25 disabled:opacity-40"
-          >
-            <Undo2 className="size-4" />
-          </button>
-          <button
-            type="button"
-            title="Повторити"
-            disabled={!future.length}
-            onClick={redo}
-            className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-white/10 bg-black/25 disabled:opacity-40"
-          >
-            <Redo2 className="size-4" />
-          </button>
-          <button
-            type="button"
-            title="Скинути макет"
-            onClick={resetBlank}
-            className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-white/10 bg-black/25"
-          >
-            <RotateCcw className="size-4" />
-          </button>
-        </div>
-
-        <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
-          Пензель
-          <select
-            value={brushSize}
-            onChange={(e) => setBrushSize(Number(e.target.value))}
-            className="rounded-sm border border-white/15 bg-black/40 px-1.5 py-1 text-xs text-[var(--mc-ink)]"
-          >
-            <option value={1}>1×1</option>
-            <option value={2}>2×2</option>
-            <option value={3}>3×3</option>
-          </select>
-        </label>
-
-        <label className="flex items-center gap-1.5 text-[11px]">
-          <span className="text-[var(--mc-ink-subtle)]">Колір</span>
-          <input
-            type="color"
-            value={color}
-            onChange={(e) => setColor(e.target.value)}
-            className="size-8 cursor-pointer rounded-sm border border-white/15 bg-transparent"
-          />
-        </label>
-        <div className="flex flex-wrap gap-1">
+      {/* Інструменти — горизонтальний скрол на вузьких екранах */}
+      <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-white/10 bg-black/35 px-2 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {toolBtn("pencil", "Олівець", Paintbrush)}
+        {toolBtn("eraser", "Прозорість", Eraser)}
+        {toolBtn("fill", "Заливка", PaintBucket)}
+        {toolBtn("eyedropper", "Піпетка", Pipette)}
+        <button
+          type="button"
+          title="Скасувати"
+          disabled={!history.length}
+          onClick={undo}
+          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation disabled:opacity-40"
+        >
+          <Undo2 className="size-4" />
+        </button>
+        <button
+          type="button"
+          title="Повторити"
+          disabled={!future.length}
+          onClick={redo}
+          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation disabled:opacity-40"
+        >
+          <Redo2 className="size-4" />
+        </button>
+        <button
+          type="button"
+          title="Скинути"
+          onClick={resetBlank}
+          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation"
+        >
+          <RotateCcw className="size-4" />
+        </button>
+        <select
+          value={brushSize}
+          onChange={(e) => setBrushSize(Number(e.target.value))}
+          className="min-h-11 shrink-0 rounded-sm border border-white/15 bg-black/40 px-2 text-xs"
+          aria-label="Розмір пензля"
+        >
+          <option value={1}>1×1</option>
+          <option value={2}>2×2</option>
+          <option value={3}>3×3</option>
+        </select>
+        <input
+          type="color"
+          value={color}
+          onChange={(e) => setColor(e.target.value)}
+          className="size-11 shrink-0 cursor-pointer rounded-sm border border-white/15 bg-transparent"
+          aria-label="Колір"
+        />
+        <div className="flex shrink-0 gap-1">
           {PALETTE.map((c) => (
             <button
               key={c}
@@ -601,230 +863,52 @@ export function SkinEditor() {
               aria-label={c}
               onClick={() => setColor(c)}
               className={cn(
-                "size-6 rounded-sm border",
+                "size-9 shrink-0 rounded-sm border touch-manipulation sm:size-7",
                 color === c ? "border-white" : "border-white/20",
               )}
               style={{ backgroundColor: c }}
             />
           ))}
         </div>
-
-        <div className="ml-auto flex flex-wrap items-center gap-1.5">
-          <button
-            type="button"
-            className={cn(
-              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
-              model === "classic"
-                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
-                : "border-white/10 bg-black/25",
-            )}
-            onClick={() => setModel("classic")}
-          >
-            Steve
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
-              model === "slim"
-                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
-                : "border-white/10 bg-black/25",
-            )}
-            onClick={() => setModel("slim")}
-          >
-            Alex
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
-              !useOverlay
-                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
-                : "border-white/10 bg-black/25",
-            )}
-            onClick={() => setUseOverlay(false)}
-            title="Внутрішній шар тіла"
-          >
-            База
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
-              useOverlay
-                ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
-                : "border-white/10 bg-black/25",
-            )}
-            onClick={() => {
-              setUseOverlay(true);
-              setShowOuterLayer(true);
-            }}
-            title="Зовнішній 3D-шар (капелюх, куртка, волосся)"
-          >
-            3D шар
-          </button>
-          <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
-            <input
-              type="checkbox"
-              checked={showOuterLayer}
-              onChange={(e) => setShowOuterLayer(e.target.checked)}
-              className="accent-[var(--mc-accent)]"
-            />
-            Показ 3D
-          </label>
-          <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
-            <input
-              type="checkbox"
-              checked={paintOn3d}
-              onChange={(e) => setPaintOn3d(e.target.checked)}
-              className="accent-[var(--mc-accent)]"
-            />
-            Малювати на моделі
-          </label>
-        </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_11rem_minmax(0,1fr)]">
-        <section className="relative flex min-h-[40vh] flex-col border-b border-white/10 lg:min-h-0 lg:border-b-0 lg:border-r">
-          <div className="flex flex-wrap items-center gap-1.5 border-b border-white/10 px-3 py-2">
-            <span className="text-[11px] uppercase tracking-wide text-[var(--mc-ink-subtle)]">
-              Поза
-            </span>
-            {SKIN_POSE_OPTIONS.map((p) => (
-              <button
-                key={p.id}
-                type="button"
-                onClick={() => setPose(p.id)}
-                className={cn(
-                  "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
-                  pose === p.id
-                    ? "border-rose-400/60 bg-rose-500/15 text-rose-100"
-                    : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
-                )}
-              >
-                {p.label}
-              </button>
-            ))}
-            <label className="ml-2 flex items-center gap-2 text-[11px] text-[var(--mc-ink-subtle)]">
-              Швидкість
-              <input
-                type="range"
-                min={0}
-                max={2}
-                step={0.05}
-                value={animSpeed}
-                onChange={(e) => setAnimSpeed(Number(e.target.value))}
-                className="w-24 accent-[var(--mc-accent)]"
-              />
-              <span className="w-8 tabular-nums text-[var(--mc-ink)]">
-                {animSpeed.toFixed(2)}
-              </span>
-            </label>
-            <span className="ml-auto text-[10px] text-[var(--mc-ink-subtle)]">
-              ЛКМ — фарба · ПКМ — обертати · PNG 64×64 для гри
-            </span>
-          </div>
-          <div className="relative min-h-0 flex-1">
-            <SkinViewer3D
-              skinUrl={viewerSkinUrl}
-              slim={model === "slim"}
-              fill
-              pose={pose}
-              animationSpeed={animSpeed}
-              showOuterLayer={showOuterLayer}
-              enableRotate
-              enableZoom
-              className="absolute inset-0"
-              onReady={(v) => {
-                viewerRef.current = v;
-                v.controls.mouseButtons = {
-                  LEFT: -1 as never,
-                  MIDDLE: MOUSE.DOLLY,
-                  RIGHT: MOUSE.ROTATE,
-                };
-                v.playerObject.skin.setOuterLayerVisible(showOuterLayer);
-                pushTextureToViewer(imageRef.current);
-              }}
-            />
-          </div>
-        </section>
+      {/* Мобільні вкладки */}
+      <div className="flex shrink-0 border-b border-white/10 lg:hidden">
+        {(
+          [
+            ["view", "3D"],
+            ["paint", "Пікселі"],
+            ["parts", "Частини"],
+          ] as const
+        ).map(([id, label]) => (
+          <button
+            key={id}
+            type="button"
+            onClick={() => setMobileTab(id)}
+            className={cn(
+              "lc-focus-ring min-h-12 flex-1 text-sm font-medium touch-manipulation",
+              mobileTab === id
+                ? "border-b-2 border-rose-400 text-rose-100"
+                : "text-[var(--mc-ink-subtle)]",
+            )}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
 
-        <aside className="flex flex-col items-center gap-2 border-b border-white/10 px-2 py-3 lg:border-b-0 lg:border-r">
-          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
-            Частина
-          </p>
-          <BodyPartPicker
-            selected={bodyPart}
-            onSelect={(id) => {
-              setBodyPart(id);
-              const faces = getBodyPart(id, model).faces;
-              if (!faces[faceSide]) {
-                const first = FACE_ORDER.find((s) => faces[s]);
-                if (first) setFaceSide(first);
-              }
-            }}
-          />
-        </aside>
+      {/* Мобільний контент */}
+      <div className="flex min-h-0 flex-1 flex-col lg:hidden">
+        {mobileTab === "view" ? viewerBlock : null}
+        {mobileTab === "paint" ? paintBlock : null}
+        {mobileTab === "parts" ? partsBlock : null}
+      </div>
 
-        <section className="flex min-h-0 flex-col overflow-auto px-3 py-3">
-          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
-            {partDef.label} · сторони
-          </p>
-          <div className="mb-3 flex flex-wrap gap-1.5">
-            {availableSides.map((side) => (
-              <button
-                key={side}
-                type="button"
-                onClick={() => setFaceSide(side)}
-                className={cn(
-                  "lc-focus-ring rounded-sm border px-2.5 py-1.5 text-xs",
-                  faceSide === side
-                    ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
-                    : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
-                )}
-              >
-                {FACE_SIDE_LABELS[side]}
-              </button>
-            ))}
-          </div>
-
-          <div className="mb-4 flex justify-center">
-            <canvas
-              ref={faceCanvasRef}
-              className="cursor-crosshair touch-none rounded-sm border border-white/15 shadow-[0_0_0_1px_rgba(225,29,72,0.25)]"
-              onPointerDown={(e) => {
-                strokeStartedRef.current = false;
-                (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
-                paintFaceFromEvent(e, false);
-                strokeStartedRef.current = true;
-              }}
-              onPointerMove={(e) => {
-                if (e.buttons !== 1) return;
-                paintFaceFromEvent(e, true);
-              }}
-              onPointerUp={() => {
-                strokeStartedRef.current = false;
-              }}
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            {availableSides.map((side) => {
-              const rect = partDef.faces[side]!;
-              const origin = resolveFaceRect(rect, useOverlay);
-              return (
-                <FaceThumb
-                  key={side}
-                  label={FACE_SIDE_LABELS[side]}
-                  active={faceSide === side}
-                  imageData={imageData}
-                  origin={origin}
-                  onClick={() => setFaceSide(side)}
-                />
-              );
-            })}
-          </div>
-        </section>
+      {/* Desktop / tablet landscape */}
+      <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.2fr)_12rem_minmax(0,1fr)]">
+        <div className="min-h-0 border-r border-white/10">{viewerBlock}</div>
+        <div className="min-h-0 border-r border-white/10">{partsBlock}</div>
+        <div className="min-h-0">{paintBlock}</div>
       </div>
     </div>
   );
