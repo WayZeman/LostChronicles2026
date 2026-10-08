@@ -1,3 +1,5 @@
+import { validateMinecraftSkinDataUrl } from "@/lib/minecraft-skin-png";
+
 /** Розмір класичного Java-скіна (1.8+). */
 export const SKIN_SIZE = 64;
 
@@ -33,8 +35,10 @@ export type BodyPartDef = {
   faces: Partial<Record<FaceSide, SkinFaceRect>>;
 };
 
-/** Регіони базового шару (непрозорі частини макета). */
-const BASE_OPAQUE_RECTS: ReadonlyArray<readonly [number, number, number, number]> = [
+/** Регіони базового шару (непрозорі частини макета) — мають бути opaque у грі. */
+export const BASE_OPAQUE_RECTS: ReadonlyArray<
+  readonly [number, number, number, number]
+> = [
   [0, 0, 32, 16],
   [0, 16, 56, 32],
   [16, 48, 32, 64],
@@ -126,7 +130,41 @@ export const BODY_PARTS: BodyPartDef[] = [
   },
 ];
 
-export function getBodyPart(id: BodyPartId): BodyPartDef {
+/** Slim (Alex) — руки шириною 3 px. */
+const SLIM_ARM_R: BodyPartDef = {
+  id: "arm_r",
+  label: "Права рука",
+  faces: {
+    front: { x: 44, y: 20, w: 3, h: 12, overlay: { x: 44, y: 36 } },
+    back: { x: 51, y: 20, w: 3, h: 12, overlay: { x: 51, y: 36 } },
+    left: { x: 47, y: 20, w: 4, h: 12, overlay: { x: 47, y: 36 } },
+    right: { x: 40, y: 20, w: 4, h: 12, overlay: { x: 40, y: 36 } },
+    top: { x: 44, y: 16, w: 3, h: 4, overlay: { x: 44, y: 32 } },
+    bottom: { x: 47, y: 16, w: 3, h: 4, overlay: { x: 47, y: 32 } },
+  },
+};
+
+const SLIM_ARM_L: BodyPartDef = {
+  id: "arm_l",
+  label: "Ліва рука",
+  faces: {
+    front: { x: 36, y: 52, w: 3, h: 12, overlay: { x: 52, y: 52 } },
+    back: { x: 43, y: 52, w: 3, h: 12, overlay: { x: 59, y: 52 } },
+    left: { x: 39, y: 52, w: 4, h: 12, overlay: { x: 55, y: 52 } },
+    right: { x: 32, y: 52, w: 4, h: 12, overlay: { x: 48, y: 52 } },
+    top: { x: 36, y: 48, w: 3, h: 4, overlay: { x: 52, y: 48 } },
+    bottom: { x: 39, y: 48, w: 3, h: 4, overlay: { x: 55, y: 48 } },
+  },
+};
+
+export function getBodyPart(
+  id: BodyPartId,
+  model: SkinModelType = "classic",
+): BodyPartDef {
+  if (model === "slim") {
+    if (id === "arm_r") return SLIM_ARM_R;
+    if (id === "arm_l") return SLIM_ARM_L;
+  }
   return BODY_PARTS.find((p) => p.id === id) ?? BODY_PARTS[0]!;
 }
 
@@ -174,12 +212,52 @@ export function createBlankSkinImageData(): ImageData {
   return { data, width: SKIN_SIZE, height: SKIN_SIZE, colorSpace: "srgb" } as ImageData;
 }
 
+/**
+ * Готує скін до гри: базовий шар завжди непрозорий (інакше «дірки» на персонажі).
+ * Overlay лишається з альфою.
+ */
+export function normalizeSkinForGame(imageData: ImageData): ImageData {
+  const out = cloneImageData(imageData);
+  for (const [x0, y0, x1, y1] of BASE_OPAQUE_RECTS) {
+    for (let y = y0; y < y1; y++) {
+      for (let x = x0; x < x1; x++) {
+        const i = (y * SKIN_SIZE + x) * 4;
+        if (out.data[i + 3]! < 255) {
+          // порожні пікселі бази → білий макет, напівпрозорі → повна непрозорість
+          if (out.data[i + 3]! === 0) {
+            out.data[i] = 245;
+            out.data[i + 1] = 245;
+            out.data[i + 2] = 245;
+          }
+          out.data[i + 3] = 255;
+        }
+      }
+    }
+  }
+  return out;
+}
+
 export function imageDataToPngDataUrl(imageData: ImageData): string {
+  const normalized = normalizeSkinForGame(imageData);
   const canvas = document.createElement("canvas");
   canvas.width = SKIN_SIZE;
   canvas.height = SKIN_SIZE;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D недоступний");
+  // Вимикаємо згладжування — критично для піксель-арту
+  ctx.imageSmoothingEnabled = false;
+  ctx.putImageData(normalized, 0, 0);
+  return canvas.toDataURL("image/png");
+}
+
+/** Експорт для превʼю без повторної нормалізації (швидкий live-update). */
+export function imageDataToPreviewDataUrl(imageData: ImageData): string {
+  const canvas = document.createElement("canvas");
+  canvas.width = SKIN_SIZE;
+  canvas.height = SKIN_SIZE;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D недоступний");
+  ctx.imageSmoothingEnabled = false;
   ctx.putImageData(imageData, 0, 0);
   return canvas.toDataURL("image/png");
 }
@@ -291,13 +369,13 @@ export function floodFill(
   }
 }
 
-const PNG_DATA_URL_RE =
-  /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/i;
-
 export function isValidSkinPngDataUrl(dataUrl: string): boolean {
-  const m = dataUrl.trim().match(PNG_DATA_URL_RE);
-  if (!m) return false;
-  return m[1]!.length <= 120_000;
+  try {
+    validateMinecraftSkinDataUrl(dataUrl);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 export function hexToRgba(hex: string): { r: number; g: number; b: number; a: number } {

@@ -1,11 +1,15 @@
+import { isAdminRole } from "@/lib/admin-role";
 import { getSql } from "@/lib/db";
-import { isValidSkinPngDataUrl, type SkinModelType } from "@/lib/minecraft-skin";
+import type { SkinModelType } from "@/lib/minecraft-skin";
+import { validateMinecraftSkinDataUrl } from "@/lib/minecraft-skin-png";
+import { buildDemoSkinPresets } from "@/lib/skin-demo-presets";
 
 function rowsOf(r: unknown): Record<string, unknown>[] {
   return r as Record<string, unknown>[];
 }
 
 let skinsEnsured = false;
+let demoSeedAttempted = false;
 
 async function ensureSkinsTables(): Promise<void> {
   if (skinsEnsured) return;
@@ -70,12 +74,57 @@ function mapSkinRow(r: Record<string, unknown>): SkinListItem {
   };
 }
 
+/** Якщо галерея порожня — додає 10 демо-скінів від першого адміна / будь-якого юзера. */
+export async function ensureDemoSkins(): Promise<void> {
+  if (demoSeedAttempted) return;
+  demoSeedAttempted = true;
+  await ensureSkinsTables();
+  const sql = getSql();
+  const marker = rowsOf(
+    await sql`
+      SELECT 1 AS ok FROM skins
+      WHERE title = ${"Хронікер LC"}
+      LIMIT 1
+    `,
+  );
+  if (marker[0]) return;
+
+  const ownerRows = rowsOf(
+    await sql`
+      SELECT id FROM users
+      WHERE role = 'admin'
+      ORDER BY id ASC
+      LIMIT 1
+    `,
+  );
+  let ownerId = Number(ownerRows[0]?.id ?? 0);
+  if (!ownerId) {
+    const any = rowsOf(await sql`SELECT id FROM users ORDER BY id ASC LIMIT 1`);
+    ownerId = Number(any[0]?.id ?? 0);
+  }
+  if (!ownerId) return;
+
+  const presets = buildDemoSkinPresets();
+  for (const p of presets) {
+    try {
+      const png = validateMinecraftSkinDataUrl(p.png_data);
+      await sql`
+        INSERT INTO skins (user_id, title, model_type, png_data)
+        VALUES (${ownerId}, ${p.title}, ${p.model_type}, ${png})
+      `;
+    } catch {
+      /* skip broken preset */
+    }
+  }
+}
+
 export async function listSkins(params: {
   limit: number;
   offset?: number;
   viewerUserId: number | null;
 }): Promise<SkinListItem[]> {
   await ensureSkinsTables();
+  await ensureDemoSkins();
   const sql = getSql();
   const limit = Math.min(Math.max(params.limit, 1), 60);
   const offset = Math.max(params.offset ?? 0, 0);
@@ -129,6 +178,7 @@ export async function listSkins(params: {
 
 export async function countSkins(): Promise<number> {
   await ensureSkinsTables();
+  await ensureDemoSkins();
   const sql = getSql();
   const rows = rowsOf(await sql`SELECT COUNT(*)::int AS c FROM skins`);
   return Number(rows[0]?.c ?? 0);
@@ -194,8 +244,13 @@ export async function createSkin(params: {
   pngData: string;
 }): Promise<SkinListItem> {
   await ensureSkinsTables();
-  if (!isValidSkinPngDataUrl(params.pngData)) {
-    throw new Error("Невірний формат скіна (потрібен PNG 64×64).");
+  let png: string;
+  try {
+    png = validateMinecraftSkinDataUrl(params.pngData);
+  } catch (e) {
+    throw new Error(
+      e instanceof Error ? e.message : "Невірний PNG скіна (потрібен 64×64).",
+    );
   }
   const title = params.title.trim().slice(0, 80) || "Без назви";
   const model: SkinModelType =
@@ -204,7 +259,7 @@ export async function createSkin(params: {
   const rows = rowsOf(
     await sql`
       INSERT INTO skins (user_id, title, model_type, png_data)
-      VALUES (${params.userId}, ${title}, ${model}, ${params.pngData})
+      VALUES (${params.userId}, ${title}, ${model}, ${png})
       RETURNING id
     `,
   );
@@ -212,6 +267,39 @@ export async function createSkin(params: {
   const created = await getSkinById(id, params.userId);
   if (!created) throw new Error("Не вдалося створити скін.");
   return created;
+}
+
+export async function deleteSkin(params: {
+  skinId: number;
+  actorUserId: number;
+  actorIsAdmin: boolean;
+}): Promise<{ ok: true } | { ok: false; error: string; status: number }> {
+  await ensureSkinsTables();
+  const sql = getSql();
+  const rows = rowsOf(
+    await sql`
+      SELECT user_id FROM skins WHERE id = ${params.skinId} LIMIT 1
+    `,
+  );
+  const ownerId = Number(rows[0]?.user_id ?? 0);
+  if (!ownerId) {
+    return { ok: false, error: "Скін не знайдено", status: 404 };
+  }
+  if (!params.actorIsAdmin && ownerId !== params.actorUserId) {
+    return { ok: false, error: "Немає прав на видалення", status: 403 };
+  }
+  await sql`DELETE FROM skins WHERE id = ${params.skinId}`;
+  return { ok: true };
+}
+
+export async function canUserDeleteSkin(
+  skinAuthorId: number,
+  viewerUserId: number | null,
+  viewerRole: string | null | undefined,
+): Promise<boolean> {
+  if (!viewerUserId) return false;
+  if (viewerUserId === skinAuthorId) return true;
+  return isAdminRole(viewerRole);
 }
 
 export async function toggleSkinLike(
@@ -282,8 +370,16 @@ export async function recordSkinDownload(
   );
   const r = rows[0];
   if (!r) return null;
-  return {
-    png_data: String(r.png_data ?? ""),
-    title: String(r.title ?? "skin"),
-  };
+  const raw = String(r.png_data ?? "");
+  try {
+    return {
+      png_data: validateMinecraftSkinDataUrl(raw),
+      title: String(r.title ?? "skin"),
+    };
+  } catch {
+    return {
+      png_data: raw,
+      title: String(r.title ?? "skin"),
+    };
+  }
 }

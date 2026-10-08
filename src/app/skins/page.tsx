@@ -7,8 +7,10 @@ import {
   lcPageContainerClass,
   lcPageMainClass,
 } from "@/components/site/lc-page-shell";
+import { isAdminRole } from "@/lib/admin-role";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { listSkins } from "@/lib/skins";
+import { getUserRole } from "@/lib/site-content";
 import { buildLcPageMetadata } from "@/lib/seo";
 import { cn } from "@/lib/utils";
 
@@ -25,9 +27,14 @@ export const dynamic = "force-dynamic";
 export default async function SkinsGalleryPage() {
   const userId = await getSessionUserIdFromCookies();
   let skins: SkinCardData[] = [];
+  let isAdmin = false;
   if (userId) {
     try {
-      const rows = await listSkins({ limit: 48, viewerUserId: userId });
+      const [rows, role] = await Promise.all([
+        listSkins({ limit: 48, viewerUserId: userId }),
+        getUserRole(userId),
+      ]);
+      isAdmin = isAdminRole(role);
       skins = rows.map((s) => ({
         id: s.id,
         title: s.title,
@@ -37,6 +44,7 @@ export default async function SkinsGalleryPage() {
         downloads_count: s.downloads_count,
         created_at: s.created_at.toISOString(),
         author_username: s.author_username,
+        author_id: s.author_id,
         liked_by_me: s.liked_by_me,
       }));
     } catch {
@@ -56,7 +64,8 @@ export default async function SkinsGalleryPage() {
           <div>
             <h1 className="lc-section-title text-xl md:text-2xl">Скіни</h1>
             <p className="mt-1 text-sm text-[var(--mc-ink-subtle)]">
-              Усі скіни, створені гравцями в редакторі Lost Chronicles.
+              Усі скіни спільноти. PNG 64×64 — готовий до вдягання в Minecraft.
+              Автор або адмін може видалити свій/будь-який скін.
             </p>
           </div>
           <Link
@@ -69,13 +78,25 @@ export default async function SkinsGalleryPage() {
         </header>
 
         {skins.length === 0 ? (
-          <div className={cn(lcGlassPanelClass, "mt-4 text-center text-sm text-[var(--mc-ink-subtle)]")}>
+          <div
+            className={cn(
+              lcGlassPanelClass,
+              "mt-4 text-center text-sm text-[var(--mc-ink-subtle)]",
+            )}
+          >
             Ще немає скінів. Створи перший у редакторі.
           </div>
         ) : (
           <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
             {skins.map((skin) => (
-              <SkinCard key={skin.id} skin={skin} />
+              <SkinCard
+                key={skin.id}
+                skin={skin}
+                canDelete={
+                  Boolean(userId) &&
+                  (isAdmin || skin.author_id === userId)
+                }
+              />
             ))}
           </div>
         )}

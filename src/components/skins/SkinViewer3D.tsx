@@ -29,33 +29,37 @@ export const SKIN_POSE_OPTIONS: { id: SkinPoseId; label: string }[] = [
   { id: "swim", label: "Плавання" },
 ];
 
-function createPoseAnimation(pose: SkinPoseId): PlayerAnimation | null {
+function createPoseAnimation(
+  pose: SkinPoseId,
+  speed: number,
+): PlayerAnimation | null {
+  const s = Math.min(3, Math.max(0, speed));
   switch (pose) {
     case "stand":
       return null;
     case "idle": {
       const a = new IdleAnimation();
-      a.speed = 0.7;
+      a.speed = s;
       return a;
     }
     case "walk": {
       const a = new WalkingAnimation();
-      a.speed = 0.7;
+      a.speed = s;
       return a;
     }
     case "run": {
       const a = new RunningAnimation();
-      a.speed = 0.85;
+      a.speed = s;
       return a;
     }
     case "crouch": {
       const a = new CrouchAnimation();
-      a.speed = 0.5;
+      a.speed = s;
       return a;
     }
     case "swim": {
       const a = new SwimAnimation();
-      a.speed = 0.7;
+      a.speed = s;
       return a;
     }
     default:
@@ -68,11 +72,12 @@ type Props = {
   slim?: boolean;
   width?: number;
   height?: number;
-  /** Якщо true — розтягується на батьківський контейнер. */
   fill?: boolean;
   className?: string;
   animate?: boolean;
   pose?: SkinPoseId;
+  /** 0 = пауза, 1 = нормально, до 3. */
+  animationSpeed?: number;
   onReady?: (viewer: SkinViewer) => void;
   enableRotate?: boolean;
   enableZoom?: boolean;
@@ -88,6 +93,7 @@ export function SkinViewer3D({
   className,
   animate = false,
   pose,
+  animationSpeed = 0.7,
   onReady,
   enableRotate = true,
   enableZoom = true,
@@ -98,12 +104,39 @@ export function SkinViewer3D({
   const viewerRef = useRef<SkinViewer | null>(null);
   const onReadyRef = useRef(onReady);
   onReadyRef.current = onReady;
+  const slimRef = useRef(slim);
+  slimRef.current = slim;
+  const poseRef = useRef(pose);
+  poseRef.current = pose;
+  const speedRef = useRef(animationSpeed);
+  speedRef.current = animationSpeed;
+  const animateRef = useRef(animate);
+  animateRef.current = animate;
+
+  const applyPose = (viewer: SkinViewer) => {
+    const next = poseRef.current ?? (animateRef.current ? "walk" : "stand");
+    const speed = speedRef.current;
+    if (speed <= 0.001 || next === "stand") {
+      viewer.animation = null;
+      viewer.playerObject.resetJoints();
+      return;
+    }
+    const anim = createPoseAnimation(next, speed);
+    if (anim) {
+      viewer.animation = anim;
+    } else {
+      viewer.animation = null;
+      viewer.playerObject.resetJoints();
+    }
+  };
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const startW = fill ? Math.max(wrapRef.current?.clientWidth || width, 120) : width;
+    const startW = fill
+      ? Math.max(wrapRef.current?.clientWidth || width, 120)
+      : width;
     const startH = fill
       ? Math.max(wrapRef.current?.clientHeight || height, 160)
       : height;
@@ -119,15 +152,7 @@ export function SkinViewer3D({
     viewer.controls.enableZoom = enableZoom;
     viewer.controls.enablePan = enablePan;
     viewer.autoRotate = false;
-
-    const initialPose = pose ?? (animate ? "walk" : "stand");
-    const anim = createPoseAnimation(initialPose);
-    if (anim) {
-      viewer.animation = anim;
-    } else {
-      viewer.animation = null;
-      viewer.playerObject.skin.resetJoints();
-    }
+    applyPose(viewer);
 
     viewerRef.current = viewer;
     onReadyRef.current?.(viewer);
@@ -150,7 +175,6 @@ export function SkinViewer3D({
       viewer.dispose();
       viewerRef.current = null;
     };
-    // Mount once; updates handled below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -165,7 +189,9 @@ export function SkinViewer3D({
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer || !skinUrl) return;
-    void viewer.loadSkin(skinUrl, { model: slim ? "slim" : "default" });
+    void viewer.loadSkin(skinUrl, {
+      model: slimRef.current ? "slim" : "default",
+    });
   }, [skinUrl, slim]);
 
   useEffect(() => {
@@ -179,15 +205,8 @@ export function SkinViewer3D({
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
-    const next = pose ?? (animate ? "walk" : "stand");
-    const anim = createPoseAnimation(next);
-    if (anim) {
-      viewer.animation = anim;
-    } else {
-      viewer.animation = null;
-      viewer.playerObject.resetJoints();
-    }
-  }, [pose, animate]);
+    applyPose(viewer);
+  }, [pose, animate, animationSpeed]);
 
   return (
     <div

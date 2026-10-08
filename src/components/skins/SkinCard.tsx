@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useState } from "react";
-import { Download, Heart } from "lucide-react";
+import { Download, Heart, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const SkinViewer3D = dynamic(
@@ -27,6 +27,7 @@ export type SkinCardData = {
   downloads_count: number;
   created_at: string;
   author_username: string;
+  author_id: number;
   liked_by_me: boolean;
 };
 
@@ -45,13 +46,23 @@ function formatUaDate(iso: string): string {
 type Props = {
   skin: SkinCardData;
   compact?: boolean;
+  canDelete?: boolean;
+  onDeleted?: (id: number) => void;
 };
 
-export function SkinCard({ skin, compact = false }: Props) {
+export function SkinCard({
+  skin,
+  compact = false,
+  canDelete = false,
+  onDeleted,
+}: Props) {
   const [liked, setLiked] = useState(skin.liked_by_me);
   const [likes, setLikes] = useState(skin.likes_count);
   const [downloads, setDownloads] = useState(skin.downloads_count);
   const [busy, setBusy] = useState(false);
+  const [gone, setGone] = useState(false);
+
+  if (gone) return null;
 
   const toggleLike = async () => {
     if (busy) return;
@@ -65,7 +76,6 @@ export function SkinCard({ skin, compact = false }: Props) {
       const data = (await res.json()) as {
         liked?: boolean;
         likes_count?: number;
-        error?: string;
       };
       if (!res.ok) {
         setLiked(prevLiked);
@@ -99,6 +109,26 @@ export function SkinCard({ skin, compact = false }: Props) {
     }
   };
 
+  const remove = async () => {
+    if (busy) return;
+    if (!window.confirm(`Видалити скін «${skin.title}»?`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/skins/${skin.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = (await res.json()) as { error?: string };
+        window.alert(data.error || "Не вдалося видалити");
+        return;
+      }
+      setGone(true);
+      onDeleted?.(skin.id);
+    } catch {
+      window.alert("Мережева помилка");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <article
       className={cn(
@@ -113,6 +143,7 @@ export function SkinCard({ skin, compact = false }: Props) {
           width={compact ? 140 : 180}
           height={compact ? 190 : 240}
           animate={!compact}
+          animationSpeed={0.65}
           enableZoom={false}
         />
       </div>
@@ -122,7 +153,7 @@ export function SkinCard({ skin, compact = false }: Props) {
       <p className="mt-0.5 text-center text-[11px] text-[var(--mc-ink-subtle)]">
         {skin.author_username} · {formatUaDate(skin.created_at)}
       </p>
-      <div className="mt-2 flex items-center justify-center gap-2">
+      <div className="mt-2 flex flex-wrap items-center justify-center gap-2">
         <button
           type="button"
           onClick={() => void toggleLike()}
@@ -149,6 +180,18 @@ export function SkinCard({ skin, compact = false }: Props) {
           <Download className="size-3.5" aria-hidden />
           {downloads}
         </button>
+        {canDelete ? (
+          <button
+            type="button"
+            onClick={() => void remove()}
+            disabled={busy}
+            title="Видалити"
+            className="lc-focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-red-400/40 bg-red-500/10 px-2.5 text-xs text-red-200"
+          >
+            <Trash2 className="size-3.5" aria-hidden />
+            {!compact ? "Видалити" : null}
+          </button>
+        ) : null}
       </div>
     </article>
   );

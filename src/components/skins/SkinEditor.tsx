@@ -12,8 +12,10 @@ import {
   PaintBucket,
   Pipette,
   Redo2,
+  RotateCcw,
   Save,
   Undo2,
+  Upload,
 } from "lucide-react";
 import type { SkinViewer } from "skinview3d";
 import { MOUSE, Raycaster, Vector2 } from "three";
@@ -35,6 +37,7 @@ import {
   getPixel,
   hexToRgba,
   imageDataToPngDataUrl,
+  normalizeSkinForGame,
   resolveFaceRect,
   rgbaToHex,
   stampBrush,
@@ -83,23 +86,19 @@ const FACE_ORDER: FaceSide[] = [
 
 function collectLayerTargets(viewer: SkinViewer, useOverlay: boolean) {
   const skin = viewer.playerObject.skin;
-  const parts = [
+  return [
     skin.head,
     skin.body,
     skin.rightArm,
     skin.leftArm,
     skin.rightLeg,
     skin.leftLeg,
-  ];
-  return parts.map((p) => (useOverlay ? p.outerLayer : p.innerLayer));
+  ].map((p) => (useOverlay ? p.outerLayer : p.innerLayer));
 }
 
 export function SkinEditor() {
   const router = useRouter();
   const [imageData, setImageData] = useState(() => createBlankSkinImageData());
-  const [skinUrl, setSkinUrl] = useState(() =>
-    imageDataToPngDataUrl(createBlankSkinImageData()),
-  );
   const [model, setModel] = useState<SkinModelType>("classic");
   const [title, setTitle] = useState("");
   const [tool, setTool] = useState<Tool>("pencil");
@@ -109,11 +108,16 @@ export function SkinEditor() {
   const [bodyPart, setBodyPart] = useState<BodyPartId>("head");
   const [faceSide, setFaceSide] = useState<FaceSide>("front");
   const [paintOn3d, setPaintOn3d] = useState(true);
-  const [pose, setPose] = useState<SkinPoseId>("stand");
+  const [pose, setPose] = useState<SkinPoseId>("walk");
+  const [animSpeed, setAnimSpeed] = useState(0.7);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ImageData[]>([]);
   const [future, setFuture] = useState<ImageData[]>([]);
+  /** Stable URL for initial viewer mount only — live updates go via texture canvas. */
+  const [viewerSkinUrl] = useState(() =>
+    imageDataToPngDataUrl(createBlankSkinImageData()),
+  );
 
   const imageRef = useRef(imageData);
   imageRef.current = imageData;
@@ -125,14 +129,20 @@ export function SkinEditor() {
   brushRef.current = brushSize;
   const overlayRef = useRef(useOverlay);
   overlayRef.current = useOverlay;
+  const modelRef = useRef(model);
+  modelRef.current = model;
   const faceClipRef = useRef({ x: 0, y: 0, w: 8, h: 8 });
   const viewerRef = useRef<SkinViewer | null>(null);
+  const texCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const paintingRef = useRef(false);
   const strokeStartedRef = useRef(false);
   const faceCanvasRef = useRef<HTMLCanvasElement>(null);
-  const useOverlayForPaint = useOverlay;
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const partDef = useMemo(() => getBodyPart(bodyPart), [bodyPart]);
+  const partDef = useMemo(
+    () => getBodyPart(bodyPart, model),
+    [bodyPart, model],
+  );
   const availableSides = useMemo(
     () => FACE_ORDER.filter((s) => partDef.faces[s]),
     [partDef],
@@ -149,8 +159,32 @@ export function SkinEditor() {
     if (!faceRect) return { x: 8, y: 8, w: 8, h: 8 };
     return resolveFaceRect(faceRect, useOverlay);
   }, [faceRect, useOverlay]);
-
   faceClipRef.current = faceOrigin;
+
+  const pushTextureToViewer = useCallback((data: ImageData) => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    let canvas = texCanvasRef.current;
+    if (!canvas) {
+      canvas = document.createElement("canvas");
+      canvas.width = SKIN_SIZE;
+      canvas.height = SKIN_SIZE;
+      texCanvasRef.current = canvas;
+    }
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.imageSmoothingEnabled = false;
+    ctx.putImageData(data, 0, 0);
+    const map = viewer.playerObject.skin.map;
+    const img = map?.image as CanvasImageSource | undefined;
+    if (map && img === canvas) {
+      map.needsUpdate = true;
+    } else {
+      void viewer.loadSkin(canvas, {
+        model: modelRef.current === "slim" ? "slim" : "default",
+      });
+    }
+  }, []);
 
   const pushHistory = useCallback((prev: ImageData) => {
     setHistory((h) => [...h.slice(-39), cloneImageData(prev)]);
@@ -162,9 +196,9 @@ export function SkinEditor() {
       if (recordHistory) pushHistory(imageRef.current);
       setImageData(next);
       imageRef.current = next;
-      setSkinUrl(imageDataToPngDataUrl(next));
+      pushTextureToViewer(next);
     },
-    [pushHistory],
+    [pushHistory, pushTextureToViewer],
   );
 
   const undo = () => {
@@ -175,7 +209,7 @@ export function SkinEditor() {
       const restored = cloneImageData(prev);
       setImageData(restored);
       imageRef.current = restored;
-      setSkinUrl(imageDataToPngDataUrl(restored));
+      pushTextureToViewer(restored);
       return h.slice(0, -1);
     });
   };
@@ -188,12 +222,16 @@ export function SkinEditor() {
       const restored = cloneImageData(next);
       setImageData(restored);
       imageRef.current = restored;
-      setSkinUrl(imageDataToPngDataUrl(restored));
+      pushTextureToViewer(restored);
       return f.slice(1);
     });
   };
 
-  // Main face canvas
+  const resetBlank = () => {
+    const blank = createBlankSkinImageData();
+    commitImage(blank, true);
+  };
+
   useEffect(() => {
     const canvas = faceCanvasRef.current;
     if (!canvas) return;
@@ -226,7 +264,6 @@ export function SkinEditor() {
       canvas.height,
     );
     ctx.strokeStyle = "rgba(255,255,255,0.18)";
-    ctx.lineWidth = 1;
     for (let x = 0; x <= faceOrigin.w; x++) {
       ctx.beginPath();
       ctx.moveTo(x * scale + 0.5, 0);
@@ -241,13 +278,24 @@ export function SkinEditor() {
     }
   }, [imageData, faceOrigin]);
 
+  const paintColor = useCallback((): {
+    r: number;
+    g: number;
+    b: number;
+    a: number;
+  } => {
+    if (toolRef.current === "eraser") {
+      // База: білий непрозорий (інакше дірки в грі). Overlay: прозорість.
+      if (overlayRef.current) return { r: 0, g: 0, b: 0, a: 0 };
+      return { r: 245, g: 245, b: 245, a: 255 };
+    }
+    return hexToRgba(colorRef.current);
+  }, []);
+
   const applyToolAt = useCallback(
     (texX: number, texY: number, continuous: boolean) => {
       const currentTool = toolRef.current;
-      const rgba =
-        currentTool === "eraser"
-          ? { r: 0, g: 0, b: 0, a: 0 }
-          : hexToRgba(colorRef.current);
+      const rgba = paintColor();
 
       if (currentTool === "eyedropper") {
         const p = getPixel(imageRef.current, texX, texY);
@@ -287,7 +335,7 @@ export function SkinEditor() {
       if (continuous) strokeStartedRef.current = true;
       commitImage(next, recordHistory);
     },
-    [commitImage],
+    [commitImage, paintColor],
   );
 
   const paintFaceFromEvent = (
@@ -310,7 +358,6 @@ export function SkinEditor() {
     (e: PointerEvent, continuous: boolean) => {
       const viewer = viewerRef.current;
       if (!viewer || !paintOn3d) return;
-
       const canvas = viewer.canvas;
       const rect = canvas.getBoundingClientRect();
       if (rect.width < 1 || rect.height < 1) return;
@@ -319,18 +366,13 @@ export function SkinEditor() {
         ((e.clientX - rect.left) / rect.width) * 2 - 1,
         -((e.clientY - rect.top) / rect.height) * 2 + 1,
       );
-
       viewer.camera.updateMatrixWorld();
       const raycaster = new Raycaster();
       raycaster.setFromCamera(ndc, viewer.camera);
-
-      // Критично: raycast лише по base або overlay — інакше після повороту
-      // потрапляємо в більший outer-шар з іншими UV.
       const targets = collectLayerTargets(viewer, overlayRef.current);
       const hits = raycaster.intersectObjects(targets, true);
       const hit = hits.find((h) => h.uv);
       if (!hit?.uv) return;
-
       const { x, y } = uvToSkinPixel(hit.uv.x, hit.uv.y);
       applyToolAt(x, y, continuous);
     },
@@ -343,8 +385,7 @@ export function SkinEditor() {
     const canvas = viewer.canvas;
 
     const onDown = (e: PointerEvent) => {
-      if (!paintOn3d || e.button !== 0) return;
-      if (e.altKey) return;
+      if (!paintOn3d || e.button !== 0 || e.altKey) return;
       e.preventDefault();
       paintingRef.current = true;
       strokeStartedRef.current = false;
@@ -379,13 +420,49 @@ export function SkinEditor() {
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
     };
-  }, [paint3dFromEvent, paintOn3d, skinUrl, useOverlayForPaint]);
+  }, [paint3dFromEvent, paintOn3d, useOverlay]);
+
+  // Reload model when Steve/Alex switches
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    pushTextureToViewer(imageRef.current);
+  }, [model, pushTextureToViewer]);
 
   const exportLocal = () => {
+    const url = imageDataToPngDataUrl(imageRef.current);
     const a = document.createElement("a");
-    a.href = skinUrl;
+    a.href = url;
     a.download = `${title.trim() || "lc-skin"}.png`;
     a.click();
+  };
+
+  const importPng = (file: File) => {
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      const src = String(reader.result || "");
+      const img = new Image();
+      img.onload = () => {
+        if (img.width !== 64 || img.height !== 64) {
+          setError("Імпорт лише PNG 64×64 (стандарт Java-скіна).");
+          return;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, 64, 64);
+        ctx.drawImage(img, 0, 0);
+        const imported = normalizeSkinForGame(ctx.getImageData(0, 0, 64, 64));
+        commitImage(imported, true);
+      };
+      img.onerror = () => setError("Не вдалося прочитати PNG");
+      img.src = src;
+    };
+    reader.readAsDataURL(file);
   };
 
   const save = async () => {
@@ -397,13 +474,14 @@ export function SkinEditor() {
     }
     setSaving(true);
     try {
+      const png_data = imageDataToPngDataUrl(imageRef.current);
       const res = await fetch("/api/skins", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: t,
           model_type: model,
-          png_data: skinUrl,
+          png_data,
         }),
       });
       const data = (await res.json()) as { error?: string };
@@ -440,7 +518,6 @@ export function SkinEditor() {
 
   return (
     <div className="fixed inset-0 z-[70] flex flex-col bg-[#0b0f14] text-[var(--mc-ink)]">
-      {/* Top bar */}
       <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
         <Link
           href="/skins"
@@ -450,7 +527,6 @@ export function SkinEditor() {
           Галерея
         </Link>
         <h1 className="text-sm font-semibold sm:text-base">Редактор скіна</h1>
-
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           <input
             value={title}
@@ -459,6 +535,25 @@ export function SkinEditor() {
             placeholder="Назва скіна"
             className="w-36 rounded-sm border border-white/15 bg-black/40 px-2 py-1.5 text-xs sm:w-48 sm:text-sm"
           />
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/png"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) importPng(f);
+              e.target.value = "";
+            }}
+          />
+          <button
+            type="button"
+            onClick={() => fileInputRef.current?.click()}
+            className="lc-focus-ring mc-btn-secondary inline-flex min-h-9 items-center gap-1.5 px-3 text-xs"
+          >
+            <Upload className="size-3.5" aria-hidden />
+            Імпорт
+          </button>
           <button
             type="button"
             onClick={exportLocal}
@@ -484,7 +579,6 @@ export function SkinEditor() {
         ) : null}
       </header>
 
-      {/* Toolbar */}
       <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black/25 px-3 py-2">
         <div className="flex gap-1">
           {toolBtn("pencil", "Олівець", Paintbrush)}
@@ -510,6 +604,14 @@ export function SkinEditor() {
             className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-white/10 bg-black/25 disabled:opacity-40"
           >
             <Redo2 className="size-4" />
+          </button>
+          <button
+            type="button"
+            title="Скинути макет"
+            onClick={resetBlank}
+            className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-white/10 bg-black/25"
+          >
+            <RotateCcw className="size-4" />
           </button>
         </div>
 
@@ -612,9 +714,7 @@ export function SkinEditor() {
         </div>
       </div>
 
-      {/* Workspace */}
       <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_11rem_minmax(0,1fr)]">
-        {/* 3D */}
         <section className="relative flex min-h-[40vh] flex-col border-b border-white/10 lg:min-h-0 lg:border-b-0 lg:border-r">
           <div className="flex flex-wrap items-center gap-1.5 border-b border-white/10 px-3 py-2">
             <span className="text-[11px] uppercase tracking-wide text-[var(--mc-ink-subtle)]">
@@ -635,16 +735,32 @@ export function SkinEditor() {
                 {p.label}
               </button>
             ))}
+            <label className="ml-2 flex items-center gap-2 text-[11px] text-[var(--mc-ink-subtle)]">
+              Швидкість
+              <input
+                type="range"
+                min={0}
+                max={2}
+                step={0.05}
+                value={animSpeed}
+                onChange={(e) => setAnimSpeed(Number(e.target.value))}
+                className="w-24 accent-[var(--mc-accent)]"
+              />
+              <span className="w-8 tabular-nums text-[var(--mc-ink)]">
+                {animSpeed.toFixed(2)}
+              </span>
+            </label>
             <span className="ml-auto text-[10px] text-[var(--mc-ink-subtle)]">
-              ЛКМ — фарба · ПКМ — обертати · колесо — зум
+              ЛКМ — фарба · ПКМ — обертати · PNG 64×64 для гри
             </span>
           </div>
           <div className="relative min-h-0 flex-1">
             <SkinViewer3D
-              skinUrl={skinUrl}
+              skinUrl={viewerSkinUrl}
               slim={model === "slim"}
               fill
               pose={pose}
+              animationSpeed={animSpeed}
               enableRotate
               enableZoom
               className="absolute inset-0"
@@ -655,12 +771,12 @@ export function SkinEditor() {
                   MIDDLE: MOUSE.DOLLY,
                   RIGHT: MOUSE.ROTATE,
                 };
+                pushTextureToViewer(imageRef.current);
               }}
             />
           </div>
         </section>
 
-        {/* Body picker */}
         <aside className="flex flex-col items-center gap-2 border-b border-white/10 px-2 py-3 lg:border-b-0 lg:border-r">
           <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
             Частина
@@ -669,7 +785,7 @@ export function SkinEditor() {
             selected={bodyPart}
             onSelect={(id) => {
               setBodyPart(id);
-              const faces = getBodyPart(id).faces;
+              const faces = getBodyPart(id, model).faces;
               if (!faces[faceSide]) {
                 const first = FACE_ORDER.find((s) => faces[s]);
                 if (first) setFaceSide(first);
@@ -678,7 +794,6 @@ export function SkinEditor() {
           />
         </aside>
 
-        {/* 2D faces */}
         <section className="flex min-h-0 flex-col overflow-auto px-3 py-3">
           <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
             {partDef.label} · сторони
@@ -721,9 +836,6 @@ export function SkinEditor() {
             />
           </div>
 
-          <p className="mb-2 text-[11px] text-[var(--mc-ink-subtle)]">
-            Усі грані {partDef.label.toLowerCase()}
-          </p>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {availableSides.map((side) => {
               const rect = partDef.faces[side]!;
@@ -740,12 +852,6 @@ export function SkinEditor() {
               );
             })}
           </div>
-
-          <p className="mt-4 text-[10px] leading-relaxed text-[var(--mc-ink-subtle)]">
-            Обери частину на міні-моделі (червона = активна). Далі — перед /
-            зад / ліво / право. 3D-малювання бʼє лише в поточний шар (база або
-            overlay), тож після обертання пікселі лягають туди, куди клікаєш.
-          </p>
         </section>
       </div>
     </div>

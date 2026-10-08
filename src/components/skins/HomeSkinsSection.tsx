@@ -23,6 +23,7 @@ export async function HomeSkinsSection() {
         downloads_count: s.downloads_count,
         created_at: s.created_at.toISOString(),
         author_username: s.author_username,
+        author_id: s.author_id,
         liked_by_me: s.liked_by_me,
       }));
     } catch {
