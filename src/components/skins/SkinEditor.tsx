@@ -133,6 +133,20 @@ function collectLayerTargets(viewer: SkinViewer, useOverlay: boolean) {
   ].map((p) => (useOverlay ? p.outerLayer : p.innerLayer));
 }
 
+/** Для піпетки — обидва шари (спочатку overlay, потім база). */
+function collectEyedropTargets(viewer: SkinViewer) {
+  const skin = viewer.playerObject.skin;
+  const parts = [
+    skin.head,
+    skin.body,
+    skin.rightArm,
+    skin.leftArm,
+    skin.rightLeg,
+    skin.leftLeg,
+  ];
+  return parts.flatMap((p) => [p.outerLayer, p.innerLayer]);
+}
+
 export function SkinEditor() {
   const router = useRouter();
   const [imageData, setImageData] = useState(() => createBlankSkinImageData());
@@ -453,15 +467,27 @@ export function SkinEditor() {
     return hexToRgba(colorRef.current);
   }, []);
 
+  const pickColorAt = useCallback(
+    (texX: number, texY: number): boolean => {
+      const p = getPixel(imageRef.current, texX, texY);
+      if (p.a <= 0) return false;
+      selectColor(rgbaToHex(p.r, p.g, p.b));
+      toolRef.current = "pencil";
+      setTool("pencil");
+      return true;
+    },
+    [selectColor],
+  );
+
   const applyToolAt = useCallback(
     (texX: number, texY: number, continuous: boolean) => {
       const currentTool = toolRef.current;
       const rgba = paintColor();
 
       if (currentTool === "eyedropper") {
-        const p = getPixel(imageRef.current, texX, texY);
-        if (p.a > 0) selectColor(rgbaToHex(p.r, p.g, p.b));
-        setTool("pencil");
+        // Піпетка лише на натисканні, не під час drag
+        if (continuous) return;
+        pickColorAt(texX, texY);
         return;
       }
 
@@ -503,7 +529,7 @@ export function SkinEditor() {
       if (continuous) strokeStartedRef.current = true;
       commitImage(next, recordHistory);
     },
-    [commitImage, paintColor, rememberColor, selectColor],
+    [commitImage, paintColor, pickColorAt, rememberColor],
   );
 
   const paintFaceFromEvent = (
@@ -525,7 +551,9 @@ export function SkinEditor() {
   const paint3dFromEvent = useCallback(
     (e: PointerEvent, continuous: boolean) => {
       const viewer = viewerRef.current;
-      if (!viewer || !paintOn3d) return;
+      const picking = toolRef.current === "eyedropper";
+      if (!viewer) return;
+      if (!paintOn3d && !picking) return;
       // Мультитач (зум/обертання) — не малюємо
       if (activePointersRef.current.size > 1) return;
       const canvas = viewer.canvas;
@@ -539,6 +567,19 @@ export function SkinEditor() {
       viewer.camera.updateMatrixWorld();
       const raycaster = new Raycaster();
       raycaster.setFromCamera(ndc, viewer.camera);
+
+      if (picking) {
+        if (continuous) return;
+        const targets = collectEyedropTargets(viewer);
+        const hits = raycaster.intersectObjects(targets, true);
+        for (const hit of hits) {
+          if (!hit.uv) continue;
+          const { x, y } = uvToSkinPixel(hit.uv.x, hit.uv.y);
+          if (pickColorAt(x, y)) return;
+        }
+        return;
+      }
+
       const targets = collectLayerTargets(viewer, overlayRef.current);
       const hits = raycaster.intersectObjects(targets, true);
       const hit = hits.find((h) => h.uv);
@@ -546,7 +587,7 @@ export function SkinEditor() {
       const { x, y } = uvToSkinPixel(hit.uv.x, hit.uv.y);
       applyToolAt(x, y, continuous);
     },
-    [applyToolAt, paintOn3d],
+    [applyToolAt, paintOn3d, pickColorAt],
   );
 
   useEffect(() => {
@@ -556,7 +597,8 @@ export function SkinEditor() {
 
     const onDown = (e: PointerEvent) => {
       activePointersRef.current.add(e.pointerId);
-      if (!paintOn3d || e.button !== 0 || e.altKey) return;
+      const picking = toolRef.current === "eyedropper";
+      if ((!paintOn3d && !picking) || e.button !== 0 || e.altKey) return;
       if (activePointersRef.current.size > 1) return;
       e.preventDefault();
       paintingRef.current = true;
@@ -572,6 +614,7 @@ export function SkinEditor() {
     };
     const onMove = (e: PointerEvent) => {
       if (!paintingRef.current) return;
+      if (toolRef.current === "eyedropper") return;
       if (activePointersRef.current.size > 1) return;
       e.preventDefault();
       paint3dFromEvent(e, true);
@@ -599,7 +642,15 @@ export function SkinEditor() {
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
     };
-  }, [paint3dFromEvent, paintOn3d, useOverlay]);
+  }, [paint3dFromEvent, paintOn3d, useOverlay, tool]);
+
+  // Курсор піпетки на 3D-перегляді
+  useEffect(() => {
+    const canvas = viewerRef.current?.canvas;
+    if (!canvas) return;
+    canvas.style.cursor =
+      tool === "eyedropper" ? "crosshair" : paintOn3d ? "crosshair" : "";
+  }, [tool, paintOn3d]);
 
   // Reload model when Steve/Alex switches
   useEffect(() => {
@@ -667,7 +718,13 @@ export function SkinEditor() {
       type="button"
       title={label}
       aria-label={label}
-      onClick={() => setTool(id)}
+      onClick={() => {
+        setTool(id);
+        // Піпетка / пензель / заливка — одразу можна клікати по 3D-моделі
+        if (id === "eyedropper" || id === "pencil" || id === "fill") {
+          setPaintOn3d(true);
+        }
+      }}
       className={cn(
         "lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border touch-manipulation sm:size-10",
         tool === id
