@@ -1,8 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import dynamic from "next/dynamic";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
+  ArrowLeft,
   Download,
   Eraser,
   Paintbrush,
@@ -12,23 +15,30 @@ import {
   Save,
   Undo2,
 } from "lucide-react";
-import dynamic from "next/dynamic";
 import type { SkinViewer } from "skinview3d";
 import { MOUSE, Raycaster, Vector2 } from "three";
-import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
+import { BodyPartPicker } from "@/components/skins/BodyPartPicker";
 import {
-  SKIN_FACES,
+  SKIN_POSE_OPTIONS,
+  type SkinPoseId,
+} from "@/components/skins/SkinViewer3D";
+import {
+  FACE_SIDE_LABELS,
   SKIN_SIZE,
-  type SkinFaceId,
+  type BodyPartId,
+  type FaceSide,
   type SkinModelType,
   cloneImageData,
   createBlankSkinImageData,
   floodFill,
+  getBodyPart,
   getPixel,
   hexToRgba,
   imageDataToPngDataUrl,
+  resolveFaceRect,
   rgbaToHex,
-  setPixel,
+  stampBrush,
+  uvToSkinPixel,
 } from "@/lib/minecraft-skin";
 import { cn } from "@/lib/utils";
 
@@ -38,7 +48,7 @@ const SkinViewer3D = dynamic(
   {
     ssr: false,
     loading: () => (
-      <div className="flex h-[380px] w-[280px] items-center justify-center text-sm text-[var(--mc-ink-subtle)]">
+      <div className="flex h-full min-h-[16rem] w-full items-center justify-center text-sm text-[var(--mc-ink-subtle)]">
         Завантаження 3D…
       </div>
     ),
@@ -62,7 +72,27 @@ const PALETTE = [
   "#f0a0c0",
 ];
 
-const FACE_IDS = Object.keys(SKIN_FACES) as SkinFaceId[];
+const FACE_ORDER: FaceSide[] = [
+  "front",
+  "back",
+  "left",
+  "right",
+  "top",
+  "bottom",
+];
+
+function collectLayerTargets(viewer: SkinViewer, useOverlay: boolean) {
+  const skin = viewer.playerObject.skin;
+  const parts = [
+    skin.head,
+    skin.body,
+    skin.rightArm,
+    skin.leftArm,
+    skin.rightLeg,
+    skin.leftLeg,
+  ];
+  return parts.map((p) => (useOverlay ? p.outerLayer : p.innerLayer));
+}
 
 export function SkinEditor() {
   const router = useRouter();
@@ -74,9 +104,12 @@ export function SkinEditor() {
   const [title, setTitle] = useState("");
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState("#3c78c4");
+  const [brushSize, setBrushSize] = useState(1);
   const [useOverlay, setUseOverlay] = useState(false);
-  const [faceId, setFaceId] = useState<SkinFaceId>("head_front");
+  const [bodyPart, setBodyPart] = useState<BodyPartId>("head");
+  const [faceSide, setFaceSide] = useState<FaceSide>("front");
   const [paintOn3d, setPaintOn3d] = useState(true);
+  const [pose, setPose] = useState<SkinPoseId>("stand");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [history, setHistory] = useState<ImageData[]>([]);
@@ -84,18 +117,40 @@ export function SkinEditor() {
 
   const imageRef = useRef(imageData);
   imageRef.current = imageData;
+  const toolRef = useRef(tool);
+  toolRef.current = tool;
+  const colorRef = useRef(color);
+  colorRef.current = color;
+  const brushRef = useRef(brushSize);
+  brushRef.current = brushSize;
+  const overlayRef = useRef(useOverlay);
+  overlayRef.current = useOverlay;
+  const faceClipRef = useRef({ x: 0, y: 0, w: 8, h: 8 });
   const viewerRef = useRef<SkinViewer | null>(null);
   const paintingRef = useRef(false);
+  const strokeStartedRef = useRef(false);
   const faceCanvasRef = useRef<HTMLCanvasElement>(null);
-  const uvCanvasRef = useRef<HTMLCanvasElement>(null);
+  const useOverlayForPaint = useOverlay;
 
-  const face = SKIN_FACES[faceId];
-  const faceOrigin = useMemo(() => {
-    if (useOverlay && face.overlay) {
-      return { x: face.overlay.x, y: face.overlay.y, w: face.w, h: face.h };
+  const partDef = useMemo(() => getBodyPart(bodyPart), [bodyPart]);
+  const availableSides = useMemo(
+    () => FACE_ORDER.filter((s) => partDef.faces[s]),
+    [partDef],
+  );
+
+  useEffect(() => {
+    if (!partDef.faces[faceSide]) {
+      setFaceSide(availableSides[0] ?? "front");
     }
-    return { x: face.x, y: face.y, w: face.w, h: face.h };
-  }, [face, useOverlay]);
+  }, [partDef, faceSide, availableSides]);
+
+  const faceRect = partDef.faces[faceSide];
+  const faceOrigin = useMemo(() => {
+    if (!faceRect) return { x: 8, y: 8, w: 8, h: 8 };
+    return resolveFaceRect(faceRect, useOverlay);
+  }, [faceRect, useOverlay]);
+
+  faceClipRef.current = faceOrigin;
 
   const pushHistory = useCallback((prev: ImageData) => {
     setHistory((h) => [...h.slice(-39), cloneImageData(prev)]);
@@ -138,24 +193,26 @@ export function SkinEditor() {
     });
   };
 
-  // Draw face zoom canvas
+  // Main face canvas
   useEffect(() => {
     const canvas = faceCanvasRef.current;
     if (!canvas) return;
-    const scale = 22;
+    const scale = Math.max(
+      18,
+      Math.min(36, Math.floor(320 / Math.max(faceOrigin.w, faceOrigin.h))),
+    );
     canvas.width = faceOrigin.w * scale;
     canvas.height = faceOrigin.h * scale;
+    canvas.dataset.scale = String(scale);
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
     const tmp = document.createElement("canvas");
     tmp.width = SKIN_SIZE;
     tmp.height = SKIN_SIZE;
-    const tctx = tmp.getContext("2d");
-    if (!tctx) return;
-    tctx.putImageData(imageData, 0, 0);
+    tmp.getContext("2d")?.putImageData(imageData, 0, 0);
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "rgba(0,0,0,0.35)";
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     ctx.drawImage(
       tmp,
@@ -168,7 +225,7 @@ export function SkinEditor() {
       canvas.width,
       canvas.height,
     );
-    ctx.strokeStyle = "rgba(255,255,255,0.15)";
+    ctx.strokeStyle = "rgba(255,255,255,0.18)";
     ctx.lineWidth = 1;
     for (let x = 0; x <= faceOrigin.w; x++) {
       ctx.beginPath();
@@ -184,43 +241,15 @@ export function SkinEditor() {
     }
   }, [imageData, faceOrigin]);
 
-  // Mini full UV map
-  useEffect(() => {
-    const canvas = uvCanvasRef.current;
-    if (!canvas) return;
-    canvas.width = SKIN_SIZE * 2;
-    canvas.height = SKIN_SIZE * 2;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return;
-    ctx.imageSmoothingEnabled = false;
-    ctx.putImageData(imageData, 0, 0);
-    // scale up via draw
-    const tmp = document.createElement("canvas");
-    tmp.width = SKIN_SIZE;
-    tmp.height = SKIN_SIZE;
-    tmp.getContext("2d")?.putImageData(imageData, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "#111";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.drawImage(tmp, 0, 0, canvas.width, canvas.height);
-    ctx.strokeStyle = "rgba(96, 165, 250, 0.9)";
-    ctx.lineWidth = 2;
-    ctx.strokeRect(
-      faceOrigin.x * 2,
-      faceOrigin.y * 2,
-      faceOrigin.w * 2,
-      faceOrigin.h * 2,
-    );
-  }, [imageData, faceOrigin]);
-
   const applyToolAt = useCallback(
     (texX: number, texY: number, continuous: boolean) => {
+      const currentTool = toolRef.current;
       const rgba =
-        tool === "eraser"
+        currentTool === "eraser"
           ? { r: 0, g: 0, b: 0, a: 0 }
-          : hexToRgba(color);
+          : hexToRgba(colorRef.current);
 
-      if (tool === "eyedropper") {
+      if (currentTool === "eyedropper") {
         const p = getPixel(imageRef.current, texX, texY);
         if (p.a > 0) setColor(rgbaToHex(p.r, p.g, p.b));
         setTool("pencil");
@@ -228,17 +257,37 @@ export function SkinEditor() {
       }
 
       const next = cloneImageData(imageRef.current);
-      if (tool === "fill") {
-        floodFill(next, texX, texY, rgba.r, rgba.g, rgba.b, rgba.a, faceOrigin);
+      if (currentTool === "fill") {
+        floodFill(
+          next,
+          texX,
+          texY,
+          rgba.r,
+          rgba.g,
+          rgba.b,
+          rgba.a,
+          faceClipRef.current,
+        );
         commitImage(next, true);
         return;
       }
 
-      setPixel(next, texX, texY, rgba.r, rgba.g, rgba.b, rgba.a);
-      // For continuous paint, only push history on stroke start
-      commitImage(next, !continuous);
+      stampBrush(
+        next,
+        texX,
+        texY,
+        brushRef.current,
+        rgba.r,
+        rgba.g,
+        rgba.b,
+        rgba.a,
+      );
+
+      const recordHistory = !continuous || !strokeStartedRef.current;
+      if (continuous) strokeStartedRef.current = true;
+      commitImage(next, recordHistory);
     },
-    [color, commitImage, faceOrigin, tool],
+    [commitImage],
   );
 
   const paintFaceFromEvent = (
@@ -247,11 +296,12 @@ export function SkinEditor() {
   ) => {
     const canvas = faceCanvasRef.current;
     if (!canvas) return;
+    const scale = Number(canvas.dataset.scale || 22);
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    const px = Math.floor(((e.clientX - rect.left) * scaleX) / 22);
-    const py = Math.floor(((e.clientY - rect.top) * scaleY) / 22);
+    const px = Math.floor(((e.clientX - rect.left) * scaleX) / scale);
+    const py = Math.floor(((e.clientY - rect.top) * scaleY) / scale);
     if (px < 0 || py < 0 || px >= faceOrigin.w || py >= faceOrigin.h) return;
     applyToolAt(faceOrigin.x + px, faceOrigin.y + py, continuous);
   };
@@ -260,23 +310,29 @@ export function SkinEditor() {
     (e: PointerEvent, continuous: boolean) => {
       const viewer = viewerRef.current;
       if (!viewer || !paintOn3d) return;
+
       const canvas = viewer.canvas;
       const rect = canvas.getBoundingClientRect();
+      if (rect.width < 1 || rect.height < 1) return;
+
       const ndc = new Vector2(
         ((e.clientX - rect.left) / rect.width) * 2 - 1,
         -((e.clientY - rect.top) / rect.height) * 2 + 1,
       );
+
+      viewer.camera.updateMatrixWorld();
       const raycaster = new Raycaster();
       raycaster.setFromCamera(ndc, viewer.camera);
-      const hits = raycaster.intersectObject(viewer.playerObject, true);
+
+      // Критично: raycast лише по base або overlay — інакше після повороту
+      // потрапляємо в більший outer-шар з іншими UV.
+      const targets = collectLayerTargets(viewer, overlayRef.current);
+      const hits = raycaster.intersectObjects(targets, true);
       const hit = hits.find((h) => h.uv);
       if (!hit?.uv) return;
-      const texX = Math.min(SKIN_SIZE - 1, Math.max(0, Math.floor(hit.uv.x * SKIN_SIZE)));
-      const texY = Math.min(
-        SKIN_SIZE - 1,
-        Math.max(0, Math.floor((1 - hit.uv.y) * SKIN_SIZE)),
-      );
-      applyToolAt(texX, texY, continuous);
+
+      const { x, y } = uvToSkinPixel(hit.uv.x, hit.uv.y);
+      applyToolAt(x, y, continuous);
     },
     [applyToolAt, paintOn3d],
   );
@@ -288,12 +344,14 @@ export function SkinEditor() {
 
     const onDown = (e: PointerEvent) => {
       if (!paintOn3d || e.button !== 0) return;
-      // Rotate with Alt / right button / two fingers — paint with left
       if (e.altKey) return;
+      e.preventDefault();
       paintingRef.current = true;
+      strokeStartedRef.current = false;
       viewer.controls.enabled = false;
       canvas.setPointerCapture(e.pointerId);
       paint3dFromEvent(e, false);
+      strokeStartedRef.current = true;
     };
     const onMove = (e: PointerEvent) => {
       if (!paintingRef.current) return;
@@ -302,6 +360,7 @@ export function SkinEditor() {
     const onUp = (e: PointerEvent) => {
       if (!paintingRef.current) return;
       paintingRef.current = false;
+      strokeStartedRef.current = false;
       viewer.controls.enabled = true;
       try {
         canvas.releasePointerCapture(e.pointerId);
@@ -320,7 +379,7 @@ export function SkinEditor() {
       canvas.removeEventListener("pointerup", onUp);
       canvas.removeEventListener("pointercancel", onUp);
     };
-  }, [paint3dFromEvent, paintOn3d, skinUrl]);
+  }, [paint3dFromEvent, paintOn3d, skinUrl, useOverlayForPaint]);
 
   const exportLocal = () => {
     const a = document.createElement("a");
@@ -347,7 +406,7 @@ export function SkinEditor() {
           png_data: skinUrl,
         }),
       });
-      const data = (await res.json()) as { error?: string; skin?: { id: number } };
+      const data = (await res.json()) as { error?: string };
       if (!res.ok) {
         setError(data.error || "Не вдалося зберегти");
         return;
@@ -368,10 +427,10 @@ export function SkinEditor() {
       title={label}
       onClick={() => setTool(id)}
       className={cn(
-        "lc-focus-ring inline-flex size-10 items-center justify-center rounded-sm border",
+        "lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border sm:size-10",
         tool === id
           ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/20 text-[var(--mc-ink)]"
-          : "border-white/10 bg-black/20 text-[var(--mc-ink-subtle)] hover:bg-black/35",
+          : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)] hover:bg-black/40",
       )}
     >
       <Icon className="size-4" aria-hidden />
@@ -380,102 +439,66 @@ export function SkinEditor() {
   );
 
   return (
-    <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)]">
-      <section className={cn(lcGlassPanelClass, "flex flex-col gap-3")}>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="lc-section-title text-lg">3D макет</h2>
-          <label className="flex items-center gap-2 text-xs text-[var(--mc-ink-subtle)]">
-            <input
-              type="checkbox"
-              checked={paintOn3d}
-              onChange={(e) => setPaintOn3d(e.target.checked)}
-              className="accent-[var(--mc-accent)]"
-            />
-            Малювати на моделі
-          </label>
-        </div>
-        <p className="text-xs text-[var(--mc-ink-subtle)]">
-          {paintOn3d
-            ? "ЛКМ — малювати піксель. ПКМ — крутити модель. Колесо — зум."
-            : "Увімкни «Малювати на моделі» або малюй на розгортці справа. ПКМ — обертання."}
-        </p>
-        <div className="flex justify-center">
-          <SkinViewer3D
-            skinUrl={skinUrl}
-            slim={model === "slim"}
-            width={280}
-            height={380}
-            enableRotate
-            enableZoom
-            onReady={(v) => {
-              viewerRef.current = v;
-              // ЛКМ для фарби, ПКМ для орбіти
-              v.controls.mouseButtons = {
-                LEFT: -1 as never,
-                MIDDLE: MOUSE.DOLLY,
-                RIGHT: MOUSE.ROTATE,
-              };
-            }}
+    <div className="fixed inset-0 z-[70] flex flex-col bg-[#0b0f14] text-[var(--mc-ink)]">
+      {/* Top bar */}
+      <header className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black/40 px-3 py-2 backdrop-blur-md">
+        <Link
+          href="/skins"
+          className="lc-focus-ring inline-flex items-center gap-1.5 rounded-sm px-2 py-1.5 text-xs text-[var(--mc-ink-subtle)] hover:bg-white/5 hover:text-[var(--mc-ink)]"
+        >
+          <ArrowLeft className="size-3.5" aria-hidden />
+          Галерея
+        </Link>
+        <h1 className="text-sm font-semibold sm:text-base">Редактор скіна</h1>
+
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <input
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            maxLength={80}
+            placeholder="Назва скіна"
+            className="w-36 rounded-sm border border-white/15 bg-black/40 px-2 py-1.5 text-xs sm:w-48 sm:text-sm"
           />
-        </div>
-        <div className="flex flex-wrap gap-2">
           <button
             type="button"
-            className={cn(
-              "lc-focus-ring mc-btn-secondary min-h-9 px-3 text-xs",
-              model === "classic" && "ring-1 ring-[var(--mc-accent)]",
-            )}
-            onClick={() => setModel("classic")}
+            onClick={exportLocal}
+            className="lc-focus-ring mc-btn-secondary inline-flex min-h-9 items-center gap-1.5 px-3 text-xs"
           >
-            Steve (широкі)
+            <Download className="size-3.5" aria-hidden />
+            PNG
           </button>
           <button
             type="button"
-            className={cn(
-              "lc-focus-ring mc-btn-secondary min-h-9 px-3 text-xs",
-              model === "slim" && "ring-1 ring-[var(--mc-accent)]",
-            )}
-            onClick={() => setModel("slim")}
+            onClick={() => void save()}
+            disabled={saving}
+            className="lc-focus-ring lc-btn-accent inline-flex min-h-9 items-center gap-1.5 px-3 text-xs disabled:opacity-60"
           >
-            Alex (slim)
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "lc-focus-ring mc-btn-secondary min-h-9 px-3 text-xs",
-              !useOverlay && "ring-1 ring-[var(--mc-accent)]",
-            )}
-            onClick={() => setUseOverlay(false)}
-          >
-            База
-          </button>
-          <button
-            type="button"
-            className={cn(
-              "lc-focus-ring mc-btn-secondary min-h-9 px-3 text-xs",
-              useOverlay && "ring-1 ring-[var(--mc-accent)]",
-            )}
-            onClick={() => setUseOverlay(true)}
-          >
-            Overlay
+            <Save className="size-3.5" aria-hidden />
+            {saving ? "…" : "Зберегти"}
           </button>
         </div>
-      </section>
+        {error ? (
+          <p className="w-full text-xs text-red-400" role="alert">
+            {error}
+          </p>
+        ) : null}
+      </header>
 
-      <section className={cn(lcGlassPanelClass, "flex flex-col gap-3")}>
-        <h2 className="lc-section-title text-lg">Пікселі</h2>
-
-        <div className="flex flex-wrap gap-1.5">
+      {/* Toolbar */}
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black/25 px-3 py-2">
+        <div className="flex gap-1">
           {toolBtn("pencil", "Олівець", Paintbrush)}
           {toolBtn("eraser", "Гумка", Eraser)}
           {toolBtn("fill", "Заливка", PaintBucket)}
           {toolBtn("eyedropper", "Піпетка", Pipette)}
+        </div>
+        <div className="flex gap-1">
           <button
             type="button"
             title="Скасувати"
             disabled={!history.length}
             onClick={undo}
-            className="lc-focus-ring inline-flex size-10 items-center justify-center rounded-sm border border-white/10 bg-black/20 disabled:opacity-40"
+            className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-white/10 bg-black/25 disabled:opacity-40"
           >
             <Undo2 className="size-4" />
           </button>
@@ -484,22 +507,35 @@ export function SkinEditor() {
             title="Повторити"
             disabled={!future.length}
             onClick={redo}
-            className="lc-focus-ring inline-flex size-10 items-center justify-center rounded-sm border border-white/10 bg-black/20 disabled:opacity-40"
+            className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-white/10 bg-black/25 disabled:opacity-40"
           >
             <Redo2 className="size-4" />
           </button>
-          <label className="ml-auto flex items-center gap-2 text-xs">
-            <span className="text-[var(--mc-ink-subtle)]">Колір</span>
-            <input
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-              className="size-9 cursor-pointer rounded-sm border border-white/15 bg-transparent"
-            />
-          </label>
         </div>
 
-        <div className="flex flex-wrap gap-1.5">
+        <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
+          Пензель
+          <select
+            value={brushSize}
+            onChange={(e) => setBrushSize(Number(e.target.value))}
+            className="rounded-sm border border-white/15 bg-black/40 px-1.5 py-1 text-xs text-[var(--mc-ink)]"
+          >
+            <option value={1}>1×1</option>
+            <option value={2}>2×2</option>
+            <option value={3}>3×3</option>
+          </select>
+        </label>
+
+        <label className="flex items-center gap-1.5 text-[11px]">
+          <span className="text-[var(--mc-ink-subtle)]">Колір</span>
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => setColor(e.target.value)}
+            className="size-8 cursor-pointer rounded-sm border border-white/15 bg-transparent"
+          />
+        </label>
+        <div className="flex flex-wrap gap-1">
           {PALETTE.map((c) => (
             <button
               key={c}
@@ -507,7 +543,7 @@ export function SkinEditor() {
               aria-label={c}
               onClick={() => setColor(c)}
               className={cn(
-                "size-7 rounded-sm border",
+                "size-6 rounded-sm border",
                 color === c ? "border-white" : "border-white/20",
               )}
               style={{ backgroundColor: c }}
@@ -515,84 +551,262 @@ export function SkinEditor() {
           ))}
         </div>
 
-        <label className="block text-xs text-[var(--mc-ink-subtle)]">
-          Частина тіла
-          <select
-            value={faceId}
-            onChange={(e) => setFaceId(e.target.value as SkinFaceId)}
-            className="mt-1 w-full rounded-sm border border-white/15 bg-black/30 px-2 py-2 text-sm text-[var(--mc-ink)]"
+        <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <button
+            type="button"
+            className={cn(
+              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
+              model === "classic"
+                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+                : "border-white/10 bg-black/25",
+            )}
+            onClick={() => setModel("classic")}
           >
-            {FACE_IDS.map((id) => (
-              <option key={id} value={id}>
-                {SKIN_FACES[id].label}
-              </option>
-            ))}
-          </select>
-        </label>
+            Steve
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
+              model === "slim"
+                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+                : "border-white/10 bg-black/25",
+            )}
+            onClick={() => setModel("slim")}
+          >
+            Alex
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
+              !useOverlay
+                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+                : "border-white/10 bg-black/25",
+            )}
+            onClick={() => setUseOverlay(false)}
+          >
+            База
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
+              useOverlay
+                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+                : "border-white/10 bg-black/25",
+            )}
+            onClick={() => setUseOverlay(true)}
+          >
+            Overlay
+          </button>
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
+            <input
+              type="checkbox"
+              checked={paintOn3d}
+              onChange={(e) => setPaintOn3d(e.target.checked)}
+              className="accent-[var(--mc-accent)]"
+            />
+            3D-малювання
+          </label>
+        </div>
+      </div>
 
-        <div className="flex flex-wrap items-start gap-4">
-          <canvas
-            ref={faceCanvasRef}
-            className="cursor-crosshair touch-none rounded-sm border border-white/10"
-            onPointerDown={(e) => {
-              (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
-              paintFaceFromEvent(e, false);
-            }}
-            onPointerMove={(e) => {
-              if (e.buttons !== 1) return;
-              paintFaceFromEvent(e, true);
+      {/* Workspace */}
+      <div className="grid min-h-0 flex-1 grid-cols-1 lg:grid-cols-[minmax(0,1.15fr)_11rem_minmax(0,1fr)]">
+        {/* 3D */}
+        <section className="relative flex min-h-[40vh] flex-col border-b border-white/10 lg:min-h-0 lg:border-b-0 lg:border-r">
+          <div className="flex flex-wrap items-center gap-1.5 border-b border-white/10 px-3 py-2">
+            <span className="text-[11px] uppercase tracking-wide text-[var(--mc-ink-subtle)]">
+              Поза
+            </span>
+            {SKIN_POSE_OPTIONS.map((p) => (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => setPose(p.id)}
+                className={cn(
+                  "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
+                  pose === p.id
+                    ? "border-rose-400/60 bg-rose-500/15 text-rose-100"
+                    : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
+                )}
+              >
+                {p.label}
+              </button>
+            ))}
+            <span className="ml-auto text-[10px] text-[var(--mc-ink-subtle)]">
+              ЛКМ — фарба · ПКМ — обертати · колесо — зум
+            </span>
+          </div>
+          <div className="relative min-h-0 flex-1">
+            <SkinViewer3D
+              skinUrl={skinUrl}
+              slim={model === "slim"}
+              fill
+              pose={pose}
+              enableRotate
+              enableZoom
+              className="absolute inset-0"
+              onReady={(v) => {
+                viewerRef.current = v;
+                v.controls.mouseButtons = {
+                  LEFT: -1 as never,
+                  MIDDLE: MOUSE.DOLLY,
+                  RIGHT: MOUSE.ROTATE,
+                };
+              }}
+            />
+          </div>
+        </section>
+
+        {/* Body picker */}
+        <aside className="flex flex-col items-center gap-2 border-b border-white/10 px-2 py-3 lg:border-b-0 lg:border-r">
+          <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
+            Частина
+          </p>
+          <BodyPartPicker
+            selected={bodyPart}
+            onSelect={(id) => {
+              setBodyPart(id);
+              const faces = getBodyPart(id).faces;
+              if (!faces[faceSide]) {
+                const first = FACE_ORDER.find((s) => faces[s]);
+                if (first) setFaceSide(first);
+              }
             }}
           />
-          <div>
-            <p className="mb-1 text-[10px] uppercase tracking-wide text-[var(--mc-ink-subtle)]">
-              UV 64×64
-            </p>
-            <canvas
-              ref={uvCanvasRef}
-              className="rounded-sm border border-white/10"
-              width={128}
-              height={128}
-            />
-          </div>
-        </div>
+        </aside>
 
-        <div className="mt-2 grid gap-2 border-t border-white/10 pt-3">
-          <label className="text-xs text-[var(--mc-ink-subtle)]">
-            Назва скіна
-            <input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              maxLength={80}
-              placeholder="Наприклад: Лицар боліт"
-              className="mt-1 w-full rounded-sm border border-white/15 bg-black/30 px-3 py-2 text-sm text-[var(--mc-ink)]"
-            />
-          </label>
-          {error ? (
-            <p className="text-sm text-red-400" role="alert">
-              {error}
-            </p>
-          ) : null}
-          <div className="flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => void save()}
-              disabled={saving}
-              className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center gap-2 px-5 text-sm disabled:opacity-60"
-            >
-              <Save className="size-4" aria-hidden />
-              {saving ? "Збереження…" : "Зберегти скін"}
-            </button>
-            <button
-              type="button"
-              onClick={exportLocal}
-              className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center gap-2 px-4 text-sm"
-            >
-              <Download className="size-4" aria-hidden />
-              PNG
-            </button>
+        {/* 2D faces */}
+        <section className="flex min-h-0 flex-col overflow-auto px-3 py-3">
+          <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
+            {partDef.label} · сторони
+          </p>
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {availableSides.map((side) => (
+              <button
+                key={side}
+                type="button"
+                onClick={() => setFaceSide(side)}
+                className={cn(
+                  "lc-focus-ring rounded-sm border px-2.5 py-1.5 text-xs",
+                  faceSide === side
+                    ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
+                    : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
+                )}
+              >
+                {FACE_SIDE_LABELS[side]}
+              </button>
+            ))}
           </div>
-        </div>
-      </section>
+
+          <div className="mb-4 flex justify-center">
+            <canvas
+              ref={faceCanvasRef}
+              className="cursor-crosshair touch-none rounded-sm border border-white/15 shadow-[0_0_0_1px_rgba(225,29,72,0.25)]"
+              onPointerDown={(e) => {
+                strokeStartedRef.current = false;
+                (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
+                paintFaceFromEvent(e, false);
+                strokeStartedRef.current = true;
+              }}
+              onPointerMove={(e) => {
+                if (e.buttons !== 1) return;
+                paintFaceFromEvent(e, true);
+              }}
+              onPointerUp={() => {
+                strokeStartedRef.current = false;
+              }}
+            />
+          </div>
+
+          <p className="mb-2 text-[11px] text-[var(--mc-ink-subtle)]">
+            Усі грані {partDef.label.toLowerCase()}
+          </p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {availableSides.map((side) => {
+              const rect = partDef.faces[side]!;
+              const origin = resolveFaceRect(rect, useOverlay);
+              return (
+                <FaceThumb
+                  key={side}
+                  label={FACE_SIDE_LABELS[side]}
+                  active={faceSide === side}
+                  imageData={imageData}
+                  origin={origin}
+                  onClick={() => setFaceSide(side)}
+                />
+              );
+            })}
+          </div>
+
+          <p className="mt-4 text-[10px] leading-relaxed text-[var(--mc-ink-subtle)]">
+            Обери частину на міні-моделі (червона = активна). Далі — перед /
+            зад / ліво / право. 3D-малювання бʼє лише в поточний шар (база або
+            overlay), тож після обертання пікселі лягають туди, куди клікаєш.
+          </p>
+        </section>
+      </div>
     </div>
+  );
+}
+
+function FaceThumb({
+  label,
+  active,
+  imageData,
+  origin,
+  onClick,
+}: {
+  label: string;
+  active: boolean;
+  imageData: ImageData;
+  origin: { x: number; y: number; w: number; h: number };
+  onClick: () => void;
+}) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  useEffect(() => {
+    const canvas = ref.current;
+    if (!canvas) return;
+    const scale = 10;
+    canvas.width = origin.w * scale;
+    canvas.height = origin.h * scale;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.imageSmoothingEnabled = false;
+    const tmp = document.createElement("canvas");
+    tmp.width = SKIN_SIZE;
+    tmp.height = SKIN_SIZE;
+    tmp.getContext("2d")?.putImageData(imageData, 0, 0);
+    ctx.fillStyle = "#111";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(
+      tmp,
+      origin.x,
+      origin.y,
+      origin.w,
+      origin.h,
+      0,
+      0,
+      canvas.width,
+      canvas.height,
+    );
+  }, [imageData, origin]);
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "lc-focus-ring flex flex-col items-center gap-1 rounded-sm border p-2",
+        active
+          ? "border-rose-400/70 bg-rose-500/10"
+          : "border-white/10 bg-black/20 hover:bg-black/35",
+      )}
+    >
+      <canvas ref={ref} className="rounded-[1px]" />
+      <span className="text-[10px] text-[var(--mc-ink-subtle)]">{label}</span>
+    </button>
   );
 }

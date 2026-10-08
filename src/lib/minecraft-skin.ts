@@ -3,58 +3,142 @@ export const SKIN_SIZE = 64;
 
 export type SkinModelType = "classic" | "slim";
 
+export type BodyPartId =
+  | "head"
+  | "body"
+  | "arm_r"
+  | "arm_l"
+  | "leg_r"
+  | "leg_l";
+
+export type FaceSide =
+  | "front"
+  | "back"
+  | "left"
+  | "right"
+  | "top"
+  | "bottom";
+
+export type SkinFaceRect = {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  overlay?: { x: number; y: number };
+};
+
+export type BodyPartDef = {
+  id: BodyPartId;
+  label: string;
+  faces: Partial<Record<FaceSide, SkinFaceRect>>;
+};
+
 /** Регіони базового шару (непрозорі частини макета). */
 const BASE_OPAQUE_RECTS: ReadonlyArray<readonly [number, number, number, number]> = [
-  // Head
   [0, 0, 32, 16],
-  // Right leg + body + right arm
   [0, 16, 56, 32],
-  // Left leg + left arm (1.8+)
   [16, 48, 32, 64],
   [32, 48, 48, 64],
 ];
 
-const OVERLAY_RECTS: ReadonlyArray<readonly [number, number, number, number]> = [
-  // Hat
-  [32, 0, 64, 16],
-  // Jacket / sleeves / pants overlay
-  [0, 32, 56, 48],
-  [0, 48, 16, 64],
-  [48, 48, 64, 64],
+export const FACE_SIDE_LABELS: Record<FaceSide, string> = {
+  front: "Перед",
+  back: "Зад",
+  left: "Ліво",
+  right: "Право",
+  top: "Верх",
+  bottom: "Низ",
+};
+
+/** Частини тіла + усі сторони UV (база + offset overlay). */
+export const BODY_PARTS: BodyPartDef[] = [
+  {
+    id: "head",
+    label: "Голова",
+    faces: {
+      front: { x: 8, y: 8, w: 8, h: 8, overlay: { x: 40, y: 8 } },
+      back: { x: 24, y: 8, w: 8, h: 8, overlay: { x: 56, y: 8 } },
+      left: { x: 16, y: 8, w: 8, h: 8, overlay: { x: 48, y: 8 } },
+      right: { x: 0, y: 8, w: 8, h: 8, overlay: { x: 32, y: 8 } },
+      top: { x: 8, y: 0, w: 8, h: 8, overlay: { x: 40, y: 0 } },
+      bottom: { x: 16, y: 0, w: 8, h: 8, overlay: { x: 48, y: 0 } },
+    },
+  },
+  {
+    id: "body",
+    label: "Тіло",
+    faces: {
+      front: { x: 20, y: 20, w: 8, h: 12, overlay: { x: 20, y: 36 } },
+      back: { x: 32, y: 20, w: 8, h: 12, overlay: { x: 32, y: 36 } },
+      left: { x: 28, y: 20, w: 4, h: 12, overlay: { x: 28, y: 36 } },
+      right: { x: 16, y: 20, w: 4, h: 12, overlay: { x: 16, y: 36 } },
+      top: { x: 20, y: 16, w: 8, h: 4, overlay: { x: 20, y: 32 } },
+      bottom: { x: 28, y: 16, w: 8, h: 4, overlay: { x: 28, y: 32 } },
+    },
+  },
+  {
+    id: "arm_r",
+    label: "Права рука",
+    faces: {
+      front: { x: 44, y: 20, w: 4, h: 12, overlay: { x: 44, y: 36 } },
+      back: { x: 52, y: 20, w: 4, h: 12, overlay: { x: 52, y: 36 } },
+      left: { x: 48, y: 20, w: 4, h: 12, overlay: { x: 48, y: 36 } },
+      right: { x: 40, y: 20, w: 4, h: 12, overlay: { x: 40, y: 36 } },
+      top: { x: 44, y: 16, w: 4, h: 4, overlay: { x: 44, y: 32 } },
+      bottom: { x: 48, y: 16, w: 4, h: 4, overlay: { x: 48, y: 32 } },
+    },
+  },
+  {
+    id: "arm_l",
+    label: "Ліва рука",
+    faces: {
+      front: { x: 36, y: 52, w: 4, h: 12, overlay: { x: 52, y: 52 } },
+      back: { x: 44, y: 52, w: 4, h: 12, overlay: { x: 60, y: 52 } },
+      left: { x: 40, y: 52, w: 4, h: 12, overlay: { x: 56, y: 52 } },
+      right: { x: 32, y: 52, w: 4, h: 12, overlay: { x: 48, y: 52 } },
+      top: { x: 36, y: 48, w: 4, h: 4, overlay: { x: 52, y: 48 } },
+      bottom: { x: 40, y: 48, w: 4, h: 4, overlay: { x: 56, y: 48 } },
+    },
+  },
+  {
+    id: "leg_r",
+    label: "Права нога",
+    faces: {
+      front: { x: 4, y: 20, w: 4, h: 12, overlay: { x: 4, y: 36 } },
+      back: { x: 12, y: 20, w: 4, h: 12, overlay: { x: 12, y: 36 } },
+      left: { x: 8, y: 20, w: 4, h: 12, overlay: { x: 8, y: 36 } },
+      right: { x: 0, y: 20, w: 4, h: 12, overlay: { x: 0, y: 36 } },
+      top: { x: 4, y: 16, w: 4, h: 4, overlay: { x: 4, y: 32 } },
+      bottom: { x: 8, y: 16, w: 4, h: 4, overlay: { x: 8, y: 32 } },
+    },
+  },
+  {
+    id: "leg_l",
+    label: "Ліва нога",
+    faces: {
+      front: { x: 20, y: 52, w: 4, h: 12, overlay: { x: 4, y: 52 } },
+      back: { x: 28, y: 52, w: 4, h: 12, overlay: { x: 12, y: 52 } },
+      left: { x: 24, y: 52, w: 4, h: 12, overlay: { x: 8, y: 52 } },
+      right: { x: 16, y: 52, w: 4, h: 12, overlay: { x: 0, y: 52 } },
+      top: { x: 20, y: 48, w: 4, h: 4, overlay: { x: 4, y: 48 } },
+      bottom: { x: 24, y: 48, w: 4, h: 4, overlay: { x: 8, y: 48 } },
+    },
+  },
 ];
 
-export type SkinFaceId =
-  | "head_front"
-  | "head_back"
-  | "head_left"
-  | "head_right"
-  | "head_top"
-  | "head_bottom"
-  | "body_front"
-  | "body_back"
-  | "arm_r_front"
-  | "arm_l_front"
-  | "leg_r_front"
-  | "leg_l_front";
+export function getBodyPart(id: BodyPartId): BodyPartDef {
+  return BODY_PARTS.find((p) => p.id === id) ?? BODY_PARTS[0]!;
+}
 
-/** UV-вирізки для 2D-панелі редактора (x, y, w, h) на базовому шарі. */
-export const SKIN_FACES: Record<
-  SkinFaceId,
-  { label: string; x: number; y: number; w: number; h: number; overlay?: { x: number; y: number } }
-> = {
-  head_front: { label: "Голова · перед", x: 8, y: 8, w: 8, h: 8, overlay: { x: 40, y: 8 } },
-  head_back: { label: "Голова · зад", x: 24, y: 8, w: 8, h: 8, overlay: { x: 56, y: 8 } },
-  head_left: { label: "Голова · ліво", x: 16, y: 8, w: 8, h: 8, overlay: { x: 48, y: 8 } },
-  head_right: { label: "Голова · право", x: 0, y: 8, w: 8, h: 8, overlay: { x: 32, y: 8 } },
-  head_top: { label: "Голова · верх", x: 8, y: 0, w: 8, h: 8, overlay: { x: 40, y: 0 } },
-  head_bottom: { label: "Голова · низ", x: 16, y: 0, w: 8, h: 8, overlay: { x: 48, y: 0 } },
-  body_front: { label: "Тіло · перед", x: 20, y: 20, w: 8, h: 12, overlay: { x: 20, y: 36 } },
-  body_back: { label: "Тіло · зад", x: 32, y: 20, w: 8, h: 12, overlay: { x: 32, y: 36 } },
-  arm_r_front: { label: "Права рука", x: 44, y: 20, w: 4, h: 12, overlay: { x: 44, y: 36 } },
-  arm_l_front: { label: "Ліва рука", x: 36, y: 52, w: 4, h: 12, overlay: { x: 52, y: 52 } },
-  leg_r_front: { label: "Права нога", x: 4, y: 20, w: 4, h: 12, overlay: { x: 4, y: 36 } },
-  leg_l_front: { label: "Ліва нога", x: 20, y: 52, w: 4, h: 12, overlay: { x: 4, y: 52 } },
-};
+export function resolveFaceRect(
+  rect: SkinFaceRect,
+  useOverlay: boolean,
+): { x: number; y: number; w: number; h: number } {
+  if (useOverlay && rect.overlay) {
+    return { x: rect.overlay.x, y: rect.overlay.y, w: rect.w, h: rect.h };
+  }
+  return { x: rect.x, y: rect.y, w: rect.w, h: rect.h };
+}
 
 function fillRect(
   data: Uint8ClampedArray,
@@ -84,12 +168,9 @@ export function createBlankSkinImageData(): ImageData {
   for (const [x0, y0, x1, y1] of BASE_OPAQUE_RECTS) {
     fillRect(data, x0, y0, x1, y1, 245, 245, 245, 255);
   }
-  // Overlay лишаємо прозорим (0)
-  void OVERLAY_RECTS;
   if (typeof ImageData !== "undefined") {
     return new ImageData(data, SKIN_SIZE, SKIN_SIZE);
   }
-  // SSR / Node fallback
   return { data, width: SKIN_SIZE, height: SKIN_SIZE, colorSpace: "srgb" } as ImageData;
 }
 
@@ -122,6 +203,38 @@ export function setPixel(
   imageData.data[i + 1] = g;
   imageData.data[i + 2] = b;
   imageData.data[i + 3] = a;
+}
+
+/** Пензель (квадрат) навколо точки. */
+export function stampBrush(
+  imageData: ImageData,
+  cx: number,
+  cy: number,
+  size: number,
+  r: number,
+  g: number,
+  b: number,
+  a: number,
+  clip?: { x: number; y: number; w: number; h: number },
+) {
+  const half = Math.floor(size / 2);
+  for (let dy = -half; dy <= half; dy++) {
+    for (let dx = -half; dx <= half; dx++) {
+      const x = cx + dx;
+      const y = cy + dy;
+      if (clip) {
+        if (
+          x < clip.x ||
+          y < clip.y ||
+          x >= clip.x + clip.w ||
+          y >= clip.y + clip.h
+        ) {
+          continue;
+        }
+      }
+      setPixel(imageData, x, y, r, g, b, a);
+    }
+  }
 }
 
 export function getPixel(
@@ -184,7 +297,6 @@ const PNG_DATA_URL_RE =
 export function isValidSkinPngDataUrl(dataUrl: string): boolean {
   const m = dataUrl.trim().match(PNG_DATA_URL_RE);
   if (!m) return false;
-  // ~64×64 PNG ≈ кілька KB; лишаємо запас
   return m[1]!.length <= 120_000;
 }
 
@@ -209,4 +321,12 @@ export function hexToRgba(hex: string): { r: number; g: number; b: number; a: nu
 export function rgbaToHex(r: number, g: number, b: number): string {
   const c = (n: number) => n.toString(16).padStart(2, "0");
   return `#${c(r)}${c(g)}${c(b)}`;
+}
+
+/** UV з raycast skinview3d → піксель Minecraft PNG. */
+export function uvToSkinPixel(u: number, v: number): { x: number; y: number } {
+  const x = Math.min(SKIN_SIZE - 1, Math.max(0, Math.floor(u * SKIN_SIZE)));
+  // skinview3d уже кладе UV з flipY (1 - y/64), тому повертаємо назад
+  const y = Math.min(SKIN_SIZE - 1, Math.max(0, Math.floor((1 - v) * SKIN_SIZE)));
+  return { x, y };
 }

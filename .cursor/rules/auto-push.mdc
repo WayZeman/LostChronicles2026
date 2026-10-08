@@ -1,0 +1,13 @@
+---
+description: After finishing site changes, commit and push to main without waiting to be asked
+alwaysApply: true
+---
+
+# Auto commit + push
+
+When a feature/fix for this repo is done and verified (build or local check OK):
+
+1. Commit with a concise message (HEREDOC), then `git push origin HEAD` immediately.
+2. Do **not** wait for the user to say «пуш» / «коміт».
+3. Still never commit secrets (`.env`, credentials). Still never force-push or amend unless the existing amend safety rules allow it.
+4. If the push triggers Vercel and deploy fails, fix and push again without waiting.
