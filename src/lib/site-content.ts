@@ -162,6 +162,15 @@ const SUPPORT_CARD_SEEDS: SupportCardSeed[] = [
     price: "100 ₴",
     qty: false,
   },
+  {
+    order: 11,
+    title: "Зміна біому",
+    description:
+      "Зміни біом навколо твоєї ділянки на бажаний — пустеля, сніг, джунглі чи інший. Після оплати адміністрація узгоджує зону й виконує зміну; у коментарі до замовлення вкажи біом і координати або назву місця.",
+    image: "/support-biome.jpg",
+    price: "50 ₴",
+    qty: false,
+  },
 ];
 
 let supportCardsSchemaEnsured = false;
@@ -247,7 +256,8 @@ async function upsertSupportCardByTitle(
 const SUPPORT_CARD_PATCHES: SupportCardSeed[] = SUPPORT_CARD_SEEDS.filter(
   (s) =>
     s.title === "Кастомний підпис предмета" ||
-    s.title === "Перенесення ділянки або будинку",
+    s.title === "Перенесення ділянки або будинку" ||
+    s.title === "Зміна біому",
 );
 
 /** Seed дефолтний каталог, якщо таблиця порожня (не затирає адмін-контент). */
