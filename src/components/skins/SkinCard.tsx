@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Download, Heart, Pencil, Trash2 } from "lucide-react";
+import { Download, Heart, Trash2 } from "lucide-react";
 import { authRequiredPath } from "@/lib/auth-paths";
 import { cn } from "@/lib/utils";
 
@@ -155,14 +155,6 @@ export function SkinCard({
     }
   };
 
-  const edit = () => {
-    if (!isLoggedIn) {
-      goAuth(`/skins/new?from=${skin.id}`);
-      return;
-    }
-    router.push(`/skins/new?from=${skin.id}`);
-  };
-
   const remove = async () => {
     if (busy) return;
     if (!window.confirm(`Видалити скін «${skin.title}»?`)) return;
@@ -235,16 +227,6 @@ export function SkinCard({
         >
           <Download className="size-3.5" aria-hidden />
           {downloads}
-        </button>
-        <button
-          type="button"
-          onClick={edit}
-          disabled={busy}
-          title="Редагувати"
-          aria-label="Редагувати скін"
-          className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-[var(--mc-accent)]/40 bg-[var(--mc-accent)]/10 text-[var(--mc-ink)] disabled:opacity-50"
-        >
-          <Pencil className="size-3.5" aria-hidden />
         </button>
         {canDelete ? (
           <button
