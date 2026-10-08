@@ -42,6 +42,11 @@ const bottomNavLinks = [
 export function Navbar() {
   const pathname = usePathname() ?? "";
 
+  // Повноекранний редактор скінів — без нижньої панелі
+  if (pathname === "/skins/new" || pathname.startsWith("/skins/new/")) {
+    return null;
+  }
+
   return (
     <nav className="lc-bottom-nav mc-frame" aria-label="Головна навігація">
       <div className="mx-auto flex w-full items-stretch justify-around gap-0.5 px-1 md:px-2">

@@ -22,6 +22,7 @@ import {
   RotateCcw,
   Save,
   Undo2,
+  Upload,
 } from "lucide-react";
 import type { SkinViewer } from "skinview3d";
 import { MOUSE, Raycaster, Vector2 } from "three";
@@ -65,7 +66,9 @@ const SkinViewer3D = dynamic(
 
 type Tool = "pencil" | "eraser" | "fill" | "eyedropper";
 
-const PALETTE = [
+const RECENT_COLORS_KEY = "lc-skin-recent-colors";
+const MAX_RECENT_COLORS = 10;
+const SEED_COLORS = [
   "#f5f5f5",
   "#1a1a1a",
   "#c43c3c",
@@ -74,11 +77,40 @@ const PALETTE = [
   "#e8c040",
   "#8b5a2b",
   "#c0c0c0",
-  "#7b3fa0",
-  "#e07030",
-  "#5ac8d4",
-  "#f0a0c0",
 ];
+
+function normalizeHex(hex: string): string | null {
+  const m = hex.trim().match(/^#?([0-9a-fA-F]{6})$/);
+  return m ? `#${m[1]!.toLowerCase()}` : null;
+}
+
+function loadRecentColors(): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = JSON.parse(
+      localStorage.getItem(RECENT_COLORS_KEY) || "[]",
+    ) as unknown;
+    if (!Array.isArray(raw)) return [];
+    const out: string[] = [];
+    for (const item of raw) {
+      if (typeof item !== "string") continue;
+      const hex = normalizeHex(item);
+      if (hex && !out.includes(hex)) out.push(hex);
+      if (out.length >= MAX_RECENT_COLORS) break;
+    }
+    return out;
+  } catch {
+    return [];
+  }
+}
+
+function persistRecentColors(colors: string[]) {
+  try {
+    localStorage.setItem(RECENT_COLORS_KEY, JSON.stringify(colors));
+  } catch {
+    /* ignore quota */
+  }
+}
 
 const FACE_ORDER: FaceSide[] = [
   "front",
@@ -108,6 +140,9 @@ export function SkinEditor() {
   const [title, setTitle] = useState("");
   const [tool, setTool] = useState<Tool>("pencil");
   const [color, setColor] = useState("#3c78c4");
+  const [recentColors, setRecentColors] = useState<string[]>(() =>
+    loadRecentColors(),
+  );
   const [brushSize, setBrushSize] = useState(1);
   const [useOverlay, setUseOverlay] = useState(false);
   const [bodyPart, setBodyPart] = useState<BodyPartId>("head");
@@ -155,6 +190,7 @@ export function SkinEditor() {
   const strokeStartedRef = useRef(false);
   const faceCanvasRef = useRef<HTMLCanvasElement>(null);
   const activePointersRef = useRef(new Set<number>());
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const prev = document.body.style.overflow;
@@ -171,6 +207,28 @@ export function SkinEditor() {
     mq.addEventListener("change", apply);
     return () => mq.removeEventListener("change", apply);
   }, []);
+
+  const rememberColor = useCallback((hex: string) => {
+    const n = normalizeHex(hex);
+    if (!n) return;
+    setRecentColors((prev) => {
+      const next = [n, ...prev.filter((c) => c !== n)].slice(
+        0,
+        MAX_RECENT_COLORS,
+      );
+      persistRecentColors(next);
+      return next;
+    });
+  }, []);
+
+  const selectColor = useCallback(
+    (hex: string) => {
+      const n = normalizeHex(hex) ?? hex;
+      setColor(n);
+      rememberColor(n);
+    },
+    [rememberColor],
+  );
 
   const partDef = useMemo(
     () => getBodyPart(bodyPart, model),
@@ -233,6 +291,71 @@ export function SkinEditor() {
     },
     [pushHistory, pushTextureToViewer],
   );
+
+  const loadPngDataUrl = useCallback(
+    (
+      src: string,
+      opts?: { title?: string; modelType?: SkinModelType; asCopy?: boolean },
+    ) => {
+      setError(null);
+      const img = new Image();
+      img.onload = () => {
+        if (img.width !== 64 || img.height !== 64) {
+          setError("Потрібен PNG 64×64 (стандарт Java-скіна).");
+          return;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = 64;
+        canvas.height = 64;
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.imageSmoothingEnabled = false;
+        ctx.clearRect(0, 0, 64, 64);
+        ctx.drawImage(img, 0, 0);
+        commitImage(ctx.getImageData(0, 0, 64, 64), true);
+        if (opts?.modelType === "classic" || opts?.modelType === "slim") {
+          setModel(opts.modelType);
+        }
+        if (opts?.title) {
+          const base = opts.title.trim().slice(0, 70);
+          setTitle(opts.asCopy && base ? `${base} (копія)` : base);
+        }
+      };
+      img.onerror = () => setError("Не вдалося прочитати PNG");
+      img.src = src;
+    },
+    [commitImage],
+  );
+
+  useEffect(() => {
+    const from = Number(
+      new URLSearchParams(window.location.search).get("from"),
+    );
+    if (!Number.isInteger(from) || from < 1) return;
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await fetch(`/api/skins/${from}`);
+        if (!res.ok || cancelled) return;
+        const data = (await res.json()) as {
+          title?: string;
+          model_type?: SkinModelType;
+          png_data?: string;
+        };
+        if (!data.png_data || cancelled) return;
+        loadPngDataUrl(data.png_data, {
+          title: data.title,
+          modelType: data.model_type,
+          asCopy: true,
+        });
+      } catch {
+        if (!cancelled) setError("Не вдалося завантажити скін для редагування");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [loadPngDataUrl]);
 
   const undo = () => {
     setHistory((h) => {
@@ -337,9 +460,16 @@ export function SkinEditor() {
 
       if (currentTool === "eyedropper") {
         const p = getPixel(imageRef.current, texX, texY);
-        if (p.a > 0) setColor(rgbaToHex(p.r, p.g, p.b));
+        if (p.a > 0) selectColor(rgbaToHex(p.r, p.g, p.b));
         setTool("pencil");
         return;
+      }
+
+      if (
+        currentTool !== "eraser" &&
+        (!continuous || !strokeStartedRef.current)
+      ) {
+        rememberColor(colorRef.current);
       }
 
       const next = cloneImageData(imageRef.current);
@@ -373,7 +503,7 @@ export function SkinEditor() {
       if (continuous) strokeStartedRef.current = true;
       commitImage(next, recordHistory);
     },
-    [commitImage, paintColor],
+    [commitImage, paintColor, rememberColor, selectColor],
   );
 
   const paintFaceFromEvent = (
@@ -483,7 +613,19 @@ export function SkinEditor() {
     const a = document.createElement("a");
     a.href = url;
     a.download = `${title.trim() || "lc-skin"}.png`;
+    document.body.appendChild(a);
     a.click();
+    a.remove();
+  };
+
+  const importPng = (file: File) => {
+    setError(null);
+    const reader = new FileReader();
+    reader.onload = () => {
+      loadPngDataUrl(String(reader.result || ""));
+    };
+    reader.onerror = () => setError("Не вдалося прочитати файл");
+    reader.readAsDataURL(file);
   };
 
   const save = async () => {
@@ -750,6 +892,26 @@ export function SkinEditor() {
           placeholder="Назва"
           className="min-h-11 min-w-0 flex-1 rounded-sm border border-white/15 bg-black/40 px-2 text-sm"
         />
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/png,.png"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) importPng(f);
+            e.target.value = "";
+          }}
+        />
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="lc-focus-ring mc-btn-secondary inline-flex min-h-11 items-center gap-1.5 px-2.5 text-xs touch-manipulation sm:px-3"
+          title="Імпортувати свій PNG 64×64"
+        >
+          <Upload className="size-3.5" aria-hidden />
+          <span className="hidden sm:inline">Імпорт</span>
+        </button>
         <button
           type="button"
           onClick={exportLocal}
@@ -816,23 +978,54 @@ export function SkinEditor() {
           <option value={2}>2×2</option>
           <option value={3}>3×3</option>
         </select>
-        <input
-          type="color"
-          value={color}
-          onChange={(e) => setColor(e.target.value)}
-          className="size-11 shrink-0 cursor-pointer rounded-sm border border-white/15 bg-transparent lg:size-8"
-          aria-label="Колір"
-        />
-        <div className="flex shrink-0 gap-1">
-          {PALETTE.map((c) => (
+        <label
+          className="relative size-11 shrink-0 cursor-pointer touch-manipulation lg:size-9"
+          title="Відкрити палітру кольорів"
+        >
+          <span
+            className="pointer-events-none absolute inset-0 rounded-md shadow-[0_0_0_1px_rgba(255,255,255,0.35)]"
+            style={{
+              background:
+                "conic-gradient(#ff0040, #ffcc00, #33ff66, #00ccff, #3355ff, #cc33ff, #ff0040)",
+            }}
+            aria-hidden
+          />
+          <span
+            className="pointer-events-none absolute inset-[3px] rounded-sm border border-black/40"
+            style={{
+              backgroundImage: [
+                `linear-gradient(${color}, ${color})`,
+                "linear-gradient(45deg, #888 25%, transparent 25%), linear-gradient(-45deg, #888 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #888 75%), linear-gradient(-45deg, transparent 75%, #888 75%)",
+              ].join(", "),
+              backgroundSize: "100% 100%, 8px 8px, 8px 8px, 8px 8px, 8px 8px",
+              backgroundPosition: "0 0, 0 0, 0 4px, 4px -4px, -4px 0",
+              backgroundColor: "#222",
+            }}
+            aria-hidden
+          />
+          <input
+            type="color"
+            value={color}
+            onChange={(e) => selectColor(e.target.value)}
+            className="absolute inset-0 cursor-pointer opacity-0"
+            aria-label="Палітра кольорів"
+          />
+        </label>
+        <div
+          className="flex shrink-0 items-center gap-1"
+          title="Останні використані кольори"
+        >
+          {(recentColors.length > 0 ? recentColors : SEED_COLORS).map((c) => (
             <button
               key={c}
               type="button"
-              aria-label={c}
-              onClick={() => setColor(c)}
+              aria-label={`Колір ${c}`}
+              onClick={() => selectColor(c)}
               className={cn(
                 "size-9 shrink-0 rounded-sm border touch-manipulation sm:size-7 lg:size-6",
-                color === c ? "border-white" : "border-white/20",
+                normalizeHex(color) === c
+                  ? "border-white ring-1 ring-white/60"
+                  : "border-white/20",
               )}
               style={{ backgroundColor: c }}
             />

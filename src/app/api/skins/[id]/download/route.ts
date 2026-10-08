@@ -6,7 +6,18 @@ export const dynamic = "force-dynamic";
 
 type Ctx = { params: Promise<{ id: string }> };
 
-const DATA_URL_RE = /^data:image\/png;base64,([A-Za-z0-9+/=]+)$/i;
+/** Дозволяє пробіли/переноси в base64 (як у validateMinecraftSkinDataUrl). */
+const DATA_URL_RE = /^data:image\/png;base64,([A-Za-z0-9+/=\s]+)$/i;
+
+function asciiFilename(title: string): string {
+  const ascii = title
+    .normalize("NFKD")
+    .replace(/[^\w\- ]+/g, "")
+    .trim()
+    .slice(0, 40)
+    .replace(/\s+/g, "-");
+  return ascii || "skin";
+}
 
 export async function GET(_req: Request, ctx: Ctx) {
   const userId = await getSessionUserIdFromCookies();
@@ -25,22 +36,20 @@ export async function GET(_req: Request, ctx: Ctx) {
     if (!skin) {
       return NextResponse.json({ error: "Скін не знайдено" }, { status: 404 });
     }
-    const m = skin.png_data.match(DATA_URL_RE);
+    const m = skin.png_data.trim().match(DATA_URL_RE);
     if (!m) {
       return NextResponse.json({ error: "Пошкоджений файл" }, { status: 500 });
     }
-    const buffer = Buffer.from(m[1]!, "base64");
-    const safeName =
-      skin.title
-        .replace(/[^\w\u0400-\u04FF\- ]+/g, "")
-        .trim()
-        .slice(0, 40)
-        .replace(/\s+/g, "-") || "skin";
+    const buffer = Buffer.from(m[1]!.replace(/\s+/g, ""), "base64");
+    const safeName = asciiFilename(skin.title);
+    const utfName = encodeURIComponent(
+      `${skin.title.trim().slice(0, 60) || "skin"}.png`,
+    );
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         "Content-Type": "image/png",
-        "Content-Disposition": `attachment; filename="${safeName}.png"`,
+        "Content-Disposition": `attachment; filename="${safeName}.png"; filename*=UTF-8''${utfName}`,
         "Cache-Control": "no-store",
       },
     });

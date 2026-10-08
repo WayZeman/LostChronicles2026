@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Download, Heart, Trash2 } from "lucide-react";
+import { Download, Heart, Pencil, Trash2 } from "lucide-react";
 import { authRequiredPath } from "@/lib/auth-paths";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +45,23 @@ function formatUaDate(iso: string): string {
   }
 }
 
+function triggerBlobDownload(blob: Blob, filename: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.rel = "noopener";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+async function blobFromDataUrl(dataUrl: string): Promise<Blob> {
+  const res = await fetch(dataUrl);
+  return res.blob();
+}
+
 type Props = {
   skin: SkinCardData;
   compact?: boolean;
@@ -69,8 +86,8 @@ export function SkinCard({
 
   if (gone) return null;
 
-  const goAuth = () => {
-    router.push(authRequiredPath("/skins"));
+  const goAuth = (next = "/skins") => {
+    router.push(authRequiredPath(next));
   };
 
   const toggleLike = async () => {
@@ -110,20 +127,40 @@ export function SkinCard({
       goAuth();
       return;
     }
+    if (busy) return;
+    setBusy(true);
+    const filename = `${skin.title || "skin"}.png`.replace(
+      /[\\/:*?"<>|]+/g,
+      "-",
+    );
     try {
       const res = await fetch(`/api/skins/${skin.id}/download`);
-      if (!res.ok) return;
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `${skin.title || "skin"}.png`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setDownloads((d) => d + 1);
+      const ct = res.headers.get("content-type") || "";
+      if (res.ok && ct.includes("image/png")) {
+        triggerBlobDownload(await res.blob(), filename);
+        setDownloads((d) => d + 1);
+        return;
+      }
+      // Fallback: локальний png_data з картки (лічильник може не оновитись)
+      triggerBlobDownload(await blobFromDataUrl(skin.png_data), filename);
+      if (res.ok) setDownloads((d) => d + 1);
     } catch {
-      /* ignore */
+      try {
+        triggerBlobDownload(await blobFromDataUrl(skin.png_data), filename);
+      } catch {
+        /* ignore */
+      }
+    } finally {
+      setBusy(false);
     }
+  };
+
+  const edit = () => {
+    if (!isLoggedIn) {
+      goAuth(`/skins/new?from=${skin.id}`);
+      return;
+    }
+    router.push(`/skins/new?from=${skin.id}`);
   };
 
   const remove = async () => {
@@ -192,10 +229,22 @@ export function SkinCard({
         <button
           type="button"
           onClick={() => void download()}
-          className="lc-focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-white/15 bg-black/25 px-2.5 text-xs text-[var(--mc-ink-subtle)]"
+          disabled={busy}
+          title="Завантажити PNG"
+          className="lc-focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-white/15 bg-black/25 px-2.5 text-xs text-[var(--mc-ink-subtle)] disabled:opacity-50"
         >
           <Download className="size-3.5" aria-hidden />
           {downloads}
+        </button>
+        <button
+          type="button"
+          onClick={edit}
+          disabled={busy}
+          title="Редагувати в редакторі"
+          className="lc-focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-[var(--mc-accent)]/40 bg-[var(--mc-accent)]/10 px-2.5 text-xs text-[var(--mc-ink)] disabled:opacity-50"
+        >
+          <Pencil className="size-3.5" aria-hidden />
+          {!compact ? "Редагувати" : null}
         </button>
         {canDelete ? (
           <button
