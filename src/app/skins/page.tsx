@@ -64,8 +64,8 @@ export default async function SkinsGalleryPage() {
           <div>
             <h1 className="lc-section-title text-xl md:text-2xl">Скіни</h1>
             <p className="mt-1 text-sm text-[var(--mc-ink-subtle)]">
-              Усі скіни спільноти. PNG 64×64 — готовий до вдягання в Minecraft.
-              Автор або адмін може видалити свій/будь-який скін.
+              PNG 64×64 з прозорістю та 3D-шаром (overlay). Автор або адмін
+              може видалити скін.
             </p>
           </div>
           <Link

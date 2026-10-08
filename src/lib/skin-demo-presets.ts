@@ -1,172 +1,36 @@
-import { BASE_OPAQUE_RECTS, SKIN_SIZE } from "@/lib/minecraft-skin";
-import { encodeRgba64ToDataUrl } from "@/lib/minecraft-skin-png";
-
-type Rgba = { r: number; g: number; b: number; a?: number };
-
-function fillRect(
-  data: Uint8ClampedArray,
-  x0: number,
-  y0: number,
-  w: number,
-  h: number,
-  c: Rgba,
-) {
-  const a = c.a ?? 255;
-  for (let y = y0; y < y0 + h; y++) {
-    for (let x = x0; x < x0 + w; x++) {
-      if (x < 0 || y < 0 || x >= SKIN_SIZE || y >= SKIN_SIZE) continue;
-      const i = (y * SKIN_SIZE + x) * 4;
-      data[i] = c.r;
-      data[i + 1] = c.g;
-      data[i + 2] = c.b;
-      data[i + 3] = a;
-    }
-  }
-}
-
-function blankBase(): Uint8ClampedArray {
-  const data = new Uint8ClampedArray(SKIN_SIZE * SKIN_SIZE * 4);
-  for (const [x0, y0, x1, y1] of BASE_OPAQUE_RECTS) {
-    fillRect(data, x0, y0, x1 - x0, y1 - y0, { r: 245, g: 245, b: 245 });
-  }
-  return data;
-}
-
-/** Заливає основні грані класичної моделі. */
-function paintCharacter(
-  data: Uint8ClampedArray,
-  colors: {
-    head: Rgba;
-    body: Rgba;
-    arms: Rgba;
-    legs: Rgba;
-    accent?: Rgba;
-  },
-) {
-  // Head box
-  fillRect(data, 0, 0, 32, 16, colors.head);
-  // Body + right arm + right leg row
-  fillRect(data, 16, 16, 24, 16, colors.body); // body area incl top
-  fillRect(data, 20, 20, 8, 12, colors.body);
-  fillRect(data, 32, 20, 8, 12, colors.body);
-  fillRect(data, 40, 16, 16, 16, colors.arms);
-  fillRect(data, 0, 16, 16, 16, colors.legs);
-  // Left arm / left leg (1.8+)
-  fillRect(data, 32, 48, 16, 16, colors.arms);
-  fillRect(data, 16, 48, 16, 16, colors.legs);
-  // Face accent (eyes)
-  if (colors.accent) {
-    fillRect(data, 10, 12, 2, 2, colors.accent);
-    fillRect(data, 14, 12, 2, 2, colors.accent);
-  }
-}
-
+/** Демо-скіни (валідні PNG 64×64 з alpha / overlay). Автоген. */
 export type DemoSkinPreset = {
   title: string;
   model_type: "classic" | "slim";
   png_data: string;
 };
 
-function make(
-  title: string,
-  model_type: "classic" | "slim",
-  paint: (data: Uint8ClampedArray) => void,
-): DemoSkinPreset {
-  const data = blankBase();
-  paint(data);
-  return { title, model_type, png_data: encodeRgba64ToDataUrl(data) };
-}
-
-/** 10 демо-скінів для галереї (валідні 64×64 PNG). */
 export function buildDemoSkinPresets(): DemoSkinPreset[] {
   return [
-    make("LC Білий макет", "classic", () => {
-      /* blank */
-    }),
-    make("Смарагдовий вартовий", "classic", (d) =>
-      paintCharacter(d, {
-        head: { r: 40, g: 120, b: 70 },
-        body: { r: 30, g: 90, b: 55 },
-        arms: { r: 50, g: 140, b: 80 },
-        legs: { r: 25, g: 70, b: 45 },
-        accent: { r: 220, g: 240, b: 180 },
-      }),
-    ),
-    make("Лавовий мандрівник", "classic", (d) =>
-      paintCharacter(d, {
-        head: { r: 40, g: 20, b: 20 },
-        body: { r: 180, g: 60, b: 20 },
-        arms: { r: 220, g: 90, b: 30 },
-        legs: { r: 60, g: 30, b: 20 },
-        accent: { r: 255, g: 200, b: 80 },
-      }),
-    ),
-    make("Крижаний лицар", "classic", (d) =>
-      paintCharacter(d, {
-        head: { r: 180, g: 220, b: 240 },
-        body: { r: 120, g: 170, b: 210 },
-        arms: { r: 200, g: 230, b: 245 },
-        legs: { r: 90, g: 130, b: 170 },
-        accent: { r: 30, g: 60, b: 100 },
-      }),
-    ),
-    make("Тіньовий лучник", "slim", (d) =>
-      paintCharacter(d, {
-        head: { r: 30, g: 30, b: 40 },
-        body: { r: 50, g: 45, b: 70 },
-        arms: { r: 70, g: 60, b: 90 },
-        legs: { r: 25, g: 25, b: 35 },
-        accent: { r: 160, g: 80, b: 220 },
-      }),
-    ),
-    make("Сонячний фермер", "classic", (d) =>
-      paintCharacter(d, {
-        head: { r: 220, g: 180, b: 130 },
-        body: { r: 70, g: 140, b: 60 },
-        arms: { r: 220, g: 180, b: 130 },
-        legs: { r: 60, g: 80, b: 140 },
-        accent: { r: 40, g: 40, b: 40 },
-      }),
-    ),
-    make("Пурпуровий маг", "slim", (d) =>
-      paintCharacter(d, {
-        head: { r: 90, g: 40, b: 130 },
-        body: { r: 60, g: 20, b: 100 },
-        arms: { r: 120, g: 60, b: 160 },
-        legs: { r: 40, g: 15, b: 70 },
-        accent: { r: 255, g: 210, b: 80 },
-      }),
-    ),
-    make("Пустельний рейнджер", "classic", (d) =>
-      paintCharacter(d, {
-        head: { r: 210, g: 170, b: 110 },
-        body: { r: 170, g: 130, b: 70 },
-        arms: { r: 200, g: 160, b: 100 },
-        legs: { r: 100, g: 80, b: 50 },
-        accent: { r: 80, g: 50, b: 20 },
-      }),
-    ),
-    make("Аква-дайвер", "classic", (d) =>
-      paintCharacter(d, {
-        head: { r: 30, g: 140, b: 180 },
-        body: { r: 20, g: 100, b: 140 },
-        arms: { r: 40, g: 170, b: 200 },
-        legs: { r: 15, g: 70, b: 100 },
-        accent: { r: 255, g: 255, b: 255 },
-      }),
-    ),
-    make("Хронікер LC", "classic", (d) => {
-      paintCharacter(d, {
-        head: { r: 35, g: 45, b: 55 },
-        body: { r: 180, g: 140, b: 50 },
-        arms: { r: 50, g: 60, b: 70 },
-        legs: { r: 30, g: 35, b: 45 },
-        accent: { r: 255, g: 210, b: 80 },
-      });
-      // «LC» на грудях грубо
-      fillRect(d, 22, 22, 2, 6, { r: 255, g: 230, b: 120 });
-      fillRect(d, 24, 26, 2, 2, { r: 255, g: 230, b: 120 });
-      fillRect(d, 26, 22, 2, 6, { r: 255, g: 230, b: 120 });
-    }),
+    {
+      title: "Жовтий смокінг",
+      model_type: "classic",
+      png_data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAEAUlEQVR4Xu2av2oUYRTFF1MvIRYJaJHGBJtIMIhV0MbS1j76AHbWafY1Qt7AB0gr6BsIQgotksZgIUK0GTlL7uXsmTvfzszOzh92D/zI7HfvfN89d2eGmdmMRnOUfX+dLYJPNFSpoaoM1bdLDVXFJxqq1FBVhurbpYaq4hMNVWqoKkP17VJDVfGJhio1VJXe+9aC26bzBrVtWNdbN6Br6TfSNqX8j4/yedFYHbVtWNfzQhLKLo6yCE9YRFpQER8/jGbQeF28kK6kBbVNV75dbRvW9byQHinb3d11/t7eOldXv+cWvLm5ObM/gxh6ruMGYj5RgTh/PB4vpaEzRfWtATs7O5mBWpfSAF6kbgNu/mUzYIyPgHcnJzNgrMwRcHh4mAHkL+0IaKoBVhS29/f3cw2YTCZTqjQAeUZTDbCFHW6AwgUgF0UoiEUN0DzOj+AY1rZv3kBDGZ0Ln91lkdQgo42JmsNGDCx+8e1qmo/tr7/+TIvXPM6P4BjW0ngnDYApLFymATCObx9/Pz84yC7fvMjlWn4Ex7CmxjtrQJkj4Pz83Jtw8P5Z9unh4+zySb4BkTEDcVuHm85jDOcDfPZDvUhcjKKHvzEvB8WjAT+urzMI28enT3N5nB+BGJtlc0Dn4XyKp8VmFJ3cmJeDxa0B+IztooIBF81wbLANsCPADEWwaYZjUZ7Oozl3Y2nxt6no5Ma8HCyup0BRwZYfwbGfZ6/CuBLE02Izxv3t7Sk6ucG5GgNYvOlTIELn0fy7sbTMbMR4ayuEc7QAgAuYNQBg2y5qEVx0YKBwvCRpsRlFjS+rAXbVVzSvJmnxvb6Ce/8IzgkWnBbfVAP0Xr8qbnSttdZaa60WhadAWw6PxC0u3Q9F7wP6UVkHen760t8HdLB8P3R8drxa5nH3h9Y/2tub3gn242sIxE928pSXVCrv3sbGjGlsY8w+90pqPGWMlcqLzEZjZXT39De6+fI291RYBpunM+EUWGRxNqHmymD7DlZqqCq1jNOj7mqqqQbY+wAfWAXpC43gBUpSuLDyHIN7wbFoA7APn8ODa4BcgCo3wI4A+z+AlW3AYE4B/sYVHAERfJroD5yA4zgKMJd91muEHzodKmdQG5FCzatBgDzb1niHvl21GgCzyC3TAIzbtsa9ig5VqwGgqAGah3Hb1niHvl25BqBIYIaK0P0MNgi4ARr3KjpUzoAaLUL3M9gg6KQBWqxCDc8Z0NyiI0H3M7QBPKZxr6JpabGKJwYGNHfRBvD/BkTxFCgw9S7BTCyimeKB/7ocmGZ0P0OLZObFq+Iu6kp/Otefz1MgV80zQbE5NKcqboRV9r4dUvNNNqAkzatKA/j/Bgzbfx7I1YedqnghNfUfxLktk3cp+TYAAAAASUVORK5CYII=",
+    },
+    {
+      title: "Костюм з трояндами",
+      model_type: "classic",
+      png_data: "data:image/png;base64,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",
+    },
+    {
+      title: "Енерго-ядро",
+      model_type: "classic",
+      png_data: "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAEAAAABACAYAAACqaXHeAAAACXBIWXMAAAPoAAAD6AG1e1JrAAAFqklEQVR4Xt2ZsY4cRRCGT+JkB4jASAgJIgckBKRO4Q3IeAUCREZERIJ4BUTGC5iIxJITOyMiIUBk5LzCom/kv1T61dU93d7bnbuSPu10T1V1/dUzs7dzNzcD++e3f0893nv/w9OTj5+eHn327PTnX78HzHEuEnVMuXwMt49vX/Y4x/pdy8W0YCH49rvvTz/8/NMGxyy+t4A/vv77BM8/eb2hMbhg5xzrd80Ft9AuvHj1y4a6z7lItGguuEW1Puci0aq5WOfdp5+ennzwUXRcxzofiRbNxTrV+jofiVbNBTsSyyfFAGN9RqJFc8GOxOb1GeszEq1aFlvhwtUUiESLlsVWuPCLXgG5ERKuZlyqAWqEhKsZEJ1ctSywR971TCRaNAkZkXc9E4kq84Ivze3j2/+86EtysQbw1dRq7qXEsn5rrTtvAJdmfjbo+aA5L+jcaH2Otb7m+YwGqKC7IuenCG+ACrorcn6tz/GNdqQHf57umcvokld+PvNfiIxFLtSJh1V6IMZE5yGpS1758/oaw3YFcIKBij8XaoIWhvyXoorU+ir+XOT8vr7mtwYwcc4GqNs63hZu/K3OeQrR+rn4t0Hr67han/M3KvRcTVA+HZMXql9rKlTrZyErKJ+OR+vHvSRzQU44FjZa0PM5kaiwd774MnK18oXjqnlCJxwLw4fC6L5fcp6rRSQqDJ9DN2C7/xo/T11oRSgtTH68AWrlDcdV84ROOBbm/rNEosLc3wnHveYJZtl2+c07OT/XgzhidE+3bhk+8cXv86++iVhfS1eDYCyfEFpZTrQCC+klpJ/r8evzH0OkF655moNvFi90TqgOQSOZD6GV5SQrqHCf70EMnxIrwSo8NwU/vkU8h8O3ja4gmsuY+RBamSeaRUXOojjEssMSQBM4Zs6vKjW6anj+2tVVE0Ir8yQrVAWN0C4TT+HsHE3gWFeHxzh5bY6B20PzIbSynGwFFvKdmgGRxLNrunw51m2Q/Ty2heJUUwitzBPMsio+75wK1g66eO2qxhlvDGPBOIRWloOvQRave7jVBPDxaB5CaGUecA0QINFqRk+Uk309LoRWlp2vCcK1fj7eC01rHYfQyuT4UAmhlT1U4buvADd/weCEY2Hcg1C9D/B8TiQqzN8HzMYPzRM64VgYPhTGfaw/TfVE91wtIlFh+By6AdX7ABdaEUoLk5++KWbjh+YJnXAszP1niUSFjf6VFo57zRPMsu3ym+9uP9eDOGJG7wPwxY8fN4r1tXQ1CMbyCaGV5UQrsJDeB/i5HnvfB+CbxQudE6ojvw9gPoRWlpOsoMJ9vgcxrC2xEtx6H4A/3yKew+HbRleQ3gcwL52leaJZVOQsagJie+8DcowaXTU8f+3qqpHO0jzJClVBI7TLxFN4632Axzh5bY5B7wOYC6GV5WQrsJDv1AyIJL56H5D9PLaF4lRTCK3ME8yyKj7vnArWDrp47arGGW8MY8E4hFaWg69BFq97uNUE8PFoHkJoZR5wDRAg0WpGT5STfT0uhFaWna8JwrV+Pt4LTWsdh9DK5PhQCaGVHVx49+/+PYTQveYJnHAsbPSCJRwL4x4WPPnfNn62/kM1wMXPNsDF35sG8BBz4TMNyA9BJxwr8wAnHAvzgp1wLMz9nXAszOt1wlHmDrN4gSvoku3tPHBe4M8cNeR4ry/j8cwdogH8AqSoLDY/AHWOX3j6xQjMIULxWWx+AOqcxzN3iAboF6AEC/8W0Jtm/WpkDhGKl2Dh3wIez9whGpDF+5XgsIsSwhgRWbxfCU6OZ3yIBoxE634HfNlZxSBiJFr3O+R4xodoQBan4xac169EPpnLQkeN8HjmDtUAF9yC4gVjFzkixzM+RANGOw8S7CBitPMgwc4hGuCiHBefG+aCWrj43LB70YAsXqgpWdgMh7oFXNwMLmyWe3sFnKsB/wN96O27a6vMkwAAAABJRU5ErkJggg==",
+    },
+    {
+      title: "Tally",
+      model_type: "slim",
+      png_data: "data:image/png;base64,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",
+    },
+    {
+      title: "Циліндр",
+      model_type: "classic",
+      png_data: "data:image/png;base64,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",
+    }
   ];
 }

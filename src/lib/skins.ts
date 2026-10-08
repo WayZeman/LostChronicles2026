@@ -74,7 +74,10 @@ function mapSkinRow(r: Record<string, unknown>): SkinListItem {
   };
 }
 
-/** Якщо галерея порожня — додає 10 демо-скінів від першого адміна / будь-якого юзера. */
+/**
+ * Seed v4: якщо ще немає офіційних демо — очищає галерею і вставляє
+ * поточний набір тестових скінів (з alpha / 3D overlay).
+ */
 export async function ensureDemoSkins(): Promise<void> {
   if (demoSeedAttempted) return;
   demoSeedAttempted = true;
@@ -83,7 +86,7 @@ export async function ensureDemoSkins(): Promise<void> {
   const marker = rowsOf(
     await sql`
       SELECT 1 AS ok FROM skins
-      WHERE title = ${"Хронікер LC"}
+      WHERE title = ${"Жовтий смокінг"}
       LIMIT 1
     `,
   );
@@ -103,6 +106,9 @@ export async function ensureDemoSkins(): Promise<void> {
     ownerId = Number(any[0]?.id ?? 0);
   }
   if (!ownerId) return;
+
+  // Заміна старих тестових скінів на новий набір
+  await sql`DELETE FROM skins`;
 
   const presets = buildDemoSkinPresets();
   for (const p of presets) {

@@ -15,7 +15,6 @@ import {
   RotateCcw,
   Save,
   Undo2,
-  Upload,
 } from "lucide-react";
 import type { SkinViewer } from "skinview3d";
 import { MOUSE, Raycaster, Vector2 } from "three";
@@ -37,7 +36,6 @@ import {
   getPixel,
   hexToRgba,
   imageDataToPngDataUrl,
-  normalizeSkinForGame,
   resolveFaceRect,
   rgbaToHex,
   stampBrush,
@@ -137,7 +135,7 @@ export function SkinEditor() {
   const paintingRef = useRef(false);
   const strokeStartedRef = useRef(false);
   const faceCanvasRef = useRef<HTMLCanvasElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [showOuterLayer, setShowOuterLayer] = useState(true);
 
   const partDef = useMemo(
     () => getBodyPart(bodyPart, model),
@@ -249,9 +247,15 @@ export function SkinEditor() {
     tmp.width = SKIN_SIZE;
     tmp.height = SKIN_SIZE;
     tmp.getContext("2d")?.putImageData(imageData, 0, 0);
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Шахівниця під прозорими пікселями
+    const tile = 8;
+    for (let y = 0; y < canvas.height; y += tile) {
+      for (let x = 0; x < canvas.width; x += tile) {
+        ctx.fillStyle =
+          (x / tile + y / tile) % 2 === 0 ? "#3a3a3a" : "#2a2a2a";
+        ctx.fillRect(x, y, tile, tile);
+      }
+    }
     ctx.drawImage(
       tmp,
       faceOrigin.x,
@@ -284,10 +288,9 @@ export function SkinEditor() {
     b: number;
     a: number;
   } => {
+    // Гумка / прозорість — alpha 0 (невидима область у грі, зокрема на 3D-шарі)
     if (toolRef.current === "eraser") {
-      // База: білий непрозорий (інакше дірки в грі). Overlay: прозорість.
-      if (overlayRef.current) return { r: 0, g: 0, b: 0, a: 0 };
-      return { r: 245, g: 245, b: 245, a: 255 };
+      return { r: 0, g: 0, b: 0, a: 0 };
     }
     return hexToRgba(colorRef.current);
   }, []);
@@ -437,34 +440,6 @@ export function SkinEditor() {
     a.click();
   };
 
-  const importPng = (file: File) => {
-    setError(null);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const src = String(reader.result || "");
-      const img = new Image();
-      img.onload = () => {
-        if (img.width !== 64 || img.height !== 64) {
-          setError("Імпорт лише PNG 64×64 (стандарт Java-скіна).");
-          return;
-        }
-        const canvas = document.createElement("canvas");
-        canvas.width = 64;
-        canvas.height = 64;
-        const ctx = canvas.getContext("2d");
-        if (!ctx) return;
-        ctx.imageSmoothingEnabled = false;
-        ctx.clearRect(0, 0, 64, 64);
-        ctx.drawImage(img, 0, 0);
-        const imported = normalizeSkinForGame(ctx.getImageData(0, 0, 64, 64));
-        commitImage(imported, true);
-      };
-      img.onerror = () => setError("Не вдалося прочитати PNG");
-      img.src = src;
-    };
-    reader.readAsDataURL(file);
-  };
-
   const save = async () => {
     setError(null);
     const t = title.trim();
@@ -535,25 +510,6 @@ export function SkinEditor() {
             placeholder="Назва скіна"
             className="w-36 rounded-sm border border-white/15 bg-black/40 px-2 py-1.5 text-xs sm:w-48 sm:text-sm"
           />
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept="image/png"
-            className="hidden"
-            onChange={(e) => {
-              const f = e.target.files?.[0];
-              if (f) importPng(f);
-              e.target.value = "";
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => fileInputRef.current?.click()}
-            className="lc-focus-ring mc-btn-secondary inline-flex min-h-9 items-center gap-1.5 px-3 text-xs"
-          >
-            <Upload className="size-3.5" aria-hidden />
-            Імпорт
-          </button>
           <button
             type="button"
             onClick={exportLocal}
@@ -582,7 +538,7 @@ export function SkinEditor() {
       <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-white/10 bg-black/25 px-3 py-2">
         <div className="flex gap-1">
           {toolBtn("pencil", "Олівець", Paintbrush)}
-          {toolBtn("eraser", "Гумка", Eraser)}
+          {toolBtn("eraser", "Прозорість / гумка", Eraser)}
           {toolBtn("fill", "Заливка", PaintBucket)}
           {toolBtn("eyedropper", "Піпетка", Pipette)}
         </div>
@@ -687,6 +643,7 @@ export function SkinEditor() {
                 : "border-white/10 bg-black/25",
             )}
             onClick={() => setUseOverlay(false)}
+            title="Внутрішній шар тіла"
           >
             База
           </button>
@@ -695,13 +652,26 @@ export function SkinEditor() {
             className={cn(
               "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
               useOverlay
-                ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+                ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
                 : "border-white/10 bg-black/25",
             )}
-            onClick={() => setUseOverlay(true)}
+            onClick={() => {
+              setUseOverlay(true);
+              setShowOuterLayer(true);
+            }}
+            title="Зовнішній 3D-шар (капелюх, куртка, волосся)"
           >
-            Overlay
+            3D шар
           </button>
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
+            <input
+              type="checkbox"
+              checked={showOuterLayer}
+              onChange={(e) => setShowOuterLayer(e.target.checked)}
+              className="accent-[var(--mc-accent)]"
+            />
+            Показ 3D
+          </label>
           <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
             <input
               type="checkbox"
@@ -709,7 +679,7 @@ export function SkinEditor() {
               onChange={(e) => setPaintOn3d(e.target.checked)}
               className="accent-[var(--mc-accent)]"
             />
-            3D-малювання
+            Малювати на моделі
           </label>
         </div>
       </div>
@@ -761,6 +731,7 @@ export function SkinEditor() {
               fill
               pose={pose}
               animationSpeed={animSpeed}
+              showOuterLayer={showOuterLayer}
               enableRotate
               enableZoom
               className="absolute inset-0"
@@ -771,6 +742,7 @@ export function SkinEditor() {
                   MIDDLE: MOUSE.DOLLY,
                   RIGHT: MOUSE.ROTATE,
                 };
+                v.playerObject.skin.setOuterLayerVisible(showOuterLayer);
                 pushTextureToViewer(imageRef.current);
               }}
             />

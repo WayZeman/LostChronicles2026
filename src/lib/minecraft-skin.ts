@@ -213,40 +213,19 @@ export function createBlankSkinImageData(): ImageData {
 }
 
 /**
- * Готує скін до гри: базовий шар завжди непрозорий (інакше «дірки» на персонажі).
- * Overlay лишається з альфою.
+ * Експорт PNG як є (з alpha). Прозорі пікселі = невидимі області в грі;
+ * overlay (3D-шар) теж зберігає прозорість.
  */
-export function normalizeSkinForGame(imageData: ImageData): ImageData {
-  const out = cloneImageData(imageData);
-  for (const [x0, y0, x1, y1] of BASE_OPAQUE_RECTS) {
-    for (let y = y0; y < y1; y++) {
-      for (let x = x0; x < x1; x++) {
-        const i = (y * SKIN_SIZE + x) * 4;
-        if (out.data[i + 3]! < 255) {
-          // порожні пікселі бази → білий макет, напівпрозорі → повна непрозорість
-          if (out.data[i + 3]! === 0) {
-            out.data[i] = 245;
-            out.data[i + 1] = 245;
-            out.data[i + 2] = 245;
-          }
-          out.data[i + 3] = 255;
-        }
-      }
-    }
-  }
-  return out;
-}
-
 export function imageDataToPngDataUrl(imageData: ImageData): string {
-  const normalized = normalizeSkinForGame(imageData);
   const canvas = document.createElement("canvas");
   canvas.width = SKIN_SIZE;
   canvas.height = SKIN_SIZE;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("Canvas 2D недоступний");
-  // Вимикаємо згладжування — критично для піксель-арту
   ctx.imageSmoothingEnabled = false;
-  ctx.putImageData(normalized, 0, 0);
+  // clear → справжня прозорість у PNG
+  ctx.clearRect(0, 0, SKIN_SIZE, SKIN_SIZE);
+  ctx.putImageData(imageData, 0, 0);
   return canvas.toDataURL("image/png");
 }
 

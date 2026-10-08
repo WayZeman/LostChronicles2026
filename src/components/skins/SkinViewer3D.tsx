@@ -78,6 +78,8 @@ type Props = {
   pose?: SkinPoseId;
   /** 0 = пауза, 1 = нормально, до 3. */
   animationSpeed?: number;
+  /** Показувати 3D overlay-шар (капелюх/куртка тощо). */
+  showOuterLayer?: boolean;
   onReady?: (viewer: SkinViewer) => void;
   enableRotate?: boolean;
   enableZoom?: boolean;
@@ -94,6 +96,7 @@ export function SkinViewer3D({
   animate = false,
   pose,
   animationSpeed = 0.7,
+  showOuterLayer = true,
   onReady,
   enableRotate = true,
   enableZoom = true,
@@ -207,6 +210,12 @@ export function SkinViewer3D({
     if (!viewer) return;
     applyPose(viewer);
   }, [pose, animate, animationSpeed]);
+
+  useEffect(() => {
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    viewer.playerObject.skin.setOuterLayerVisible(showOuterLayer);
+  }, [showOuterLayer]);
 
   return (
     <div
