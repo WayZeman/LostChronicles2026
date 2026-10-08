@@ -181,6 +181,7 @@ export function SkinViewer3D({
       height: startH,
       skin: skinUrl,
       model: slim ? "slim" : "default",
+      zoom: fill ? 0.92 : 0.9,
     });
     viewer.controls.enableZoom = enableZoom;
     viewer.controls.enablePan = enablePan;
@@ -198,8 +199,10 @@ export function SkinViewer3D({
         if (!entry || !viewerRef.current) return;
         const { width: cw, height: ch } = entry.contentRect;
         if (cw < 40 || ch < 40) return;
-        viewerRef.current.width = Math.floor(cw);
-        viewerRef.current.height = Math.floor(ch);
+        const v = viewerRef.current;
+        v.width = Math.floor(cw);
+        v.height = Math.floor(ch);
+        v.adjustCameraDistance();
       });
       ro.observe(wrapRef.current);
     }

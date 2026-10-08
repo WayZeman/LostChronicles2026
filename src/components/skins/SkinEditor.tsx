@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type PointerEvent as ReactPointerEvent,
+} from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -116,6 +123,12 @@ export function SkinEditor() {
   const [mobileTab, setMobileTab] = useState<"view" | "paint" | "parts">(
     "paint",
   );
+  /** Один layout у DOM — щоб не дублювати canvas/viewer (ref + WebGL). */
+  const [isDesktop, setIsDesktop] = useState(() =>
+    typeof window !== "undefined"
+      ? window.matchMedia("(min-width: 1024px)").matches
+      : false,
+  );
   const [showOuterLayer, setShowOuterLayer] = useState(true);
   /** Stable URL for initial viewer mount only — live updates go via texture canvas. */
   const [viewerSkinUrl] = useState(() =>
@@ -149,6 +162,14 @@ export function SkinEditor() {
     return () => {
       document.body.style.overflow = prev;
     };
+  }, []);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const apply = () => setIsDesktop(mq.matches);
+    apply();
+    mq.addEventListener("change", apply);
+    return () => mq.removeEventListener("change", apply);
   }, []);
 
   const partDef = useMemo(
@@ -525,102 +546,143 @@ export function SkinEditor() {
     }
   };
 
-  const viewerBlock = (
-    <section className="relative flex min-h-0 flex-1 flex-col">
-      <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-white/10 px-2 py-1.5 sm:px-3 sm:py-2">
-        <div className="flex rounded-sm border border-white/15 p-0.5">
-          <button
-            type="button"
-            onClick={() => setPaintOn3d(true)}
-            className={cn(
-              "lc-focus-ring min-h-10 rounded-sm px-3 text-xs touch-manipulation",
-              paintOn3d
-                ? "bg-rose-500/20 text-rose-100"
-                : "text-[var(--mc-ink-subtle)]",
-            )}
-          >
-            Фарба
-          </button>
-          <button
-            type="button"
-            onClick={() => setPaintOn3d(false)}
-            className={cn(
-              "lc-focus-ring min-h-10 rounded-sm px-3 text-xs touch-manipulation",
-              !paintOn3d
-                ? "bg-[var(--mc-accent)]/20 text-[var(--mc-ink)]"
-                : "text-[var(--mc-ink-subtle)]",
-            )}
-          >
-            Крутити
-          </button>
-        </div>
-        <select
-          value={pose}
-          onChange={(e) => setPose(e.target.value as SkinPoseId)}
-          className="min-h-10 rounded-sm border border-white/15 bg-black/40 px-2 text-xs"
-          aria-label="Поза"
-        >
-          {SKIN_POSE_OPTIONS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-        </select>
-        <label className="flex min-h-10 items-center gap-2 text-[11px] text-[var(--mc-ink-subtle)]">
-          <span className="hidden sm:inline">Швидк.</span>
-          <input
-            type="range"
-            min={0}
-            max={2}
-            step={0.05}
-            value={animSpeed}
-            onChange={(e) => setAnimSpeed(Number(e.target.value))}
-            className="w-20 accent-[var(--mc-accent)] sm:w-28"
-          />
-        </label>
-        <p className="hidden text-[10px] text-[var(--mc-ink-subtle)] lg:ml-auto lg:block">
-          {paintOn3d
-            ? "1 палець — фарба · 2 пальці — зум · ПКМ — обертати"
-            : "1 палець — обертати · щипок — зум"}
-        </p>
-      </div>
-      <div className="relative min-h-[42vh] flex-1 sm:min-h-[48vh] lg:min-h-0">
-        <SkinViewer3D
-          skinUrl={viewerSkinUrl}
-          slim={model === "slim"}
-          fill
-          pose={pose}
-          animationSpeed={animSpeed}
-          showOuterLayer={showOuterLayer}
-          touchInteract={paintOn3d ? "paint" : "rotate"}
-          enableRotate
-          enableZoom
-          className="absolute inset-0"
-          onReady={(v) => {
-            viewerRef.current = v;
-            v.controls.mouseButtons = {
-              LEFT: -1 as never,
-              MIDDLE: MOUSE.DOLLY,
-              RIGHT: MOUSE.ROTATE,
-            };
-            v.playerObject.skin.setOuterLayerVisible(showOuterLayer);
-            pushTextureToViewer(imageRef.current);
-          }}
+  const onViewerReady = (v: SkinViewer) => {
+    viewerRef.current = v;
+    v.controls.mouseButtons = {
+      LEFT: -1 as never,
+      MIDDLE: MOUSE.DOLLY,
+      RIGHT: MOUSE.ROTATE,
+    };
+    v.zoom = 0.92;
+    v.playerObject.skin.setOuterLayerVisible(showOuterLayer);
+    pushTextureToViewer(imageRef.current);
+  };
+
+  const facePaintHandlers = {
+    onPointerDown: (e: ReactPointerEvent<HTMLCanvasElement>) => {
+      e.preventDefault();
+      facePaintingRef.current = true;
+      strokeStartedRef.current = false;
+      (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
+      paintFaceFromEvent(e, false);
+      strokeStartedRef.current = true;
+    },
+    onPointerMove: (e: ReactPointerEvent<HTMLCanvasElement>) => {
+      if (!facePaintingRef.current) return;
+      e.preventDefault();
+      paintFaceFromEvent(e, true);
+    },
+    onPointerUp: () => {
+      facePaintingRef.current = false;
+      strokeStartedRef.current = false;
+    },
+    onPointerCancel: () => {
+      facePaintingRef.current = false;
+      strokeStartedRef.current = false;
+    },
+  };
+
+  const modelControls = (compact: boolean) => (
+    <>
+      <button
+        type="button"
+        className={cn(
+          "lc-focus-ring rounded-sm border text-xs touch-manipulation",
+          compact ? "min-h-11 px-3" : "px-2 py-1 text-[11px]",
+          model === "classic"
+            ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+            : "border-white/10 bg-black/25",
+        )}
+        onClick={() => setModel("classic")}
+      >
+        Steve
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "lc-focus-ring rounded-sm border text-xs touch-manipulation",
+          compact ? "min-h-11 px-3" : "px-2 py-1 text-[11px]",
+          model === "slim"
+            ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+            : "border-white/10 bg-black/25",
+        )}
+        onClick={() => setModel("slim")}
+      >
+        Alex
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "lc-focus-ring rounded-sm border text-xs touch-manipulation",
+          compact ? "min-h-11 px-3" : "px-2 py-1 text-[11px]",
+          !useOverlay
+            ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
+            : "border-white/10 bg-black/25",
+        )}
+        onClick={() => setUseOverlay(false)}
+        title="Внутрішній шар тіла"
+      >
+        База
+      </button>
+      <button
+        type="button"
+        className={cn(
+          "lc-focus-ring rounded-sm border text-xs touch-manipulation",
+          compact ? "min-h-11 px-3" : "px-2 py-1 text-[11px]",
+          useOverlay
+            ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
+            : "border-white/10 bg-black/25",
+        )}
+        onClick={() => {
+          setUseOverlay(true);
+          setShowOuterLayer(true);
+        }}
+        title="Зовнішній 3D-шар (капелюх, куртка, волосся)"
+      >
+        3D шар
+      </button>
+      <label
+        className={cn(
+          "flex items-center gap-2 text-xs text-[var(--mc-ink-subtle)]",
+          compact
+            ? "min-h-11 rounded-sm border border-white/10 bg-black/25 px-3"
+            : "gap-1.5 text-[11px]",
+        )}
+      >
+        <input
+          type="checkbox"
+          checked={showOuterLayer}
+          onChange={(e) => setShowOuterLayer(e.target.checked)}
+          className={cn("accent-[var(--mc-accent)]", compact && "size-4")}
         />
-      </div>
-    </section>
+        Показ 3D
+      </label>
+    </>
   );
 
-  const paintBlock = (
-    <section className="flex min-h-0 flex-1 flex-col overflow-auto px-2 py-2 sm:px-3 sm:py-3">
-      <div className="mb-2 flex flex-wrap gap-1.5">
+  const faceSidesBlock = (forMobile: boolean) => (
+    <section
+      className={cn(
+        "flex min-h-0 flex-1 flex-col overflow-auto",
+        forMobile ? "px-2 py-2 sm:px-3 sm:py-3" : "px-3 py-3",
+      )}
+    >
+      {!forMobile ? (
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
+          {partDef.label} · сторони
+        </p>
+      ) : null}
+      <div className={cn("flex flex-wrap gap-1.5", forMobile ? "mb-2" : "mb-3")}>
         {availableSides.map((side) => (
           <button
             key={side}
             type="button"
             onClick={() => setFaceSide(side)}
             className={cn(
-              "lc-focus-ring min-h-11 rounded-sm border px-3 py-2 text-xs touch-manipulation",
+              "lc-focus-ring rounded-sm border touch-manipulation",
+              forMobile
+                ? "min-h-11 px-3 py-2 text-xs"
+                : "px-2.5 py-1.5 text-xs",
               faceSide === side
                 ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
                 : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
@@ -631,36 +693,21 @@ export function SkinEditor() {
         ))}
       </div>
 
-      <div className="mb-3 flex justify-center">
+      <div className={cn("flex justify-center", forMobile ? "mb-3" : "mb-4")}>
         <canvas
           ref={faceCanvasRef}
           className="max-w-full cursor-crosshair touch-none rounded-sm border border-white/15 shadow-[0_0_0_1px_rgba(225,29,72,0.25)]"
           style={{ touchAction: "none" }}
-          onPointerDown={(e) => {
-            e.preventDefault();
-            facePaintingRef.current = true;
-            strokeStartedRef.current = false;
-            (e.target as HTMLCanvasElement).setPointerCapture(e.pointerId);
-            paintFaceFromEvent(e, false);
-            strokeStartedRef.current = true;
-          }}
-          onPointerMove={(e) => {
-            if (!facePaintingRef.current) return;
-            e.preventDefault();
-            paintFaceFromEvent(e, true);
-          }}
-          onPointerUp={() => {
-            facePaintingRef.current = false;
-            strokeStartedRef.current = false;
-          }}
-          onPointerCancel={() => {
-            facePaintingRef.current = false;
-            strokeStartedRef.current = false;
-          }}
+          {...facePaintHandlers}
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-2 sm:grid-cols-3">
+      <div
+        className={cn(
+          "grid gap-2",
+          forMobile ? "grid-cols-3" : "grid-cols-2 sm:grid-cols-3",
+        )}
+      >
         {availableSides.map((side) => {
           const rect = partDef.faces[side]!;
           const origin = resolveFaceRect(rect, useOverlay);
@@ -677,85 +724,6 @@ export function SkinEditor() {
         })}
       </div>
     </section>
-  );
-
-  const partsBlock = (
-    <aside className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-2 py-3 sm:px-3">
-      <BodyPartPicker
-        selected={bodyPart}
-        onSelect={selectBodyPart}
-        layout="row"
-        className="lg:hidden"
-      />
-      <BodyPartPicker
-        selected={bodyPart}
-        onSelect={selectBodyPart}
-        layout="stack"
-        className="hidden lg:flex"
-      />
-      <div className="flex flex-wrap gap-1.5">
-        <button
-          type="button"
-          className={cn(
-            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
-            model === "classic"
-              ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
-              : "border-white/10 bg-black/25",
-          )}
-          onClick={() => setModel("classic")}
-        >
-          Steve
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
-            model === "slim"
-              ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
-              : "border-white/10 bg-black/25",
-          )}
-          onClick={() => setModel("slim")}
-        >
-          Alex
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
-            !useOverlay
-              ? "border-[var(--mc-accent)] bg-[var(--mc-accent)]/15"
-              : "border-white/10 bg-black/25",
-          )}
-          onClick={() => setUseOverlay(false)}
-        >
-          База
-        </button>
-        <button
-          type="button"
-          className={cn(
-            "lc-focus-ring min-h-11 rounded-sm border px-3 text-xs touch-manipulation",
-            useOverlay
-              ? "border-rose-400/70 bg-rose-500/20 text-rose-50"
-              : "border-white/10 bg-black/25",
-          )}
-          onClick={() => {
-            setUseOverlay(true);
-            setShowOuterLayer(true);
-          }}
-        >
-          3D шар
-        </button>
-        <label className="flex min-h-11 items-center gap-2 rounded-sm border border-white/10 bg-black/25 px-3 text-xs text-[var(--mc-ink-subtle)]">
-          <input
-            type="checkbox"
-            checked={showOuterLayer}
-            onChange={(e) => setShowOuterLayer(e.target.checked)}
-            className="size-4 accent-[var(--mc-accent)]"
-          />
-          Показ 3D
-        </label>
-      </div>
-    </aside>
   );
 
   return (
@@ -806,8 +774,8 @@ export function SkinEditor() {
         </p>
       ) : null}
 
-      {/* Інструменти — горизонтальний скрол на вузьких екранах */}
-      <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-white/10 bg-black/35 px-2 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      {/* Інструменти */}
+      <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto border-b border-white/10 bg-black/35 px-2 py-1.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden lg:flex-wrap lg:overflow-visible lg:px-3 lg:py-2">
         {toolBtn("pencil", "Олівець", Paintbrush)}
         {toolBtn("eraser", "Прозорість", Eraser)}
         {toolBtn("fill", "Заливка", PaintBucket)}
@@ -817,7 +785,7 @@ export function SkinEditor() {
           title="Скасувати"
           disabled={!history.length}
           onClick={undo}
-          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation disabled:opacity-40"
+          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation disabled:opacity-40 lg:size-9"
         >
           <Undo2 className="size-4" />
         </button>
@@ -826,7 +794,7 @@ export function SkinEditor() {
           title="Повторити"
           disabled={!future.length}
           onClick={redo}
-          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation disabled:opacity-40"
+          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation disabled:opacity-40 lg:size-9"
         >
           <Redo2 className="size-4" />
         </button>
@@ -834,14 +802,14 @@ export function SkinEditor() {
           type="button"
           title="Скинути"
           onClick={resetBlank}
-          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation"
+          className="lc-focus-ring inline-flex size-11 shrink-0 items-center justify-center rounded-sm border border-white/10 bg-black/25 touch-manipulation lg:size-9"
         >
           <RotateCcw className="size-4" />
         </button>
         <select
           value={brushSize}
           onChange={(e) => setBrushSize(Number(e.target.value))}
-          className="min-h-11 shrink-0 rounded-sm border border-white/15 bg-black/40 px-2 text-xs"
+          className="min-h-11 shrink-0 rounded-sm border border-white/15 bg-black/40 px-2 text-xs lg:min-h-0 lg:py-1"
           aria-label="Розмір пензля"
         >
           <option value={1}>1×1</option>
@@ -852,7 +820,7 @@ export function SkinEditor() {
           type="color"
           value={color}
           onChange={(e) => setColor(e.target.value)}
-          className="size-11 shrink-0 cursor-pointer rounded-sm border border-white/15 bg-transparent"
+          className="size-11 shrink-0 cursor-pointer rounded-sm border border-white/15 bg-transparent lg:size-8"
           aria-label="Колір"
         />
         <div className="flex shrink-0 gap-1">
@@ -863,53 +831,212 @@ export function SkinEditor() {
               aria-label={c}
               onClick={() => setColor(c)}
               className={cn(
-                "size-9 shrink-0 rounded-sm border touch-manipulation sm:size-7",
+                "size-9 shrink-0 rounded-sm border touch-manipulation sm:size-7 lg:size-6",
                 color === c ? "border-white" : "border-white/20",
               )}
               style={{ backgroundColor: c }}
             />
           ))}
         </div>
+
+        {/* ПК: модель / шар у тулбарі, як раніше */}
+        <div className="ml-auto hidden flex-wrap items-center gap-1.5 lg:flex">
+          {modelControls(false)}
+          <label className="flex items-center gap-1.5 text-[11px] text-[var(--mc-ink-subtle)]">
+            <input
+              type="checkbox"
+              checked={paintOn3d}
+              onChange={(e) => setPaintOn3d(e.target.checked)}
+              className="accent-[var(--mc-accent)]"
+            />
+            Малювати на моделі
+          </label>
+        </div>
       </div>
 
-      {/* Мобільні вкладки */}
-      <div className="flex shrink-0 border-b border-white/10 lg:hidden">
-        {(
-          [
-            ["view", "3D"],
-            ["paint", "Пікселі"],
-            ["parts", "Частини"],
-          ] as const
-        ).map(([id, label]) => (
-          <button
-            key={id}
-            type="button"
-            onClick={() => setMobileTab(id)}
-            className={cn(
-              "lc-focus-ring min-h-12 flex-1 text-sm font-medium touch-manipulation",
-              mobileTab === id
-                ? "border-b-2 border-rose-400 text-rose-100"
-                : "text-[var(--mc-ink-subtle)]",
-            )}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+      {!isDesktop ? (
+        <>
+          {/* Мобільний UI */}
+          <div className="flex shrink-0 border-b border-white/10">
+            {(
+              [
+                ["view", "3D"],
+                ["paint", "Пікселі"],
+                ["parts", "Частини"],
+              ] as const
+            ).map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                onClick={() => setMobileTab(id)}
+                className={cn(
+                  "lc-focus-ring min-h-12 flex-1 text-sm font-medium touch-manipulation",
+                  mobileTab === id
+                    ? "border-b-2 border-rose-400 text-rose-100"
+                    : "text-[var(--mc-ink-subtle)]",
+                )}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
 
-      {/* Мобільний контент */}
-      <div className="flex min-h-0 flex-1 flex-col lg:hidden">
-        {mobileTab === "view" ? viewerBlock : null}
-        {mobileTab === "paint" ? paintBlock : null}
-        {mobileTab === "parts" ? partsBlock : null}
-      </div>
+          <div className="flex min-h-0 flex-1 flex-col">
+            {mobileTab === "view" ? (
+              <section className="relative flex min-h-0 flex-1 flex-col">
+                <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-white/10 px-2 py-1.5 sm:px-3 sm:py-2">
+                  <div className="flex rounded-sm border border-white/15 p-0.5">
+                    <button
+                      type="button"
+                      onClick={() => setPaintOn3d(true)}
+                      className={cn(
+                        "lc-focus-ring min-h-10 rounded-sm px-3 text-xs touch-manipulation",
+                        paintOn3d
+                          ? "bg-rose-500/20 text-rose-100"
+                          : "text-[var(--mc-ink-subtle)]",
+                      )}
+                    >
+                      Фарба
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setPaintOn3d(false)}
+                      className={cn(
+                        "lc-focus-ring min-h-10 rounded-sm px-3 text-xs touch-manipulation",
+                        !paintOn3d
+                          ? "bg-[var(--mc-accent)]/20 text-[var(--mc-ink)]"
+                          : "text-[var(--mc-ink-subtle)]",
+                      )}
+                    >
+                      Крутити
+                    </button>
+                  </div>
+                  <select
+                    value={pose}
+                    onChange={(e) => setPose(e.target.value as SkinPoseId)}
+                    className="min-h-10 rounded-sm border border-white/15 bg-black/40 px-2 text-xs"
+                    aria-label="Поза"
+                  >
+                    {SKIN_POSE_OPTIONS.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.label}
+                      </option>
+                    ))}
+                  </select>
+                  <label className="flex min-h-10 items-center gap-2 text-[11px] text-[var(--mc-ink-subtle)]">
+                    <span className="hidden sm:inline">Швидк.</span>
+                    <input
+                      type="range"
+                      min={0}
+                      max={2}
+                      step={0.05}
+                      value={animSpeed}
+                      onChange={(e) => setAnimSpeed(Number(e.target.value))}
+                      className="w-20 accent-[var(--mc-accent)] sm:w-28"
+                    />
+                  </label>
+                </div>
+                <div className="relative min-h-[42vh] flex-1 sm:min-h-[48vh]">
+                  <SkinViewer3D
+                    skinUrl={viewerSkinUrl}
+                    slim={model === "slim"}
+                    fill
+                    pose={pose}
+                    animationSpeed={animSpeed}
+                    showOuterLayer={showOuterLayer}
+                    touchInteract={paintOn3d ? "paint" : "rotate"}
+                    enableRotate
+                    enableZoom
+                    className="absolute inset-0"
+                    onReady={onViewerReady}
+                  />
+                </div>
+              </section>
+            ) : null}
+            {mobileTab === "paint" ? faceSidesBlock(true) : null}
+            {mobileTab === "parts" ? (
+              <aside className="flex min-h-0 flex-1 flex-col gap-3 overflow-auto px-2 py-3 sm:px-3">
+                <BodyPartPicker
+                  selected={bodyPart}
+                  onSelect={selectBodyPart}
+                  layout="row"
+                />
+                <div className="flex flex-wrap gap-1.5">{modelControls(true)}</div>
+              </aside>
+            ) : null}
+          </div>
+        </>
+      ) : (
+        <div className="grid min-h-0 flex-1 grid-cols-[minmax(0,1.15fr)_11rem_minmax(0,1fr)]">
+          <section className="relative flex h-full min-h-0 flex-col border-r border-white/10">
+            <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-white/10 px-3 py-2">
+              <span className="text-[11px] uppercase tracking-wide text-[var(--mc-ink-subtle)]">
+                Поза
+              </span>
+              {SKIN_POSE_OPTIONS.map((p) => (
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => setPose(p.id)}
+                  className={cn(
+                    "lc-focus-ring rounded-sm border px-2 py-1 text-[11px]",
+                    pose === p.id
+                      ? "border-rose-400/60 bg-rose-500/15 text-rose-100"
+                      : "border-white/10 bg-black/25 text-[var(--mc-ink-subtle)]",
+                  )}
+                >
+                  {p.label}
+                </button>
+              ))}
+              <label className="ml-2 flex items-center gap-2 text-[11px] text-[var(--mc-ink-subtle)]">
+                Швидкість
+                <input
+                  type="range"
+                  min={0}
+                  max={2}
+                  step={0.05}
+                  value={animSpeed}
+                  onChange={(e) => setAnimSpeed(Number(e.target.value))}
+                  className="w-24 accent-[var(--mc-accent)]"
+                />
+                <span className="w-8 tabular-nums text-[var(--mc-ink)]">
+                  {animSpeed.toFixed(2)}
+                </span>
+              </label>
+              <span className="ml-auto text-[10px] text-[var(--mc-ink-subtle)]">
+                ЛКМ — фарба · ПКМ — обертати · PNG 64×64 для гри
+              </span>
+            </div>
+            <div className="relative min-h-0 flex-1">
+              <SkinViewer3D
+                skinUrl={viewerSkinUrl}
+                slim={model === "slim"}
+                fill
+                pose={pose}
+                animationSpeed={animSpeed}
+                showOuterLayer={showOuterLayer}
+                enableRotate
+                enableZoom
+                className="absolute inset-0"
+                onReady={onViewerReady}
+              />
+            </div>
+          </section>
 
-      {/* Desktop / tablet landscape */}
-      <div className="hidden min-h-0 flex-1 lg:grid lg:grid-cols-[minmax(0,1.2fr)_12rem_minmax(0,1fr)]">
-        <div className="min-h-0 border-r border-white/10">{viewerBlock}</div>
-        <div className="min-h-0 border-r border-white/10">{partsBlock}</div>
-        <div className="min-h-0">{paintBlock}</div>
-      </div>
+          <aside className="flex h-full flex-col items-center gap-2 overflow-auto border-r border-white/10 px-2 py-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-[var(--mc-ink-subtle)]">
+              Частина
+            </p>
+            <BodyPartPicker
+              selected={bodyPart}
+              onSelect={selectBodyPart}
+              layout="stack"
+            />
+          </aside>
+
+          {faceSidesBlock(false)}
+        </div>
+      )}
     </div>
   );
 }
