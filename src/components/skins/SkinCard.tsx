@@ -240,11 +240,11 @@ export function SkinCard({
           type="button"
           onClick={edit}
           disabled={busy}
-          title="Редагувати в редакторі"
-          className="lc-focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-[var(--mc-accent)]/40 bg-[var(--mc-accent)]/10 px-2.5 text-xs text-[var(--mc-ink)] disabled:opacity-50"
+          title="Редагувати"
+          aria-label="Редагувати скін"
+          className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-[var(--mc-accent)]/40 bg-[var(--mc-accent)]/10 text-[var(--mc-ink)] disabled:opacity-50"
         >
           <Pencil className="size-3.5" aria-hidden />
-          {!compact ? "Редагувати" : null}
         </button>
         {canDelete ? (
           <button
@@ -252,10 +252,10 @@ export function SkinCard({
             onClick={() => void remove()}
             disabled={busy}
             title="Видалити"
-            className="lc-focus-ring inline-flex min-h-9 items-center gap-1.5 rounded-sm border border-red-400/40 bg-red-500/10 px-2.5 text-xs text-red-200"
+            aria-label="Видалити скін"
+            className="lc-focus-ring inline-flex size-9 items-center justify-center rounded-sm border border-red-400/40 bg-red-500/10 text-red-200 disabled:opacity-50"
           >
             <Trash2 className="size-3.5" aria-hidden />
-            {!compact ? "Видалити" : null}
           </button>
         ) : null}
       </div>

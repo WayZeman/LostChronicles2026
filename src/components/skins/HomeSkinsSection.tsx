@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Plus } from "lucide-react";
-import { SkinCard, type SkinCardData } from "@/components/skins/SkinCard";
+import { HomeSkinsCarousel } from "@/components/skins/HomeSkinsCarousel";
+import type { SkinCardData } from "@/components/skins/SkinCard";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { authRequiredPath } from "@/lib/auth-paths";
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
@@ -12,7 +13,7 @@ export async function HomeSkinsSection() {
 
   let preview: SkinCardData[] = [];
   try {
-    const rows = await listSkins({ limit: 4, viewerUserId: userId });
+    const rows = await listSkins({ limit: 16, viewerUserId: userId });
     preview = rows.map((s) => ({
       id: s.id,
       title: s.title,
@@ -48,16 +49,11 @@ export async function HomeSkinsSection() {
       </div>
 
       {preview.length > 0 ? (
-        <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {preview.map((skin) => (
-            <SkinCard
-              key={skin.id}
-              skin={skin}
-              compact
-              isLoggedIn={Boolean(userId)}
-            />
-          ))}
-        </div>
+        <HomeSkinsCarousel
+          skins={preview}
+          isLoggedIn={Boolean(userId)}
+          carouselMinCount={5}
+        />
       ) : (
         <p className="mt-5 text-center text-sm text-[var(--mc-ink-subtle)]">
           Поки немає збережених скінів.
