@@ -11,7 +11,9 @@ import { HeroSocialPanel } from "@/components/site/HeroSocialPanel";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerHomeClass, lcPageMainClass } from "@/components/site/lc-page-shell";
 import { cn } from "@/lib/utils";
+import { HomeSkinsSection } from "@/components/skins/HomeSkinsSection";
 import { SupportMonobankSection } from "@/components/site/SupportMonobankSection";
+
 import { LC_APPLY_PATH } from "@/data/lost-chronicles-faq";
 import { LC_SEO_DESCRIPTION_SHORT, LC_SEO_SITE_TITLE_DEFAULT } from "@/data/lc-seo-terms";
 import { LC_DEFAULT_JAVA_SERVER_HOST, LC_DEFAULT_BEDROCK_ADDRESS } from "@/lib/lc-server-defaults";
@@ -187,6 +189,8 @@ export default async function Home() {
           blurb={support.blurb}
           catalogLinks={support.catalogLinks}
         />
+
+        <HomeSkinsSection />
       </div>
     </main>
   );
