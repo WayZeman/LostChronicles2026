@@ -2,14 +2,12 @@ import { isAdminRole } from "@/lib/admin-role";
 import { getSql } from "@/lib/db";
 import type { SkinModelType } from "@/lib/minecraft-skin";
 import { validateMinecraftSkinDataUrl } from "@/lib/minecraft-skin-png";
-import { buildDemoSkinPresets } from "@/lib/skin-demo-presets";
 
 function rowsOf(r: unknown): Record<string, unknown>[] {
   return r as Record<string, unknown>[];
 }
 
 let skinsEnsured = false;
-let demoSeedAttempted = false;
 
 async function ensureSkinsTables(): Promise<void> {
   if (skinsEnsured) return;
@@ -74,63 +72,12 @@ function mapSkinRow(r: Record<string, unknown>): SkinListItem {
   };
 }
 
-/**
- * Seed v4: якщо ще немає офіційних демо — очищає галерею і вставляє
- * поточний набір тестових скінів (з alpha / 3D overlay).
- */
-export async function ensureDemoSkins(): Promise<void> {
-  if (demoSeedAttempted) return;
-  demoSeedAttempted = true;
-  await ensureSkinsTables();
-  const sql = getSql();
-  const marker = rowsOf(
-    await sql`
-      SELECT 1 AS ok FROM skins
-      WHERE title = ${"Жовтий смокінг"}
-      LIMIT 1
-    `,
-  );
-  if (marker[0]) return;
-
-  const ownerRows = rowsOf(
-    await sql`
-      SELECT id FROM users
-      WHERE role = 'admin'
-      ORDER BY id ASC
-      LIMIT 1
-    `,
-  );
-  let ownerId = Number(ownerRows[0]?.id ?? 0);
-  if (!ownerId) {
-    const any = rowsOf(await sql`SELECT id FROM users ORDER BY id ASC LIMIT 1`);
-    ownerId = Number(any[0]?.id ?? 0);
-  }
-  if (!ownerId) return;
-
-  // Заміна старих тестових скінів на новий набір
-  await sql`DELETE FROM skins`;
-
-  const presets = buildDemoSkinPresets();
-  for (const p of presets) {
-    try {
-      const png = validateMinecraftSkinDataUrl(p.png_data);
-      await sql`
-        INSERT INTO skins (user_id, title, model_type, png_data)
-        VALUES (${ownerId}, ${p.title}, ${p.model_type}, ${png})
-      `;
-    } catch {
-      /* skip broken preset */
-    }
-  }
-}
-
 export async function listSkins(params: {
   limit: number;
   offset?: number;
   viewerUserId: number | null;
 }): Promise<SkinListItem[]> {
   await ensureSkinsTables();
-  await ensureDemoSkins();
   const sql = getSql();
   const limit = Math.min(Math.max(params.limit, 1), 60);
   const offset = Math.max(params.offset ?? 0, 0);
@@ -184,7 +131,6 @@ export async function listSkins(params: {
 
 export async function countSkins(): Promise<number> {
   await ensureSkinsTables();
-  await ensureDemoSkins();
   const sql = getSql();
   const rows = rowsOf(await sql`SELECT COUNT(*)::int AS c FROM skins`);
   return Number(rows[0]?.c ?? 0);

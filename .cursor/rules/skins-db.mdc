@@ -1,0 +1,12 @@
+---
+description: Do not touch skins database unless user explicitly asks
+alwaysApply: true
+---
+
+# Skins database
+
+Do **not** insert, update, delete, seed, or migrate `skins` / `skin_likes` data unless the user explicitly asks in that request.
+
+- No demo seed / `ensureDemoSkins` / mass wipe from code paths that run on list/count.
+- Schema/table ensure (`CREATE TABLE IF NOT EXISTS`) for the app is OK; data changes are not.
+- Gallery content is user-owned after the 2026-10-08 clear.
