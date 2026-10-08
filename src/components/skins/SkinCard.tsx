@@ -1,8 +1,10 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { Download, Heart, Trash2 } from "lucide-react";
+import { authRequiredPath } from "@/lib/auth-paths";
 import { cn } from "@/lib/utils";
 
 const SkinViewer3D = dynamic(
@@ -47,6 +49,7 @@ type Props = {
   skin: SkinCardData;
   compact?: boolean;
   canDelete?: boolean;
+  isLoggedIn?: boolean;
   onDeleted?: (id: number) => void;
 };
 
@@ -54,8 +57,10 @@ export function SkinCard({
   skin,
   compact = false,
   canDelete = false,
+  isLoggedIn = true,
   onDeleted,
 }: Props) {
+  const router = useRouter();
   const [liked, setLiked] = useState(skin.liked_by_me);
   const [likes, setLikes] = useState(skin.likes_count);
   const [downloads, setDownloads] = useState(skin.downloads_count);
@@ -64,7 +69,15 @@ export function SkinCard({
 
   if (gone) return null;
 
+  const goAuth = () => {
+    router.push(authRequiredPath("/skins"));
+  };
+
   const toggleLike = async () => {
+    if (!isLoggedIn) {
+      goAuth();
+      return;
+    }
     if (busy) return;
     setBusy(true);
     const prevLiked = liked;
@@ -93,6 +106,10 @@ export function SkinCard({
   };
 
   const download = async () => {
+    if (!isLoggedIn) {
+      goAuth();
+      return;
+    }
     try {
       const res = await fetch(`/api/skins/${skin.id}/download`);
       if (!res.ok) return;

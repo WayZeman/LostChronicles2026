@@ -30,7 +30,10 @@ function isAuthRequiredPath(pathname: string): boolean {
   if (pathname === "/profile" || pathname.startsWith("/profile/")) return true;
   if (pathname === "/wiki/new") return true;
   if (/^\/wiki\/.+\/edit\/?$/.test(pathname)) return true;
-  if (pathname === "/skins" || pathname.startsWith("/skins/")) return true;
+  // Перегляд галереї публічний; створення — лише після входу
+  if (pathname === "/skins/new" || pathname.startsWith("/skins/new/")) {
+    return true;
+  }
   return false;
 }
 

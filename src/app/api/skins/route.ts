@@ -22,9 +22,6 @@ function serialize(s: Awaited<ReturnType<typeof listSkins>>[number]) {
 
 export async function GET(req: Request) {
   const userId = await getSessionUserIdFromCookies();
-  if (!userId) {
-    return NextResponse.json({ error: "Потрібен вхід" }, { status: 401 });
-  }
 
   try {
     const url = new URL(req.url);
