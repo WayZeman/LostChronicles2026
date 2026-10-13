@@ -171,6 +171,15 @@ const SUPPORT_CARD_SEEDS: SupportCardSeed[] = [
     price: "50 ₴",
     qty: false,
   },
+  {
+    order: 12,
+    title: "Battle Pass Premium",
+    description:
+      "Відкриває другу (преміум) доріжку нагород у /bp: ексклюзивні предмети на рівнях 1–54 на додачу до безкоштовних. Термін — до кінця поточного сезону (~30 днів); після ресету сезону преміум згорає і потрібна нова покупка. Після оплати активується на нік; прогрес і місії спільні з free, змінюється лише доступ до преміум-нагород.",
+    image: "/support-battle-pass.jpg",
+    price: "100 ₴",
+    qty: false,
+  },
 ];
 
 let supportCardsSchemaEnsured = false;
@@ -257,7 +266,8 @@ const SUPPORT_CARD_PATCHES: SupportCardSeed[] = SUPPORT_CARD_SEEDS.filter(
   (s) =>
     s.title === "Кастомний підпис предмета" ||
     s.title === "Перенесення ділянки або будинку" ||
-    s.title === "Зміна біому",
+    s.title === "Зміна біому" ||
+    s.title === "Battle Pass Premium",
 );
 
 /** Seed дефолтний каталог, якщо таблиця порожня (не затирає адмін-контент). */
