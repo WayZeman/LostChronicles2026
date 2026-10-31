@@ -32,12 +32,20 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const user = await getUserPublicById(userId);
-  if (!user) {
-    return NextResponse.json(
-      { error: "Акаунт не знайдено. Увійди ще раз." },
-      { status: 401 },
-    );
+  let username = `id ${userId}`;
+  let gameNickname: string | null = null;
+  try {
+    const user = await getUserPublicById(userId);
+    if (!user) {
+      return NextResponse.json(
+        { error: "Акаунт не знайдено. Увійди ще раз." },
+        { status: 401 },
+      );
+    }
+    username = user.username;
+    gameNickname = user.game_nickname;
+  } catch (e) {
+    console.error("[faq-support] profile lookup failed:", e);
   }
 
   try {
@@ -48,9 +56,9 @@ export async function POST(req: Request) {
     const sent = await sendFaqSupportToTelegram({
       topic: parsed.topic,
       body: parsed.body,
-      userId: user.id,
-      username: user.username,
-      gameNickname: user.game_nickname,
+      userId,
+      username,
+      gameNickname,
     });
     if (!sent.ok) {
       return NextResponse.json({ error: sent.error }, { status: 502 });
