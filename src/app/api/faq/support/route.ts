@@ -1,11 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { getSessionUserIdFromCookies } from "@/lib/auth-session";
-import {
-  faqSupportRateLimit,
-  parseFaqSupportInput,
-  sendFaqSupportToTelegram,
-} from "@/lib/faq-support";
+import { parseFaqSupportInput, sendFaqSupportToTelegram } from "@/lib/faq-support";
 import { getUserPublicById } from "@/lib/proposals-queries";
 
 export const dynamic = "force-dynamic";
@@ -49,10 +45,6 @@ export async function POST(req: Request) {
   }
 
   try {
-    const limited = await faqSupportRateLimit(userId);
-    if (limited) {
-      return NextResponse.json({ error: limited }, { status: 429 });
-    }
     const sent = await sendFaqSupportToTelegram({
       topic: parsed.topic,
       body: parsed.body,

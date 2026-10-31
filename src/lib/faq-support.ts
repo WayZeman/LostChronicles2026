@@ -1,5 +1,3 @@
-import { getSql } from "@/lib/db";
-
 /** https://t.me/c/2430381787/758 */
 const DEFAULT_THREAD_ID = 758;
 const DEFAULT_CHAT_ID = "-1002430381787";
@@ -29,23 +27,6 @@ function supportBotConfig(): { token: string; chatId: string; threadId: number }
   return { token, chatId, threadId: Math.floor(threadId) };
 }
 
-let tableReady = false;
-
-async function ensureTicketsTable(): Promise<void> {
-  if (tableReady) return;
-  const sql = getSql();
-  await sql`
-    CREATE TABLE IF NOT EXISTS faq_support_tickets (
-      id BIGSERIAL PRIMARY KEY,
-      user_id BIGINT NOT NULL,
-      topic TEXT NOT NULL,
-      body TEXT NOT NULL,
-      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-    )
-  `;
-  tableReady = true;
-}
-
 export function parseFaqSupportInput(
   topicRaw: unknown,
   bodyRaw: unknown,
@@ -65,49 +46,6 @@ export function parseFaqSupportInput(
     return { ok: false, error: "Опис задовгий. Скороти до 2000 символів." };
   }
   return { ok: true, topic, body };
-}
-
-/** Не частіше ніж раз на хвилину і не більше 5 звернень на годину. */
-export async function faqSupportRateLimit(
-  userId: number,
-): Promise<string | null> {
-  try {
-    return await faqSupportRateLimitQuery(userId);
-  } catch (e) {
-    console.error("[faq-support] rate limit skipped:", e);
-    return null;
-  }
-}
-
-async function faqSupportRateLimitQuery(
-  userId: number,
-): Promise<string | null> {
-  await ensureTicketsTable();
-  const sql = getSql();
-  const recent = (await sql`
-    SELECT created_at
-    FROM faq_support_tickets
-    WHERE user_id = ${userId}
-    ORDER BY id DESC
-    LIMIT 1
-  `) as { created_at: string | Date }[];
-  const last = recent[0]?.created_at;
-  if (last) {
-    const age = Date.now() - new Date(last).getTime();
-    if (age >= 0 && age < 60_000) {
-      return "Зачекай хвилину перед наступним зверненням.";
-    }
-  }
-  const hour = (await sql`
-    SELECT COUNT(*)::int AS c
-    FROM faq_support_tickets
-    WHERE user_id = ${userId}
-      AND created_at > NOW() - INTERVAL '1 hour'
-  `) as { c: number }[];
-  if (Number(hour[0]?.c ?? 0) >= 5) {
-    return "За цю годину вже надіслано 5 звернень. Спробуй пізніше.";
-  }
-  return null;
 }
 
 export async function sendFaqSupportToTelegram(input: {
@@ -159,17 +97,6 @@ export async function sendFaqSupportToTelegram(input: {
   } catch (e) {
     console.error("[faq-support] Telegram request failed:", e);
     return { ok: false, error: "Не вдалося надіслати звернення. Спробуй ще раз." };
-  }
-
-  try {
-    await ensureTicketsTable();
-    const sql = getSql();
-    await sql`
-      INSERT INTO faq_support_tickets (user_id, topic, body)
-      VALUES (${input.userId}, ${input.topic}, ${input.body})
-    `;
-  } catch (e) {
-    console.error("[faq-support] ticket log failed:", e);
   }
 
   return { ok: true };
