@@ -77,14 +77,14 @@ export function FaqSupportSection({ loggedIn }: Props) {
           className="h-[3px] bg-[var(--mc-net-green)] shadow-[0_1px_0_#000]"
           aria-hidden
         />
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:gap-5 sm:p-5 md:p-6">
+        <div className="flex flex-col items-center gap-4 p-4 text-center sm:p-5 md:p-6">
           <div
-            className="mx-auto flex size-14 shrink-0 items-center justify-center rounded-[var(--radius-slot)] border-2 border-[var(--mc-outline)] bg-[var(--mc-surface-elevated)] text-[var(--mc-net-green)] shadow-[inset_0_2px_0_rgba(255,255,255,0.08),inset_0_-3px_0_rgba(0,0,0,0.35)] sm:mx-0"
+            className="flex size-14 shrink-0 items-center justify-center rounded-[var(--radius-slot)] border-2 border-[var(--mc-outline)] bg-[var(--mc-surface-elevated)] text-[var(--mc-net-green)] shadow-[inset_0_2px_0_rgba(255,255,255,0.08),inset_0_-3px_0_rgba(0,0,0,0.35)]"
             aria-hidden
           >
             <LifeBuoy className="size-7" strokeWidth={2.25} />
           </div>
-          <div className="min-w-0 flex-1 text-center sm:text-left">
+          <div className="max-w-md">
             <p className="text-[0.68rem] font-bold uppercase tracking-[0.16em] text-[var(--mc-net-green)]">
               Підтримка
             </p>
@@ -100,7 +100,7 @@ export function FaqSupportSection({ loggedIn }: Props) {
           </div>
           <button
             type="button"
-            className="lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full shrink-0 items-center justify-center px-5 text-sm sm:w-auto"
+            className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center px-5 text-sm"
             aria-expanded={open}
             aria-controls="faq-support-panel"
             onClick={() => {
@@ -115,7 +115,7 @@ export function FaqSupportSection({ loggedIn }: Props) {
         {open ? (
           <div
             id="faq-support-panel"
-            className="border-t border-[var(--mc-border-card)] bg-black/20 px-4 py-4 sm:px-5 sm:py-5 md:px-6"
+            className="border-t border-[var(--mc-border-card)] bg-black/20 px-4 py-4 text-center sm:px-5 sm:py-5 md:px-6"
           >
             {sent ? (
               <div
@@ -141,7 +141,7 @@ export function FaqSupportSection({ loggedIn }: Props) {
                 <p className="text-sm leading-relaxed text-[var(--mc-text)]">
                   Звернення можуть надсилати лише ті, хто увійшов на сайт.
                 </p>
-                <div className="mt-4 grid gap-2 sm:grid-cols-2">
+                <div className="mt-4 flex flex-col items-center justify-center gap-2 sm:flex-row">
                   <a
                     href={discordLoginPath("/faq")}
                     className="lc-focus-ring mc-btn-primary inline-flex min-h-11 items-center justify-center gap-2 px-4 text-sm"
@@ -159,9 +159,9 @@ export function FaqSupportSection({ loggedIn }: Props) {
                 </div>
               </div>
             ) : (
-              <form className="mx-auto max-w-xl space-y-4" onSubmit={onSubmit}>
+              <form className="mx-auto max-w-xl space-y-4 text-center" onSubmit={onSubmit}>
                 <label className="block">
-                  <span className="flex items-baseline justify-between gap-3 text-sm font-semibold text-[var(--mc-text)]">
+                  <span className="flex items-baseline justify-center gap-3 text-sm font-semibold text-[var(--mc-text)]">
                     Тема
                     <span className="text-xs font-normal tabular-nums text-[var(--mc-text-muted)]">
                       {topic.length}/{TOPIC_MAX}
@@ -178,7 +178,7 @@ export function FaqSupportSection({ loggedIn }: Props) {
                   />
                 </label>
                 <label className="block">
-                  <span className="flex items-baseline justify-between gap-3 text-sm font-semibold text-[var(--mc-text)]">
+                  <span className="flex items-baseline justify-center gap-3 text-sm font-semibold text-[var(--mc-text)]">
                     Що сталося
                     <span className="text-xs font-normal tabular-nums text-[var(--mc-text-muted)]">
                       {body.length}/{BODY_MAX}
@@ -202,11 +202,11 @@ export function FaqSupportSection({ loggedIn }: Props) {
                     {error}
                   </p>
                 ) : null}
-                <div className="flex justify-end">
+                <div className="flex justify-center">
                   <button
                     type="submit"
                     disabled={pending}
-                    className="lc-focus-ring lc-btn-accent inline-flex min-h-11 w-full items-center justify-center gap-2 px-5 text-sm disabled:opacity-60 sm:w-auto"
+                    className="lc-focus-ring lc-btn-accent inline-flex min-h-11 items-center justify-center gap-2 px-5 text-sm disabled:opacity-60"
                   >
                     <Send className="size-4" aria-hidden />
                     {pending ? "Надсилаю…" : "Надіслати адмінам"}
