@@ -13,6 +13,7 @@ import {
   AUTH_ME_CHANGED_EVENT,
   notifyAuthMeChanged,
 } from "@/lib/auth-me-events";
+import { fetchAuthMe } from "@/lib/fetch-auth-me";
 import { gameNicknameError } from "@/lib/game-nickname";
 import { cn } from "@/lib/utils";
 
@@ -32,23 +33,38 @@ export function HeroAuthGreeting() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   const [user, setUser] = useState<AuthUser | null | undefined>(undefined);
+  const [profileUnavailable, setProfileUnavailable] = useState(false);
   const [open, setOpen] = useState(false);
   const [nickDraft, setNickDraft] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const loadMe = useCallback(async () => {
-    try {
-      const res = await fetch("/api/auth/me", { credentials: "include" });
-      const data = (await res.json()) as { user: AuthUser | null };
-      setUser(data.user);
-      if (data.user?.gameNickname) {
-        setNickDraft(data.user.gameNickname);
-      } else if (data.user) {
-        setNickDraft("");
-      }
-    } catch {
-      setUser(null);
+    const me = await fetchAuthMe();
+    if (me.unavailable) {
+      setProfileUnavailable(true);
+      return;
+    }
+    setProfileUnavailable(false);
+    const next = me.user;
+    setUser(
+      next
+        ? {
+            id: next.id,
+            displayName: next.displayName,
+            gameNickname: next.gameNickname,
+            needsNickname: next.needsNickname,
+            avatarUrl: next.avatarUrl,
+            isAdmin: next.isAdmin,
+            canEditWiki: next.canEditWiki,
+            role: next.role,
+          }
+        : null,
+    );
+    if (next?.gameNickname) {
+      setNickDraft(next.gameNickname);
+    } else if (next) {
+      setNickDraft("");
     }
   }, []);
 
@@ -123,6 +139,7 @@ export function HeroAuthGreeting() {
         credentials: "include",
       });
       setUser(null);
+      setProfileUnavailable(false);
       setOpen(false);
       notifyAuthMeChanged();
     } catch {
@@ -131,12 +148,20 @@ export function HeroAuthGreeting() {
     setBusy(false);
   }
 
-  if (user === undefined) {
+  if (user === undefined && !profileUnavailable) {
     return (
       <div
         className="mx-auto mt-2.5 h-5 w-16 animate-pulse rounded bg-white/10"
         aria-hidden
       />
+    );
+  }
+
+  if (!user && profileUnavailable) {
+    return (
+      <p className="lc-stream-in relative z-10 mt-3 text-center text-base font-bold text-[var(--mc-text)] sm:text-lg">
+        Вітаємо
+      </p>
     );
   }
 
