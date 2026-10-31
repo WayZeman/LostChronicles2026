@@ -6,6 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { FaqSupportSection } from "@/components/faq/FaqSupportSection";
 import { FaqJsonLd } from "@/components/site/FaqJsonLd";
 import { lcGlassPanelClass } from "@/components/site/lc-glass-panel";
 import { lcPageContainerClass, lcPageMainClass } from "@/components/site/lc-page-shell";
@@ -14,12 +15,11 @@ import {
   LC_SEO_FAQ_TITLE,
 } from "@/data/lc-seo-terms";
 import { LOST_CHRONICLES_FAQ } from "@/data/lost-chronicles-faq";
+import { getSessionUserIdFromCookies } from "@/lib/auth-session";
 import { getCachedFaqItems } from "@/lib/public-content-cache";
 import { buildLcPageMetadata } from "@/lib/seo";
 import { getLcMarketingSiteUrl } from "@/lib/site-base-url";
 import { cn } from "@/lib/utils";
-
-export const revalidate = 300;
 
 export const metadata: Metadata = buildLcPageMetadata({
   title: LC_SEO_FAQ_TITLE,
@@ -35,19 +35,23 @@ export default async function FAQPage() {
     order: item.order,
   }));
 
-  try {
-    const dbItems = await getCachedFaqItems();
-    if (dbItems.length > 0) {
-      faqs = dbItems.map((item) => ({
-        id: `lc-faq-${item.id}`,
-        question: item.question,
-        answer: item.answer_html,
-        order: item.sort_order,
-      }));
-    }
-  } catch {
-    /* fallback to static FAQ */
-  }
+  const [, loggedIn] = await Promise.all([
+    getCachedFaqItems()
+      .then((dbItems) => {
+        if (dbItems.length > 0) {
+          faqs = dbItems.map((item) => ({
+            id: `lc-faq-${item.id}`,
+            question: item.question,
+            answer: item.answer_html,
+            order: item.sort_order,
+          }));
+        }
+      })
+      .catch(() => {
+        /* fallback to static FAQ */
+      }),
+    getSessionUserIdFromCookies().then((id) => id != null),
+  ]);
 
   const siteUrl = getLcMarketingSiteUrl();
 
@@ -112,6 +116,8 @@ export default async function FAQPage() {
             </AccordionItem>
           ))}
         </Accordion>
+
+        <FaqSupportSection loggedIn={loggedIn} />
       </div>
     </div>
   );
