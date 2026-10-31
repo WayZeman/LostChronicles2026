@@ -420,12 +420,26 @@ export async function setApplicationServerStatusByOrdinal(
 
 export type IngameJobAction = "promote" | "demote";
 
+/** java — лише whitelist add; bedrock — Floodgate UUID; both — обидва входи. */
+export type IngameEdition = "java" | "bedrock" | "both";
+
 export type IngameJob = {
   id: number;
   ordinal: number;
   nickname: string;
   action: IngameJobAction;
+  edition: IngameEdition;
 };
+
+function detectIngameEdition(...parts: Array<string | null | undefined>): IngameEdition {
+  const text = parts.filter(Boolean).join("\n").toLowerCase();
+  const bedrock =
+    /bedrock|бедро|бекдро|бедрок|pocket|xbox|гейзер|geyser/.test(text);
+  const java = /java|джава|tlauncher|ліценз|лиценз/.test(text);
+  if (bedrock && !java) return "bedrock";
+  if (java && !bedrock) return "java";
+  return "both";
+}
 
 /** Заявки, які Minecraft-плагін ще не синхронізував з LuckPerms. */
 export async function listPendingIngameJobs(
@@ -439,6 +453,11 @@ export async function listPendingIngameJobs(
     SELECT
       a.id,
       a.nickname,
+      a.answers_json AS "answersJson",
+      a.experience,
+      a.previous_projects AS "previousProjects",
+      a.why_server AS "whyServer",
+      a.how_found AS "howFound",
       a.server_status AS "serverStatus",
       a.ingame_rank AS "ingameRank",
       (SELECT COUNT(*)::int FROM applications b WHERE b.id <= a.id) AS ordinal
@@ -467,7 +486,15 @@ export async function listPendingIngameJobs(
     }
     const action: IngameJobAction =
       status === "rejected" ? "demote" : "promote";
-    jobs.push({ id, ordinal, nickname, action });
+    const edition = detectIngameEdition(
+      nickname,
+      String(row.answersJson ?? ""),
+      String(row.experience ?? ""),
+      String(row.previousProjects ?? ""),
+      String(row.whyServer ?? ""),
+      String(row.howFound ?? ""),
+    );
+    jobs.push({ id, ordinal, nickname, action, edition });
   }
   return jobs;
 }

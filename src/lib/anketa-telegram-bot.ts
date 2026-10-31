@@ -46,8 +46,8 @@ export function anketaHelpText(): string {
     "📋 Команди анкет (сайт /apply)\n\n" +
     "/anketa — остання анкета\n" +
     "/anketa 12 — анкета №12 (+ статус)\n" +
-    "/add server 12 — прийняти + LuckPerms promote ranks\n" +
-    "/deny server 12 — відхилити + LuckPerms demote ranks\n" +
+    "/add server 12 — прийняти: whitelist add (Java і Bedrock) + LuckPerms\n" +
+    "/deny server 12 — зняти з білого списку + LuckPerms demote\n" +
     "/clear server 12 — скинути статус\n" +
     "/count — скільки анкет у базі\n" +
     "/delete 12 — що буде видалено\n" +
