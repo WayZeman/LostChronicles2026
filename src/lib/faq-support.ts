@@ -60,11 +60,19 @@ export async function sendFaqSupportToTelegram(input: {
     return { ok: false, error: "Підтримка в Telegram зараз недоступна." };
   }
 
-  const who = input.gameNickname?.trim() || input.username || `id ${input.userId}`;
+  const nick = input.gameNickname?.trim() || "";
+  const account = input.username?.trim() || "";
+  const who = nick || account || `id ${input.userId}`;
+  const showAccount = Boolean(nick && account && account !== nick);
   const text = [
-    `Звернення від ${escapeTelegramHtml(who)}`,
-    `Тема: ${escapeTelegramHtml(input.topic)}`,
-    `Опис: ${escapeTelegramHtml(input.body)}`,
+    `🛟 <b>Звернення від ${escapeTelegramHtml(who)}</b>`,
+    ...(showAccount ? [`<i>${escapeTelegramHtml(account)}</i>`] : []),
+    "",
+    "<b>Тема</b>",
+    escapeTelegramHtml(input.topic),
+    "",
+    "<b>Опис</b>",
+    `<blockquote>${escapeTelegramHtml(input.body)}</blockquote>`,
   ].join("\n");
 
   try {
