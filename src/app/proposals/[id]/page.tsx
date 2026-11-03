@@ -291,19 +291,34 @@ export default function ProposalDetailPage() {
     if (!id || notFound) return;
 
     const POLL_MS = 30_000;
+    const IDLE_MS = 120_000;
+    let lastActive = Date.now();
+    const markActive = () => {
+      const idle = Date.now() - lastActive > IDLE_MS;
+      lastActive = Date.now();
+      if (idle && document.visibilityState === "visible") void pollStats();
+    };
     const tick = () => {
-      if (document.visibilityState === "visible") void pollStats();
+      if (document.visibilityState !== "visible") return;
+      if (Date.now() - lastActive > IDLE_MS) return;
+      void pollStats();
     };
     const onVis = () => {
-      if (document.visibilityState === "visible") void pollStats();
+      if (document.visibilityState !== "visible") return;
+      lastActive = Date.now();
+      void pollStats();
     };
 
     void pollStats();
     document.addEventListener("visibilitychange", onVis);
+    window.addEventListener("pointerdown", markActive);
+    window.addEventListener("keydown", markActive);
     const t = setInterval(tick, POLL_MS);
 
     return () => {
       document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("pointerdown", markActive);
+      window.removeEventListener("keydown", markActive);
       clearInterval(t);
     };
   }, [id, notFound, pollStats]);

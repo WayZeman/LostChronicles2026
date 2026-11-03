@@ -1,3 +1,4 @@
+import { revalidateTag, unstable_cache } from "next/cache";
 import { getSql } from "@/lib/db";
 import { wakeMinecraftAnketaSync } from "@/lib/minecraft-anketa-wake";
 import type { ApplyQuestion } from "@/lib/application-form-config";
@@ -42,6 +43,19 @@ function rowsOf(r: unknown): Record<string, unknown>[] {
 }
 
 let ensured = false;
+let backfillDone = false;
+
+/** Плагін опитує /api/minecraft/anketa-sync постійно. Кеш не чіпає Neon, поки черга не зміниться. */
+const ANKETA_JOBS_CACHE_TAG = "anketa-ingame-jobs";
+const ANKETA_JOBS_REVALIDATE_SEC = 600;
+
+function invalidateAnketaJobsCache(): void {
+  try {
+    revalidateTag(ANKETA_JOBS_CACHE_TAG, { expire: 0 });
+  } catch {
+    /* поза Next-запитом кеш і так протухне за TTL */
+  }
+}
 
 function normalizeServerStatus(raw: unknown): ApplicationServerStatus {
   const s = String(raw ?? "")
@@ -374,6 +388,7 @@ export async function deleteApplication(id: number): Promise<boolean> {
   const rows = rowsOf(await sql`
     DELETE FROM applications WHERE id = ${id} RETURNING id
   `);
+  if (rows.length > 0) invalidateAnketaJobsCache();
   return rows.length > 0;
 }
 
@@ -412,6 +427,7 @@ export async function setApplicationServerStatusByOrdinal(
       END
     WHERE id = ${found.row.id}
   `;
+  invalidateAnketaJobsCache();
   if (status === "accepted" || status === "rejected") {
     void wakeMinecraftAnketaSync(`status_${status}`);
   }
@@ -451,27 +467,40 @@ export async function listPendingIngameJobs(
   const safeLimit = Math.min(50, Math.max(1, Math.floor(limit)));
   const rows = rowsOf(await sql`
     SELECT
-      a.id,
-      a.nickname,
-      a.answers_json AS "answersJson",
-      a.experience,
-      a.previous_projects AS "previousProjects",
-      a.why_server AS "whyServer",
-      a.how_found AS "howFound",
-      a.server_status AS "serverStatus",
-      a.ingame_rank AS "ingameRank",
-      (SELECT COUNT(*)::int FROM applications b WHERE b.id <= a.id) AS ordinal
-    FROM applications a
+      id,
+      nickname,
+      "answersJson",
+      experience,
+      "previousProjects",
+      "whyServer",
+      "howFound",
+      "serverStatus",
+      "ingameRank",
+      ordinal
+    FROM (
+      SELECT
+        a.id,
+        a.nickname,
+        a.answers_json AS "answersJson",
+        a.experience,
+        a.previous_projects AS "previousProjects",
+        a.why_server AS "whyServer",
+        a.how_found AS "howFound",
+        a.server_status AS "serverStatus",
+        a.ingame_rank AS "ingameRank",
+        COUNT(*) OVER (ORDER BY a.id)::int AS ordinal
+      FROM applications a
+    ) numbered
     WHERE
       (
-        a.server_status = 'accepted'
-        AND COALESCE(a.ingame_rank, '') NOT IN ('promoted', 'failed')
+        "serverStatus" = 'accepted'
+        AND COALESCE("ingameRank", '') NOT IN ('promoted', 'failed')
       )
       OR (
-        a.server_status = 'rejected'
-        AND a.ingame_rank = 'promoted'
+        "serverStatus" = 'rejected'
+        AND "ingameRank" = 'promoted'
       )
-    ORDER BY a.id ASC
+    ORDER BY id ASC
     LIMIT ${safeLimit}
   `);
 
@@ -499,6 +528,16 @@ export async function listPendingIngameJobs(
   return jobs;
 }
 
+/** Те саме, що listPendingIngameJobs, але не будить Neon на кожен fallback-poll плагіна. */
+export const listPendingIngameJobsCached = unstable_cache(
+  async () => listPendingIngameJobs(20),
+  ["anketa-ingame-jobs-v1"],
+  {
+    revalidate: ANKETA_JOBS_REVALIDATE_SEC,
+    tags: [ANKETA_JOBS_CACHE_TAG],
+  },
+);
+
 export async function ackIngameJob(
   id: number,
   action: IngameJobAction,
@@ -525,6 +564,7 @@ export async function ackIngameJob(
   `);
   const row = rows[0];
   if (!row) return null;
+  invalidateAnketaJobsCache();
   const ordinalInfo = await getOrdinalForApplicationId(Number(row.id));
   return {
     nickname: String(row.nickname ?? "").trim(),
@@ -544,6 +584,7 @@ export async function countApplications(): Promise<number> {
  * щоб плагін не зробив повторний /lp promote тим, кого вже додавали вручну.
  */
 async function backfillExistingAcceptedRanks(): Promise<void> {
+  if (backfillDone) return;
   const sql = getSql();
   await sql`
     CREATE TABLE IF NOT EXISTS anketa_ingame_meta (
@@ -554,7 +595,10 @@ async function backfillExistingAcceptedRanks(): Promise<void> {
   const rows = rowsOf(
     await sql`SELECT v FROM anketa_ingame_meta WHERE k = 'backfill' LIMIT 1`,
   );
-  if (rows.length > 0) return;
+  if (rows.length > 0) {
+    backfillDone = true;
+    return;
+  }
   await sql`
     UPDATE applications
     SET ingame_rank = 'promoted'
@@ -567,4 +611,5 @@ async function backfillExistingAcceptedRanks(): Promise<void> {
     VALUES ('backfill', '1')
     ON CONFLICT (k) DO NOTHING
   `;
+  backfillDone = true;
 }

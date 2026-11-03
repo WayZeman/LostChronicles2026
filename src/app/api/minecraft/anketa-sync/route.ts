@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 import {
   ackIngameJob,
-  listPendingIngameJobs,
+  listPendingIngameJobsCached,
   type IngameJobAction,
 } from "@/lib/applications";
 import { sendAnketaTelegramText, anketaNotifyThreadId } from "@/lib/notify-application";
@@ -39,7 +39,7 @@ export async function GET(req: Request) {
   }
 
   try {
-    const jobs = await listPendingIngameJobs(20);
+    const jobs = await listPendingIngameJobsCached();
     return NextResponse.json({ jobs });
   } catch (e) {
     console.error("[anketa-sync] list failed:", e);
