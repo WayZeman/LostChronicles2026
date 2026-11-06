@@ -94,6 +94,199 @@
     0 3px 0 #7f1d1d;
 }
 
+/* Вибір із кількох варіантів — одна картка на варіант */
+.lc-choice-poll {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.lc-choice-poll__meta {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+  color: var(--mc-text-muted);
+}
+
+.lc-choice-poll__list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-choice-option {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  min-width: 0;
+  padding: 0.85rem 0.9rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.28);
+  color: var(--mc-text);
+  text-align: left;
+}
+
+button.lc-choice-option {
+  cursor: pointer;
+}
+
+button.lc-choice-option:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.lc-choice-option--lead {
+  border-color: rgba(122, 224, 74, 0.4);
+}
+
+.lc-choice-option--mine {
+  border-color: var(--mc-net-green);
+  background:
+    linear-gradient(180deg, rgba(84, 197, 48, 0.16), transparent 70%),
+    rgba(0, 0, 0, 0.28);
+}
+
+.lc-choice-option__grid {
+  display: grid;
+  grid-template-columns: 1.75rem minmax(0, 1fr);
+  grid-template-areas:
+    "num label"
+    "num stats";
+  column-gap: 0.7rem;
+  row-gap: 0.35rem;
+  align-items: start;
+}
+
+.lc-choice-option__num {
+  grid-area: num;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--mc-text-muted);
+  font-size: 0.75rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.lc-choice-option--mine .lc-choice-option__num {
+  background: rgba(84, 197, 48, 0.22);
+  color: var(--mc-grass-bright);
+}
+
+.lc-choice-option__label {
+  grid-area: label;
+  margin: 0;
+  min-width: 0;
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.lc-choice-option__stats {
+  grid-area: stats;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.55rem;
+  margin: 0;
+  color: var(--mc-text-muted);
+  font-size: 0.78rem;
+  font-weight: 650;
+}
+
+.lc-choice-option__pct {
+  color: var(--mc-text);
+}
+
+.lc-choice-option__mine {
+  color: var(--mc-grass-bright);
+}
+
+.lc-choice-option__bar {
+  height: 0.4rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.lc-choice-option__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: rgba(84, 197, 48, 0.55);
+  transition: width 0.45s ease;
+}
+
+.lc-choice-option--lead .lc-choice-option__fill,
+.lc-choice-option--mine .lc-choice-option__fill {
+  background: linear-gradient(90deg, #2f8a18, #7ae04a);
+}
+
+.lc-choice-voters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.lc-choice-voter {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--mc-text);
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.lc-choice-voter__avatar {
+  width: 1.35rem;
+  height: 1.35rem;
+  flex: none;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+@media (min-width: 640px) {
+  .lc-choice-option {
+    padding: 1rem 1.05rem;
+  }
+
+  .lc-choice-option__grid {
+    grid-template-columns: 1.75rem minmax(0, 1fr) auto;
+    grid-template-areas: "num label stats";
+    align-items: center;
+    row-gap: 0;
+  }
+
+  .lc-choice-option__stats {
+    justify-content: flex-end;
+    text-align: right;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .lc-choice-option__fill {
+    transition: none;
+  }
+}
+
 .lc-proposal-match-card {
   transition:
     border-color 0.15s ease,

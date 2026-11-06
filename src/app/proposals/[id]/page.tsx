@@ -3,8 +3,7 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
-import { ProposalChoiceBar } from "@/components/proposals/ProposalChoiceBar";
-import { ProposalChoiceButtons } from "@/components/proposals/ProposalChoiceButtons";
+import { ProposalChoicePoll } from "@/components/proposals/ProposalChoicePoll";
 import { ProposalStatusBadge } from "@/components/proposals/ProposalStatusBadge";
 import { ProposalVoteBar } from "@/components/proposals/ProposalVoteBar";
 import { ProposalVoteButtons } from "@/components/proposals/ProposalVoteButtons";
@@ -764,8 +763,13 @@ export default function ProposalDetailPage() {
               className="lc-vote-match-stage relative space-y-3 p-3 sm:space-y-4 sm:p-4"
             >
               {(proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE ? (
-                <ProposalChoiceBar
+                <ProposalChoicePoll
                   options={proposal.options ?? []}
+                  open={open}
+                  busy={voteBusy}
+                  userOptionId={proposal.user_option_id}
+                  onVote={(optionId) => void voteChoice(optionId)}
+                  optionVoters={proposal.option_voters}
                   showQuorum={open}
                 />
               ) : (
@@ -782,23 +786,13 @@ export default function ProposalDetailPage() {
                 </p>
               ) : null}
 
-              {open ? (
-                (proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE ? (
-                  <ProposalChoiceButtons
-                    open={open}
-                    busy={voteBusy}
-                    options={proposal.options ?? []}
-                    userOptionId={proposal.user_option_id}
-                    onVote={(optionId) => void voteChoice(optionId)}
-                  />
-                ) : (
-                  <ProposalVoteButtons
-                    open={open}
-                    busy={voteBusy}
-                    userVote={proposal.user_vote}
-                    onVote={(v) => void voteYesNo(v)}
-                  />
-                )
+              {open && (proposal.kind ?? "yes_no") !== PROPOSAL_KIND_CHOICE ? (
+                <ProposalVoteButtons
+                  open={open}
+                  busy={voteBusy}
+                  userVote={proposal.user_vote}
+                  onVote={(v) => void voteYesNo(v)}
+                />
               ) : null}
 
               {!me && open ? (
@@ -825,16 +819,12 @@ export default function ProposalDetailPage() {
                 </p>
               ) : null}
 
-              <ProposalVoters
-                yesVoters={proposal.yes_voters ?? []}
-                noVoters={proposal.no_voters ?? []}
-                options={
-                  (proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE
-                    ? proposal.options
-                    : undefined
-                }
-                optionVoters={proposal.option_voters}
-              />
+              {(proposal.kind ?? "yes_no") === PROPOSAL_KIND_CHOICE ? null : (
+                <ProposalVoters
+                  yesVoters={proposal.yes_voters ?? []}
+                  noVoters={proposal.no_voters ?? []}
+                />
+              )}
             </section>
 
             {proposal.is_author ? (

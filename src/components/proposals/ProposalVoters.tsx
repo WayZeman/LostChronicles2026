@@ -21,7 +21,7 @@ function VoterList({
   return (
     <div
       className={cn(
-        "rounded-lg border p-3 sm:p-4",
+        "min-w-0 rounded-lg border p-3 sm:p-4",
         tone === "yes" && "border-emerald-500/25 bg-emerald-500/[0.06]",
         tone === "no" && "border-rose-500/25 bg-rose-500/[0.06]",
         tone === "option" && "border-white/10 bg-white/[0.03]",
@@ -32,7 +32,8 @@ function VoterList({
           "mb-2.5 text-center text-xs font-extrabold uppercase tracking-wide sm:text-left",
           tone === "yes" && "text-emerald-200/90",
           tone === "no" && "text-rose-200/90",
-          tone === "option" && "normal-case tracking-normal text-[var(--mc-text)]",
+          tone === "option" &&
+            "normal-case tracking-normal text-[var(--mc-text)] [overflow-wrap:anywhere]",
         )}
       >
         {title}{" "}

@@ -31,10 +31,11 @@ export function ProposalChoiceBar({
         const isLead = leaders.some((l) => l.id === o.id) && total > 0;
         return (
           <li key={o.id} className="min-w-0">
-            <div className="mb-1 flex items-baseline justify-between gap-2">
+            <div className="mb-1 flex items-start justify-between gap-2">
               <span
                 className={cn(
-                  "min-w-0 truncate text-xs font-semibold sm:text-sm",
+                  "min-w-0 text-xs font-semibold [overflow-wrap:anywhere] sm:text-sm",
+                  compact ? "line-clamp-2" : "line-clamp-3",
                   isLead
                     ? "text-[var(--mc-grass-bright)]"
                     : "text-[var(--mc-text)]",
