@@ -2,6 +2,22 @@
 const DEFAULT_THREAD_ID = 758;
 const DEFAULT_CHAT_ID = "-1002430381787";
 
+/** Кнопка під завданням підтримки. Після натискання текст змінюється на «Виконано». */
+const FAQ_DONE_CALLBACK = "faq:done";
+const FAQ_DONE_LOCKED_CALLBACK = "faq:done:ok";
+
+function faqTaskKeyboard(done: boolean) {
+  return {
+    inline_keyboard: [
+      [
+        done
+          ? { text: "Виконано", callback_data: FAQ_DONE_LOCKED_CALLBACK }
+          : { text: "Виконати", callback_data: FAQ_DONE_CALLBACK },
+      ],
+    ],
+  };
+}
+
 function escapeTelegramHtml(s: string): string {
   return s
     .replace(/&/g, "&amp;")
@@ -87,6 +103,7 @@ export async function sendFaqSupportToTelegram(input: {
           text,
           parse_mode: "HTML",
           disable_web_page_preview: true,
+          reply_markup: faqTaskKeyboard(false),
         }),
       },
     );
@@ -104,4 +121,89 @@ export async function sendFaqSupportToTelegram(input: {
   }
 
   return { ok: true };
+}
+
+type FaqCallbackQuery = {
+  id?: string;
+  data?: string;
+  message?: {
+    message_id?: number;
+    chat?: { id?: number | string };
+  };
+};
+
+async function callSupportBot(
+  method: string,
+  payload: Record<string, unknown>,
+): Promise<boolean> {
+  const cfg = supportBotConfig();
+  if (!cfg) return false;
+  try {
+    const res = await fetch(`https://api.telegram.org/bot${cfg.token}/${method}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+      console.error(
+        "[faq-support] Telegram",
+        method,
+        res.status,
+        await res.text().catch(() => ""),
+      );
+      return false;
+    }
+    return true;
+  } catch (e) {
+    console.error("[faq-support] Telegram", method, "failed:", e);
+    return false;
+  }
+}
+
+/** Натискання «Виконати» під зверненням у темі підтримки. */
+export async function handleFaqSupportCallback(update: unknown): Promise<boolean> {
+  if (!update || typeof update !== "object") return false;
+  const cb = (update as { callback_query?: FaqCallbackQuery }).callback_query;
+  if (!cb?.id) return false;
+  if (cb.data !== FAQ_DONE_CALLBACK && cb.data !== FAQ_DONE_LOCKED_CALLBACK) {
+    return false;
+  }
+
+  const cfg = supportBotConfig();
+  const chatId = cb.message?.chat?.id;
+  if (!cfg || chatId == null || String(chatId) !== String(cfg.chatId)) {
+    await callSupportBot("answerCallbackQuery", {
+      callback_query_id: cb.id,
+      text: "Цю кнопку можна натиснути лише в темі підтримки.",
+    });
+    return true;
+  }
+
+  if (cb.data === FAQ_DONE_LOCKED_CALLBACK) {
+    await callSupportBot("answerCallbackQuery", {
+      callback_query_id: cb.id,
+      text: "Вже виконано",
+    });
+    return true;
+  }
+
+  const messageId = cb.message?.message_id;
+  if (messageId == null) {
+    await callSupportBot("answerCallbackQuery", {
+      callback_query_id: cb.id,
+      text: "Не вдалося оновити кнопку.",
+    });
+    return true;
+  }
+
+  const edited = await callSupportBot("editMessageReplyMarkup", {
+    chat_id: chatId,
+    message_id: messageId,
+    reply_markup: faqTaskKeyboard(true),
+  });
+  await callSupportBot("answerCallbackQuery", {
+    callback_query_id: cb.id,
+    text: edited ? "Виконано" : "Не вдалося оновити кнопку.",
+  });
+  return true;
 }

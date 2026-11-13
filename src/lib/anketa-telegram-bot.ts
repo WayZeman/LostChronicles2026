@@ -24,6 +24,7 @@ import {
   markSupportOrderNotPaid,
   markSupportOrderPaid,
 } from "@/lib/support-orders";
+import { handleFaqSupportCallback } from "@/lib/faq-support";
 import { wakeMinecraftAnketaSync } from "@/lib/minecraft-anketa-wake";
 
 /** Меню при введенні «/» у Telegram (до 32 символів на command). */
@@ -334,6 +335,7 @@ async function resolveOrdinal(
  */
 export async function handleAnketaBotUpdate(update: unknown): Promise<boolean> {
   if (!update || typeof update !== "object") return false;
+  if (await handleFaqSupportCallback(update)) return true;
   const msg =
     (update as { message?: unknown; edited_message?: unknown }).message ||
     (update as { edited_message?: unknown }).edited_message;
@@ -673,7 +675,7 @@ export async function setupAnketaTelegramWebhook(
 
   const payload: Record<string, unknown> = {
     url: webhookUrl,
-    allowed_updates: ["message"],
+    allowed_updates: ["message", "callback_query"],
     drop_pending_updates: false,
   };
   if (secret) payload.secret_token = secret;
