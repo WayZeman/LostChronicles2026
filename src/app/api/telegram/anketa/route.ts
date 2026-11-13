@@ -16,7 +16,7 @@ function expectedSecret(): string {
   );
 }
 
-/** POST = Telegram webhook. У production секрет обовʼязковий. */
+/** POST = Telegram webhook (повідомлення і натискання кнопок). У production секрет обовʼязковий. */
 export async function POST(req: Request) {
   const expected = expectedSecret();
   if (!expected) {
