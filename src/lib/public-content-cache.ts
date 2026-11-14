@@ -27,13 +27,13 @@ export const getCachedWikiHomeContent = unstable_cache(
 
 const getCachedWikiPageBySlugInner = unstable_cache(
   async (slug: string) => getWikiPageBySlug(slug),
-  ["wiki-page-by-slug-v1"],
+  ["wiki-page-by-slug-v2"],
   { revalidate: WIKI_REVALIDATE_SEC, tags: [WIKI_PUBLIC_CACHE_TAG] },
 );
 
 const getCachedWikiCategoryBySlugInner = unstable_cache(
   async (slug: string) => getWikiCategoryBySlug(slug),
-  ["wiki-category-by-slug-v1"],
+  ["wiki-category-by-slug-v2"],
   { revalidate: WIKI_REVALIDATE_SEC, tags: [WIKI_PUBLIC_CACHE_TAG] },
 );
 
