@@ -716,6 +716,35 @@ export async function updateCategoryPageLink(
   return true;
 }
 
+/** Повний порядок карток категорії. Індекс у списку стає sort_order. */
+export async function setCategoryPageOrder(
+  categoryId: number,
+  ids: number[],
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  await ensureWikiStructureTables();
+  const sql = getSql();
+  const rows = rowsOf(await sql`
+    SELECT id FROM wiki_category_pages WHERE category_id = ${categoryId}
+  `);
+  const existing = new Set(rows.map((row) => num(row.id)));
+  const unique = new Set(ids);
+  if (
+    ids.length !== existing.size ||
+    unique.size !== ids.length ||
+    ids.some((id) => !Number.isInteger(id) || !existing.has(id))
+  ) {
+    return { ok: false, error: "Список гравців застарів. Онови сторінку." };
+  }
+  for (let i = 0; i < ids.length; i++) {
+    await sql`
+      UPDATE wiki_category_pages
+      SET sort_order = ${i}
+      WHERE id = ${ids[i]} AND category_id = ${categoryId}
+    `;
+  }
+  return { ok: true };
+}
+
 export async function removePageFromCategory(linkId: number): Promise<boolean> {
   await ensureWikiStructureTables();
   const sql = getSql();

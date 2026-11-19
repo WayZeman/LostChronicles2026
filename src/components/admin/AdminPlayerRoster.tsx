@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Plus, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronUp, Plus, Trash2 } from "lucide-react";
 import {
   formatPlayerCardBlurb,
   orderedPlayerGroupTitles,
@@ -270,6 +270,55 @@ export function AdminPlayerRoster() {
     byState.set(state, list);
   }
 
+  async function movePlayer(page: WikiCategoryPageRow, direction: -1 | 1) {
+    if (!category) return;
+    const state = page.player_state.trim() || WIKI_FREE_PLAYERS_LABEL;
+    const members = byState.get(state) ?? [];
+    const index = members.findIndex((item) => item.id === page.id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= members.length) return;
+
+    const reordered = [...members];
+    const [moved] = reordered.splice(index, 1);
+    if (!moved) return;
+    reordered.splice(target, 0, moved);
+
+    const slots = pages.flatMap((item, i) =>
+      (item.player_state.trim() || WIKI_FREE_PLAYERS_LABEL) === state ? [i] : [],
+    );
+    const next = [...pages];
+    slots.forEach((slot, i) => {
+      const row = reordered[i];
+      if (row) next[slot] = row;
+    });
+
+    setBusy(true);
+    setErr(null);
+    setMsg(null);
+    try {
+      const res = await fetch(
+        `/api/admin/wiki/categories/${category.id}/page-order`,
+        {
+          method: "PATCH",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: next.map((item) => item.id) }),
+        },
+      );
+      const body = (await res.json()) as { error?: string };
+      if (!res.ok) {
+        setErr(body.error || "Не вдалося змінити порядок");
+        setBusy(false);
+        return;
+      }
+      await load();
+      setMsg("Порядок оновлено.");
+    } catch {
+      setErr("Мережа недоступна");
+    }
+    setBusy(false);
+  }
+
   return (
     <div className="space-y-5">
       <div>
@@ -278,7 +327,7 @@ export function AdminPlayerRoster() {
         </h2>
         <p className="mt-1 max-w-2xl text-sm text-[var(--mc-text-muted)]">
           Категорія — держава. Посада пишеться окремо. Хто без держави —
-          у «Вільні».
+          у «Вільні». Стрілки міняють порядок гравців усередині категорії.
         </p>
       </div>
 
@@ -412,7 +461,7 @@ export function AdminPlayerRoster() {
                       <span>Посада</span>
                       <span className="sr-only">Дії</span>
                     </div>
-                    {members.map((page) => {
+                    {members.map((page, index) => {
                       const draft = drafts[page.id] ?? {
                         state: page.player_state || WIKI_FREE_PLAYERS_LABEL,
                         role: roleDraft(page.player_role),
@@ -453,6 +502,32 @@ export function AdminPlayerRoster() {
                             className={fieldClass}
                           />
                           <div className="flex flex-wrap gap-1.5">
+                            <button
+                              type="button"
+                              disabled={busy || index === 0}
+                              aria-label={`Вище: ${page.page_title}`}
+                              title="Вище"
+                              onClick={() => void movePlayer(page, -1)}
+                              className={cn(
+                                btnSm,
+                                "border-white/15 px-2 text-[var(--mc-text)]",
+                              )}
+                            >
+                              <ChevronUp className="size-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={busy || index === members.length - 1}
+                              aria-label={`Нижче: ${page.page_title}`}
+                              title="Нижче"
+                              onClick={() => void movePlayer(page, 1)}
+                              className={cn(
+                                btnSm,
+                                "border-white/15 px-2 text-[var(--mc-text)]",
+                              )}
+                            >
+                              <ChevronDown className="size-3.5" />
+                            </button>
                             <button
                               type="button"
                               disabled={busy}
