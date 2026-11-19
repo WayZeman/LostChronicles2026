@@ -589,14 +589,21 @@ export async function addPageToCategory(input: {
     input.content_html?.trim() ||
     `<h2>${title.replace(/</g, "&lt;")}</h2><p></p>`;
 
-  const created = await upsertWikiPage({
-    slug: input.slug || wikiSlugFromTitle(title),
-    title,
-    content_html: starterHtml,
-    userId: input.userId ?? null,
-    createOnly: true,
-  });
-  if (!created.ok) return created;
+  const slug = normalizeWikiSlug(input.slug || wikiSlugFromTitle(title));
+  if (!slug) return { ok: false, error: "Некоректний slug." };
+
+  let page = await getWikiPageBySlug(slug);
+  if (!page) {
+    const created = await upsertWikiPage({
+      slug,
+      title,
+      content_html: starterHtml,
+      userId: input.userId ?? null,
+      createOnly: true,
+    });
+    if (!created.ok) return created;
+    page = created.page;
+  }
 
   const sql = getSql();
   const maxRows = rowsOf(await sql`
@@ -612,7 +619,7 @@ export async function addPageToCategory(input: {
       )
       VALUES (
         ${input.category_id},
-        ${created.page.id},
+        ${page.id},
         ${(input.short_code ?? "").trim()},
         ${(input.card_blurb ?? "").trim()},
         ${(input.image_url ?? "").trim()},
@@ -627,7 +634,7 @@ export async function addPageToCategory(input: {
         END
       RETURNING id
     `);
-    return { ok: true, page: created.page, linkId: num(rows[0]?.id) };
+    return { ok: true, page, linkId: num(rows[0]?.id) };
   } catch {
     return { ok: false, error: "Не вдалося додати картку до блоку." };
   }
