@@ -115,10 +115,11 @@ export function playerRosterFromArticle(input: {
     matchState(postOnly) ||
     matchState(statusOnly);
 
-  const state =
-    (explicit?.state ? matchState(explicit.state) || explicit.state : "") ||
-    inferred ||
-    WIKI_FREE_PLAYERS_LABEL;
+  // Обрана в адмінці категорія зберігається дослівно. Старі псевдоніми
+  // («теоній», «елден») не можна накладати на неї: інакше гравець
+  // лишається в чужій групі, хоча в списку вибрано іншу.
+  const chosen = explicit?.state.trim() ?? "";
+  const state = chosen || inferred || WIKI_FREE_PLAYERS_LABEL;
 
   const role = explicit?.role || roleCell || "—";
 
